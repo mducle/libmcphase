@@ -6,7 +6,18 @@
  * This program is licensed under the GNU General Purpose License, version 3. Please see the LICENSE file
  */
 
+#ifndef CEF_H
+#define CEF_H
+
 #include "cfpars.hpp"
 #include "eigen.hpp"
 
+using namespace libMcPhase;
+
+//namespace libMcPhase {
+
 RowMatrixXd cef_hamiltonian(cfpars &pars);
+
+//} // namespace libMcPhase
+
+#endif

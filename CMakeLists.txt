@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required (VERSION 3.1)
 project(libMcPhase)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
@@ -24,4 +24,9 @@ add_subdirectory(${PyBind11_DIR} ${PyBind11_DIR})
 
 include_directories(include)
 
-add_executable(cef singleion/cef.cpp)
+add_library(cfpars OBJECT singleion/cfpars.cpp)
+set_property(TARGET cfpars PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+add_executable(cef singleion/cef.cpp $<TARGET_OBJECTS:cfpars>)
+
+add_subdirectory(pythonapi)

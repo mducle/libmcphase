@@ -7,6 +7,7 @@
  */
 
 #include "cef.hpp"
+#include <iostream>
 
 RowMatrixXd cef_hamiltonian(cfpars &pars)
 {
@@ -16,11 +17,11 @@ RowMatrixXd cef_hamiltonian(cfpars &pars)
 int main()
 {
   cfpars pars;
-  pars.B20 = 0.2;
-  pars.B22 = -0.05;
-  pars.B40 = 0.01;
-  pars.B42 = 0.002;
-  pars.B44 = -0.001;
+  pars.set(cfpars::Blm::B20, 0.2);
+  pars.set(cfpars::Blm::B22, -0.05);
+  pars.set(cfpars::Blm::B40, 0.01);
+  pars.set(cfpars::Blm::B42, 0.002);
+  pars.set(cfpars::Blm::B44, -0.001);
   RowMatrixXd Hcf = cef_hamiltonian(pars);
   std::cout << Hcf << std::endl;
 }
