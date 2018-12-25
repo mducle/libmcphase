@@ -56,11 +56,12 @@ class cfpars {
         const double alpha() { return m_stevfact[0]; }
         const double beta() { return m_stevfact[1]; }
         const double gamma() { return m_stevfact[2]; }
-        const double J() { return (double)(m_J2 / 2.); }
+        const double get_J() { return (double)(m_J2 / 2.); }
         // Setters
         void set_unit(const Units newunit);
         void set_type(const Type newtype);
         void set_name(const std::string &ionname);
+        void set_J(const double J);
         void set(const Blm blm, double val);
         void set(int l, int m, double val);
         // Constructors

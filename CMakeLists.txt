@@ -30,3 +30,7 @@ set_property(TARGET cfpars PROPERTY POSITION_INDEPENDENT_CODE ON)
 add_executable(cef singleion/cef.cpp $<TARGET_OBJECTS:cfpars>)
 
 add_subdirectory(pythonapi)
+
+enable_testing()
+add_test(NAME libMcPhasePython COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_BINARY_DIR}/bin 
+         python3 -m unittest discover WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests)

@@ -27,6 +27,9 @@ static const std::unordered_map<std::string, cfpars::Type> type_names = {
     {"Alm", cfpars::Type::Alm}, {"Blm", cfpars::Type::Blm}, {"Vlm", cfpars::Type::Vlm},
     {"Wlm", cfpars::Type::Wlm}, {"Llm", cfpars::Type::Llm}, {"ARlm", cfpars::Type::ARlm} };
 
+static const std::unordered_map<std::string, cfpars::Units> unit_names = { 
+    {"meV", cfpars::Units::meV}, {"cm", cfpars::Units::cm}, {"K", cfpars::Units::K} };
+
 static const char* cfpars_init_str = "Construct a cfpars object\n"
                                      "    args (one of):\n"
                                      "        J - total angular momentum of multiplet\n"
@@ -43,6 +46,15 @@ void cfpars_set_type(cfpars *cls, std::string typestr) {
         throw std::runtime_error("Invalid type name, must be one of 'Alm', 'ARlm', 'Blm', 'Llm', 'Vlm' or 'Wlm'");
     } else {
         cls->set_type(type_it->second);
+    }
+}
+
+void cfpars_set_unit(cfpars *cls, std::string unitstr) {
+    std::unordered_map<std::string, cfpars::Units>::const_iterator unit_it = unit_names.find(unitstr);
+    if (unit_it == unit_names.end()) {
+        throw std::runtime_error("Invalid unit, must be one of 'meV', 'cm', or 'K'");
+    } else {
+        cls->set_unit(unit_it->second);
     }
 }
 
@@ -77,6 +89,9 @@ cfpars *cfpars_init(py::args args, py::kwargs kwargs) {
     if (kwargs.contains("type")) {
         cfpars_set_type(cls, kwargs["type"].cast<std::string>());
     }
+    if (kwargs.contains("unit")) {
+        cfpars_set_unit(cls, kwargs["unit"].cast<std::string>());
+    }
     if (kwargs) {
         for (auto const &bname : Blm_names) {
             if (kwargs.contains(bname.first.c_str())) {
@@ -103,7 +118,7 @@ PYBIND11_MODULE(libMcPhase, m) {
         .value("Stevens", cfpars::Normalisation::Stevens)
         .value("Wybourne", cfpars::Normalisation::Wybourne);
 
-    py::enum_<cfpars::Type>(pycfpars, "Type")
+    py::enum_<cfpars::Type>(pycfpars, "Types")
         .value("Alm", cfpars::Type::Alm)
         .value("Blm", cfpars::Type::Blm)
         .value("Llm", cfpars::Type::Llm)
@@ -115,14 +130,14 @@ PYBIND11_MODULE(libMcPhase, m) {
         .def(py::init<const std::string &>(), py::arg("ionname"))
         .def(py::init<const double &>(), py::arg("J"))
         .def(py::init(&cfpars_init), cfpars_init_str)
-        .def_property("unit", &cfpars::get_unit, &cfpars::set_unit, "energy unit of the parameters")
+        .def_property("unit", &cfpars::get_unit, &cfpars_set_unit, "energy unit of the parameters")
         .def_property("type", &cfpars::get_type, &cfpars_set_type, "type of CF parameters. When changed, parameters values will be automatically converted.")
         .def_property("ion", &cfpars::get_name, &cfpars::set_name, "ion type. If reset, parameters will be updated by scaling by Stevens factors.")
+        .def_property("J", &cfpars::get_J, &cfpars::set_J, "the total angular momentum quantum number of this multiplet")
         .def_property_readonly("normalisation", &cfpars::get_normalisation, "normalisation of CF parameters")
         .def_property_readonly("alpha", &cfpars::alpha, "the 2nd order Stevens operator equivalent factor")
         .def_property_readonly("beta", &cfpars::beta, "the 4th order Stevens operator equivalent factor")
         .def_property_readonly("gamma", &cfpars::gamma, "the 6th order Stevens operator equivalent factor")
-        .def_property_readonly("J", &cfpars::J, "the total angular momentum quantum number of this multiplet")
         .def_property("B22S", [](cfpars const &self) { return self.get(cfpars::Blm::B22S); }, [](cfpars &self, double v) { self.set(cfpars::Blm::B22S, v); })
         .def_property("B21S", [](cfpars const &self) { return self.get(cfpars::Blm::B21S); }, [](cfpars &self, double v) { self.set(cfpars::Blm::B21S, v); })
         .def_property("B20", [](cfpars const &self) { return self.get(cfpars::Blm::B20); }, [](cfpars &self, double v) { self.set(cfpars::Blm::B20, v); })

@@ -136,9 +136,7 @@ const Map3 &RKTABLE() {
 }
 
 // Conversion factors for different energy units[from][to], order: [meV, cm, K].
-static const double ENERGYCONV[3][3] = { {1., 8.06554486, 11.6045047},
-                                         {0.12398420, 1., 1.43877505},
-                                         {0.08617733, 0.69503457, 1.} };
+static const std::array<double, 3> ENERGYCONV = { {1., 8.065544005, 11.6045221} };
 
 // --------------------------------------------------------------------------------------------------------------- //
 // Setter/getter methods for cfpars class
@@ -146,7 +144,7 @@ static const double ENERGYCONV[3][3] = { {1., 8.06554486, 11.6045047},
 void cfpars::set(const Blm blm, double val) {
     int id = (int)blm;
     m_Bo[id] = val;
-    m_Bi[id] = val / m_convfact[id];
+    m_Bi[id] = val / m_convfact[id] / ENERGYCONV[(int)m_unit];
 }
 
 void cfpars::set(int l, int m, double val) {
@@ -159,7 +157,7 @@ void cfpars::set(int l, int m, double val) {
             return;
     }
     m_Bo[id] = val;
-    m_Bi[id] = val / m_convfact[id];
+    m_Bi[id] = val / m_convfact[id] / ENERGYCONV[(int)m_unit];
 }
 
 const double cfpars::get(int l, int m) const {
@@ -176,10 +174,9 @@ const double cfpars::get(int l, int m) const {
 void cfpars::set_unit(cfpars::Units const newunit) {
     if (m_unit == newunit)
         return;
-    double convfact = ENERGYCONV[(int)m_unit][(int)newunit];
+    double convfact = ENERGYCONV[(int)newunit];
     for (int id=0; id<27; id++) {
-        m_Bo[id] *= convfact;
-        m_convfact[id] *= convfact;
+        m_Bo[id] = m_Bi[id] * convfact * m_convfact[id];
     }
     m_unit = newunit;
 }
@@ -188,29 +185,29 @@ void cfpars::set_type(const cfpars::Type newtype) {
     if (!m_convertible) {
         throw std::runtime_error("Unknown ion, cannot set parameter type. Please set the ionname on construction.");
     }
-    double e_conv = ENERGYCONV[0][(int)m_unit];
     switch(newtype) {
         case cfpars::Type::Alm:
-            for (int id=0; id<27; id++) m_convfact[id] = e_conv / m_stevfact[id2l[id]] / m_rk[id2l[id]];
+            for (int id=0; id<27; id++) m_convfact[id] = 1. / m_stevfact[id2l[id]] / m_rk[id2l[id]];
             break;
         case cfpars::Type::ARlm:
-            for (int id=0; id<27; id++) m_convfact[id] = e_conv / m_stevfact[id2l[id]];
+            for (int id=0; id<27; id++) m_convfact[id] = 1. / m_stevfact[id2l[id]];
             break;
         case cfpars::Type::Blm:
-            for (int id=0; id<27; id++) m_convfact[id] = e_conv;
+            for (int id=0; id<27; id++) m_convfact[id] = 1.;
             break;
         case cfpars::Type::Vlm:
-            for (int id=0; id<27; id++) m_convfact[id] = e_conv * half[id2l[id]];
+            for (int id=0; id<27; id++) m_convfact[id] = half[id];
             break;
         case cfpars::Type::Wlm:
-            for (int id=0; id<27; id++) m_convfact[id] = e_conv * half[id2l[id]] / m_rk[id2l[id]];
+            for (int id=0; id<27; id++) m_convfact[id] = half[id] / m_rk[id2l[id]];
             break;
         case cfpars::Type::Llm:
-            for (int id=0; id<27; id++) m_convfact[id] = e_conv / lambda[id] / m_stevfact[id2l[id]];
+            for (int id=0; id<27; id++) m_convfact[id] = 1. / lambda[id] / m_stevfact[id2l[id]];
             break;
     }
+    double e_conv = ENERGYCONV[(int)m_unit];
     for (int id=0; id<27; id++)
-        m_Bo[id] = m_Bi[id] * m_convfact[id];
+        m_Bo[id] = m_Bi[id] * m_convfact[id] * e_conv;
     m_type = newtype;
     if(newtype == cfpars::Type::Llm)
         m_norm = cfpars::Normalisation::Wybourne;
@@ -231,10 +228,16 @@ void cfpars::set_name(const std::string &ionname) {
     double beta = BETA_J[n];
     double gamma = GAMMA_J[n];
 	m_J2 = J2[n];
-    // Scales parameters by ratio of Stevens factor of old and new ion.
-    std::array<double, 3> scale = { {alpha/m_stevfact[0], beta/m_stevfact[1], gamma/m_stevfact[2]} };
-    for (int id=0; id<27; id++) {
-        m_Bi[id] *= scale[id2l[id]];
+    // Scales parameters by ratio of Stevens factor of old and new ion (if old ion defined).
+    if (m_convertible) {
+        std::array<double, 3> scale = { {alpha/m_stevfact[0], beta/m_stevfact[1], gamma/m_stevfact[2]} };
+        for (int id=0; id<27; id++)
+            m_Bi[id] *= scale[id2l[id]];
+    } 
+    else {
+        double e_conv = ENERGYCONV[(int)m_unit];
+        for (int id=0; id<27; id++)
+            m_Bi[id] = m_Bo[id] / e_conv;
     }
 	m_stevfact = {alpha, beta, gamma};
 	m_invstevfact = {1./alpha, 1./beta, 1./gamma};
@@ -246,12 +249,32 @@ void cfpars::set_name(const std::string &ionname) {
     this->set_type(m_type);
 }
 
+void cfpars::set_J(const double J) {
+    if (fmod(J, 2.) == 0.) {
+        m_J2 = (int)(2 * J);
+    }
+    else {
+        throw std::runtime_error("Invalid value of J - must be integer or half-integer");
+    }
+    m_ionname = "";
+    m_stevfact = {1., 1., 1.};
+    m_invstevfact = {1., 1., 1.};
+    m_rk = {0., 0., 0.};
+    m_convertible = false;
+    double e_conv = ENERGYCONV[(int)m_unit];
+    for (int id=0; id<27; id++) {
+        m_convfact[id] = 1.;
+        m_Bi[id] = m_Bo[id] / e_conv;
+    }
+    m_norm = cfpars::Normalisation::Stevens;
+    m_type = Type::Blm;
+}
 
 // --------------------------------------------------------------------------------------------------------------- //
 // Constructor functions for cfpars class
 // --------------------------------------------------------------------------------------------------------------- //
 cfpars::cfpars(const double J) {
-    if (fmod(J, 2.) == 0.) {
+    if (fmod(2 * J, 1.) == 0.) {
         m_J2 = (int)(2 * J);
     }
     else {
