@@ -17,6 +17,8 @@
 #include<string>
 #include<unordered_map>
 
+#include "eigen.hpp"
+
 namespace libMcPhase {
 
 class cfpars {
@@ -69,6 +71,8 @@ class cfpars {
         cfpars(const int J2) : m_J2(J2) { m_convfact.fill(1.); };
         cfpars(const double J);
         cfpars(const std::string &ionname);
+        // Methods
+        RowMatrixXd hamiltonian();
     
 }; // class cfpars
 

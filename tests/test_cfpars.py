@@ -109,6 +109,12 @@ class cfparsTests(unittest.TestCase):
         cfp.ion = 'Pr3+'
         self.assertEqual(cfp.ion.lower(), 'pr3+')
         self.assertAlmostEqual(cfp.B20, (-1.0 * 2*2*13/3/3/5/5/11) / (-1.0 * 7/3/3/11/11))
+        cfp.J = 4
+        self.assertEqual(cfp.ion, '')
+        self.assertEqual(cfp.type, cfp.Types.Blm)
+        with self.assertRaises(RuntimeError):   # lost all ion info, cannot know ion dependent factors
+            cfp.type = 'Llm'
+        self.assertAlmostEqual(cfp.B20, (-1.0 * 2*2*13/3/3/5/5/11) / (-1.0 * 7/3/3/11/11))
 
     def test_conversions(self):
         cfp = libMcPhase.cfpars('Nd3+', type='Llm', unit='K', B20=10)
