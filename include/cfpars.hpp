@@ -13,16 +13,17 @@
 #include<algorithm>
 #include<cctype>
 #include<cmath>
+#include<complex>
 #include<stdexcept>
 #include<string>
 #include<unordered_map>
 
 #include "eigen.hpp"
+#include "racah.hpp"
 
 namespace libMcPhase {
 
 class cfpars {
-
 
     public:
     enum class Units {meV = 0, cm = 1, K = 2};
@@ -34,7 +35,7 @@ class cfpars {
                     B60 = 20, B61 = 21, B62 = 22, B63 = 23, B64 = 24, B65 = 25, B66 = 26};
 
     private:
-        std::array<double, 27> m_Bi{};                        // Internal array of values (in Stevens in meV)
+        std::array<double, 27> m_Bi{};                        // Internal array of values (in Wybourne/theta_k in meV)
         std::array<double, 27> m_Bo{};                        // Output array of parameters.
         std::array<double, 3> m_rk{};                         // Radial integrals <r^k> (if constructed from ionname)
         std::array<double, 3> m_stevfact = {{1., 1., 1.}};    // Stevens factors \theta_k
@@ -46,6 +47,7 @@ class cfpars {
         std::string m_ionname;                                // Name of ion
         int m_J2 = 0;                                         // 2*J == twice the total angular momentum
         bool m_convertible = false;                           // True if can convert between types and normalisations
+        racah m_racah{};                                      // Class to calc n-j symbols and cache factorials
         
     public:
         // Getters
@@ -67,12 +69,13 @@ class cfpars {
         void set(const Blm blm, double val);
         void set(int l, int m, double val);
         // Constructors
-        cfpars() { m_convfact.fill(1.); };
-        cfpars(const int J2) : m_J2(J2) { m_convfact.fill(1.); };
+        cfpars();
+        cfpars(const int J2);
         cfpars(const double J);
         cfpars(const std::string &ionname);
         // Methods
-        RowMatrixXd hamiltonian();
+        RowMatrixXcd hamiltonian(bool upper=true);
+        std::tuple<RowMatrixXcd, VectorXd> eigensystem();
     
 }; // class cfpars
 

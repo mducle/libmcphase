@@ -8,6 +8,7 @@
 
 #include "cfpars.hpp"
 #include <pybind11/pybind11.h>
+#include <pybind11/eigen.h>
 
 namespace py = pybind11;
 using namespace libMcPhase;
@@ -138,6 +139,8 @@ PYBIND11_MODULE(libMcPhase, m) {
         .def_property_readonly("alpha", &cfpars::alpha, "the 2nd order Stevens operator equivalent factor")
         .def_property_readonly("beta", &cfpars::beta, "the 4th order Stevens operator equivalent factor")
         .def_property_readonly("gamma", &cfpars::gamma, "the 6th order Stevens operator equivalent factor")
+        .def("hamiltonian", &cfpars::hamiltonian, "the crystal field Hamiltonian", "upper"_a=true)
+        .def("eigensystem", &cfpars::eigensystem, "the eigenvectors and eigenvalues of the crystal field Hamiltonian")
         .def_property("B22S", [](cfpars const &self) { return self.get(cfpars::Blm::B22S); }, [](cfpars &self, double v) { self.set(cfpars::Blm::B22S, v); })
         .def_property("B21S", [](cfpars const &self) { return self.get(cfpars::Blm::B21S); }, [](cfpars &self, double v) { self.set(cfpars::Blm::B21S, v); })
         .def_property("B20", [](cfpars const &self) { return self.get(cfpars::Blm::B20); }, [](cfpars &self, double v) { self.set(cfpars::Blm::B20, v); })

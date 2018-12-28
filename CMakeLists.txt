@@ -24,7 +24,7 @@ add_subdirectory(${PyBind11_DIR} ${PyBind11_DIR})
 
 include_directories(include)
 
-add_library(cfpars OBJECT singleion/cfpars.cpp)
+add_library(cfpars OBJECT singleion/cfpars.cpp singleion/racah.cpp)
 set_property(TARGET cfpars PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 add_executable(cef singleion/cef.cpp $<TARGET_OBJECTS:cfpars>)
