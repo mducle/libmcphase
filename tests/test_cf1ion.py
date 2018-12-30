@@ -15,7 +15,9 @@ class cf1ionTests(unittest.TestCase):
                         [          0,  1.0034e+00, -3.8676e-01, -9.5181e-01,  7.3185e-01,  3.0767e-01, -8.2511e-01,  1.3833e+00,  1.8754e+00],
                         [          0,           0,  7.5851e-01, -7.7351e-01,  9.7844e-01,  1.0278e+00, -6.8087e-02,  1.8754e+00, -6.9491e-01]])
 
-    def test_creation(self):
+    eval_ref = np.array([-4.0496e+00, -3.4501e+00, -1.8251e+00, -1.7653e+00,  7.7521e-01,  1.3800e+00,  1.6579e+00,  3.5307e+00,  3.7464e+00])
+
+    def test_creation_and_diagonalisation(self):
         with self.assertRaises(RuntimeError):   # J must be integer or half-integer
             cfp = libMcPhase.cf1ion(2.3)
         with self.assertRaises(RuntimeError):   # Unknown ion name (must be a rare earth 3+)
@@ -25,3 +27,6 @@ class cf1ionTests(unittest.TestCase):
                                 B40=-7.2952e-04, B41=6.4828e-03, B42=-3.3059e-03, B43=1.5821e-02, B44=-4.5648e-03,
                                 B60=-2.1369e-05, B61=4.3678e-04, B62=8.8995e-05, B63=1.0380e-04, B64=4.7701e-04, B65=-1.1485e-03, B66=3.9818e-04)
         nptest.assert_allclose(cfp.hamiltonian(), self.ham_ref, rtol=1e-4)
+        V, E = cfp.eigensystem()
+        nptest.assert_allclose(E, self.eval_ref, rtol=1e-4)
+        nptest.assert_allclose(V @ np.diag(E) @ V.conj().T, cfp.hamiltonian(), atol=1e-4)

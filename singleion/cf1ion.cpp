@@ -7,7 +7,6 @@
  */
 
 #include "cf1ion.hpp"
-#include <iostream>
 
 namespace libMcPhase {
 
@@ -16,18 +15,61 @@ static const std::array<std::array<int, 4>, 12> idq = { {{2,2,0,4}, {2,1,1,3}, {
 static const std::array<std::array<int, 2>, 3> idq0 = { {{2,2}, {4,9}, {6,20}} };
 
 // --------------------------------------------------------------------------------------------------------------- //
+// Setter/getter methods for cfpars class
+// --------------------------------------------------------------------------------------------------------------- //
+void cf1ion::set(const Blm blm, double val) {
+    cfpars::set(blm, val);
+    m_ham_calc = false;
+    m_ev_calc = false;
+}
+
+void cf1ion::set(int l, int m, double val) {
+    cfpars::set(l, m, val);
+    m_ham_calc = false;
+    m_ev_calc = false;
+}
+
+void cf1ion::set_unit(cfpars::Units const newunit) {
+    cfpars::set_unit(newunit);
+    m_ham_calc = false;
+    m_ev_calc = false;
+}
+
+void cf1ion::set_type(const cfpars::Type newtype) {
+    cfpars::set_type(newtype);
+    m_ham_calc = false;
+    m_ev_calc = false;
+}
+
+void cf1ion::set_name(const std::string &ionname) {
+    cfpars::set_name(ionname);
+    m_ham_calc = false;
+    m_ev_calc = false;
+}
+
+void cf1ion::set_J(const double J) {
+    cfpars::set_J(J);
+    m_ham_calc = false;
+    m_ev_calc = false;
+}
+
+// --------------------------------------------------------------------------------------------------------------- //
 // General methods for the cf1ion class
 // --------------------------------------------------------------------------------------------------------------- //
 RowMatrixXcd cf1ion::hamiltonian(bool upper) {
+    if (m_ham_calc) {
+        return m_hamiltonian;
+    }
     if (m_J2 <= 0) {
         throw std::runtime_error("Invalid value of J - must be strictly greater than zero");
     }
 
     int dimj = m_J2 + 1;
-    RowMatrixXcd ham = RowMatrixXcd::Zero(dimj, dimj);
+    m_hamiltonian = RowMatrixXcd::Zero(dimj, dimj);
     // For J=1/2, all Stevens operators are zero
     if (dimj == 2) {
-        return ham;
+        m_ham_calc = true;
+        return m_hamiltonian;
     }
 
     // The crystal field potential operator is given by:
@@ -84,11 +126,10 @@ RowMatrixXcd cf1ion::hamiltonian(bool upper) {
     // First the diagonal elements (q=0 terms)
     for (auto iq: idq0) {
         int k = iq[0], m = iq[1];
-        std::cout << "k=" << k << ", m=" << m << ", m_Bi[m]=" << m_Bi[m] << ", rme[k]=" << rme[k] << ", m_econv=" << m_econv << "\n";
         if (std::fabs(m_Bi[m]) > 1e-12) {
             for (int i=0; i<dimj; i++) {
                 int mj = 2*i - m_J2;
-                ham(i,i) += pow(-1., (m_J2-mj)/2.) * m_racah.threej(m_J2, 2*k, m_J2, -mj, 0, mj) * rme[k] * m_Bi[m] * m_econv;
+                m_hamiltonian(i,i) += pow(-1., (m_J2-mj)/2.) * m_racah.threej(m_J2, 2*k, m_J2, -mj, 0, mj) * rme[k] * m_Bi[m] * m_econv;
             }
         }
     }
@@ -100,14 +141,14 @@ RowMatrixXcd cf1ion::hamiltonian(bool upper) {
             for (int i=0; i<(dimj-q); i++) {
                 int mj = 2*i - m_J2, mjp = 2*(i+q) - m_J2;
                 double tjp = m_racah.threej(m_J2, 2*k, m_J2, -mj, 2*q, mjp) - m_racah.threej(m_J2, 2*k, m_J2, -mj, -2*q, mjp);
-                ham(i+q,i) += std::complex<double>(0., pow(-1., (m_J2-mj)/2.) * tjp * rme[k] * m_Bi[m] * m_econv);
+                m_hamiltonian(i+q,i) += std::complex<double>(0., pow(-1., (m_J2-mj)/2.) * tjp * rme[k] * m_Bi[m] * m_econv);
             }
         }
         if (std::fabs(m_Bi[p]) > 1e-12) {
             for (int i=0; i<(dimj-q); i++) {
                 int mj = 2*i - m_J2, mjp = 2*(i+q) - m_J2;
                 double tjp = m_racah.threej(m_J2, 2*k, m_J2, -mj, 2*q, mjp) + m_racah.threej(m_J2, 2*k, m_J2, -mj, -2*q, mjp);
-                ham(i+q,i) += pow(-1., (m_J2-mj)/2.) * tjp * rme[k] * m_Bi[p] * m_econv;
+                m_hamiltonian(i+q,i) += pow(-1., (m_J2-mj)/2.) * tjp * rme[k] * m_Bi[p] * m_econv;
             }
         }
     }
@@ -116,19 +157,23 @@ RowMatrixXcd cf1ion::hamiltonian(bool upper) {
     if (upper) {
         for (int i=0; i<dimj; i++) {
             for (int j=i+1; j<dimj; j++) {
-                ham(i,j) = std::conj(ham(j,i));
+                m_hamiltonian(i,j) = std::conj(m_hamiltonian(j,i));
             }
         }
     }
 
-    return ham; 
+    m_ham_calc = true;
+    return m_hamiltonian; 
 }
 
 std::tuple<RowMatrixXcd, VectorXd> cf1ion::eigensystem() {
-    SelfAdjointEigenSolver<RowMatrixXcd> es(hamiltonian(false));
-    RowMatrixXcd eigenvectors = es.eigenvectors();
-    VectorXd eigenvalues = es.eigenvalues();
-    return std::tuple<RowMatrixXcd, VectorXd>(eigenvectors, eigenvalues);
+    if (!m_ev_calc) {
+        SelfAdjointEigenSolver<RowMatrixXcd> es(hamiltonian(false));
+        m_eigenvectors = es.eigenvectors();
+        m_eigenvalues = es.eigenvalues();
+        m_ev_calc = true;
+    }
+    return std::tuple<RowMatrixXcd, VectorXd>(m_eigenvectors, m_eigenvalues);
 }
 
 } // namespace libMcPhase

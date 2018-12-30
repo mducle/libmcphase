@@ -238,7 +238,6 @@ void cfpars::set_name(const std::string &ionname) {
             m_Bi[id] = m_Bo[id] / m_econv;
     }
 	m_stevfact = {alpha, beta, gamma};
-	m_invstevfact = {1./alpha, 1./beta, 1./gamma};
     const Map3 &rktable = RKTABLE();
 	auto rk_table = rktable.find(ion);
 	m_rk = rk_table->second;
@@ -256,7 +255,6 @@ void cfpars::set_J(const double J) {
     }
     m_ionname = "";
     m_stevfact = {1., 1., 1.};
-    m_invstevfact = {1., 1., 1.};
     m_rk = {0., 0., 0.};
     m_convertible = false;
     m_convfact = lambda;
@@ -304,7 +302,6 @@ cfpars::cfpars(const std::string &ionname) {
 	m_J2 = J2[n];
     m_convfact = lambda;
 	m_stevfact = {alpha, beta, gamma};
-	m_invstevfact = {1./alpha, 1./beta, 1./gamma};
     const Map3 &rktable = RKTABLE();
 	auto rk_table = rktable.find(ion);
 	m_rk = rk_table->second;

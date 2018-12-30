@@ -38,7 +38,6 @@ class cfpars {
         std::array<double, 27> m_Bo{};                        // Output array of parameters.
         std::array<double, 3> m_rk{};                         // Radial integrals <r^k> (if constructed from ionname)
         std::array<double, 3> m_stevfact = {{1., 1., 1.}};    // Stevens factors \theta_k
-        std::array<double, 3> m_invstevfact = {{1., 1., 1.}}; // Inverse Stevens factors
         std::array<double, 27> m_convfact;                    // Conversion factor from internal to external parameters
         double m_econv = 1.;                                  // Conversion factor from internal to external energy
         Units m_unit = Units::meV;                            // Energy units of parameters
@@ -62,12 +61,12 @@ class cfpars {
         const double gamma() { return m_stevfact[2]; }
         const double get_J() { return (double)(m_J2 / 2.); }
         // Setters
-        void set_unit(const Units newunit);
-        void set_type(const Type newtype);
-        void set_name(const std::string &ionname);
-        void set_J(const double J);
-        void set(const Blm blm, double val);
-        void set(int l, int m, double val);
+        virtual void set_unit(const Units newunit);
+        virtual void set_type(const Type newtype);
+        virtual void set_name(const std::string &ionname);
+        virtual void set_J(const double J);
+        virtual void set(const Blm blm, double val);
+        virtual void set(int l, int m, double val);
         // Constructors
         cfpars();
         cfpars(const int J2);

@@ -16,7 +16,21 @@ namespace libMcPhase {
 
 class cf1ion: public cfpars {
 
+    protected:
+        bool m_ham_calc = false;                              // Flag to indicate if Hamiltonian calculated
+        bool m_ev_calc = false;                               // Flag to indicate if eigenvectors/values calculated
+        RowMatrixXcd m_hamiltonian;                           // Cached Hamiltonian
+        RowMatrixXcd m_eigenvectors;                          // Cached eigenvectors
+        VectorXd m_eigenvalues;                               // Cached eigenvalues
+
     public:
+        // Setters
+        virtual void set_unit(const Units newunit);
+        virtual void set_type(const Type newtype);
+        virtual void set_name(const std::string &ionname);
+        virtual void set_J(const double J);
+        virtual void set(const Blm blm, double val);
+        virtual void set(int l, int m, double val);
         // Constructors
         cf1ion() : cfpars() {};
         cf1ion(const int J2) : cfpars(J2) {};
