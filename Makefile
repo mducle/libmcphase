@@ -1,15 +1,16 @@
 # Makefile for all McPhase
 
-include bin/src/Makefile.common
+bindir = .
+include $(bindir)/src/Makefile.common
 
-cfdir = bin/cf1ion_module
-icdir = bin/ic1ion_module
-phdir = bin/phonon_module
-bfkdir = bin/bfk_src
-mcpdir = bin/src
-vecdir = bin/src/vector
-funcdir = bin/src/functions
-calcdir = bin/src/calc
+cfdir = $(bindir)/cf1ion_module
+icdir = $(bindir)/ic1ion_module
+phdir = $(bindir)/phonon_module
+bfkdir = $(bindir)/bfk_src
+mcpdir = $(bindir)/src
+vecdir = $(bindir)/src/vector
+funcdir = $(bindir)/src/functions
+calcdir = $(bindir)/src/calc
 
 all: vector functions mcphase phonon
 
@@ -45,21 +46,21 @@ clean:
 	cd $(phdir) && $(MAKE) cleanall
 	cd $(mcpdir) && $(MAKE) clean
 	cd $(phdir) && $(MAKE) clean
-	rm -vf bin/addj.exe bin/charges.exe bin/coq2jjj.exe \
-		bin/mcdispit.exe bin/singleion.exe bin/cfield.exe \
-		bin/cond.exe bin/jjj2j.exe bin/mcphasit.exe bin/spins.exe \
-                bin/chrgplt.exe bin/pointc.exe bin/spinsfromq.exe \
-                bin/mcdiff.exe bin/cf1ion_module/cfield.dll \
-                bin/ic1ion.exe bin/icf1ion.exe bin/so1ion.exe \
-                bin/ic1ion_module/ic1ion.dll \
-                bin/fediff.exe bin/mf2fe.exe \
-		bin/formfactor.exe bin/radwavfunc.exe
-	rm -vf bin/addj bin/charges bin/coq2jjj \
-		bin/mcdispit bin/singleion bin/cfield \
-		bin/cond bin/jjj2j bin/mcphasit bin/spins \
-                bin/chrgplt bin/pointc bin/spinsfromq \
-                bin/mcdiff bin/cf1ion_module/cfield.so \
-                bin/ic1ion bin/icf1ion bin/so1ion \
-                bin/ic1ion_module/ic1ion.so bin/ic1ion_module/icf1ion.so \
-                bin/fediff bin/mf2fe \
-                bin/formfactor bin/radwavfunc
+	rm -vf $(bindir)/addj.exe $(bindir)/charges.exe $(bindir)/coq2jjj.exe \
+		$(bindir)/mcdispit.exe $(bindir)/singleion.exe $(bindir)/cfield.exe \
+		$(bindir)/cond.exe $(bindir)/jjj2j.exe $(bindir)/mcphasit.exe $(bindir)/spins.exe \
+                $(bindir)/chrgplt.exe $(bindir)/pointc.exe $(bindir)/spinsfromq.exe \
+                $(bindir)/mcdiff.exe $(bindir)/cf1ion_module/cfield.dll \
+                $(bindir)/ic1ion.exe $(bindir)/icf1ion.exe $(bindir)/so1ion.exe \
+                $(bindir)/ic1ion_module/ic1ion.dll \
+                $(bindir)/fediff.exe $(bindir)/mf2fe.exe \
+		$(bindir)/formfactor.exe $(bindir)/radwavfunc.exe
+	rm -vf $(bindir)/addj $(bindir)/charges $(bindir)/coq2jjj \
+		$(bindir)/mcdispit $(bindir)/singleion $(bindir)/cfield \
+		$(bindir)/cond $(bindir)/jjj2j $(bindir)/mcphasit $(bindir)/spins \
+                $(bindir)/chrgplt $(bindir)/pointc $(bindir)/spinsfromq \
+                $(bindir)/mcdiff $(bindir)/cf1ion_module/cfield.so \
+                $(bindir)/ic1ion $(bindir)/icf1ion $(bindir)/so1ion \
+                $(bindir)/ic1ion_module/ic1ion.so $(bindir)/ic1ion_module/icf1ion.so \
+                $(bindir)/fediff $(bindir)/mf2fe \
+                $(bindir)/formfactor $(bindir)/radwavfunc
