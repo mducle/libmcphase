@@ -7,6 +7,7 @@
  */
 
 #include "cfpars.hpp"
+#include "cf1ion.hpp"
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
 
@@ -59,19 +60,18 @@ void cfpars_set_unit(cfpars *cls, std::string unitstr) {
     }
 }
 
-cfpars *cfpars_init(py::args args, py::kwargs kwargs) {
+void cf_parse(cfpars *cls, py::args args, py::kwargs kwargs) {
     if (!args && !kwargs) {
-        return new cfpars;
+        return;
     }
-    cfpars *cls;
     if (args && args.size() > 0) {
         try {
             double J = args[0].cast<double>();
-            cls = new cfpars(J);
+            cls->set_J(J);
         } catch (py::cast_error) {
             try {
                 std::string ionname = args[0].cast<std::string>();
-                cls = new cfpars(ionname);
+                cls->set_name(ionname);
             } catch (py::cast_error) {
                 throw std::runtime_error("Invalid first argument: must be the ion name as a string "
                                          "or the total angular momentum quantum number J");
@@ -79,14 +79,11 @@ cfpars *cfpars_init(py::args args, py::kwargs kwargs) {
         }
     }
     else if (kwargs.contains("J")) {
-        cls = new cfpars(kwargs["J"].cast<double>());
+        cls->set_J(kwargs["J"].cast<double>());
     } 
     else if (kwargs.contains("ionname")) {
-        cls = new cfpars(kwargs["ionname"].cast<std::string>());
+        cls->set_name(kwargs["ionname"].cast<std::string>());
     } 
-    else {
-        cls = new cfpars;
-    }
     if (kwargs.contains("type")) {
         cfpars_set_type(cls, kwargs["type"].cast<std::string>());
     }
@@ -100,6 +97,17 @@ cfpars *cfpars_init(py::args args, py::kwargs kwargs) {
             }
         }
     }
+}
+
+cfpars *cfpars_init(py::args args, py::kwargs kwargs) {
+    cfpars *cls = new cfpars;
+    cf_parse(cls, args, kwargs);
+    return cls;
+}
+
+cf1ion *cf1ion_init(py::args args, py::kwargs kwargs) {
+    cf1ion *cls = new cf1ion;
+    cf_parse(static_cast<cfpars*>(cls), args, kwargs);
     return cls;
 }
 
@@ -139,8 +147,6 @@ PYBIND11_MODULE(libMcPhase, m) {
         .def_property_readonly("alpha", &cfpars::alpha, "the 2nd order Stevens operator equivalent factor")
         .def_property_readonly("beta", &cfpars::beta, "the 4th order Stevens operator equivalent factor")
         .def_property_readonly("gamma", &cfpars::gamma, "the 6th order Stevens operator equivalent factor")
-        .def("hamiltonian", &cfpars::hamiltonian, "the crystal field Hamiltonian", "upper"_a=true)
-        .def("eigensystem", &cfpars::eigensystem, "the eigenvectors and eigenvalues of the crystal field Hamiltonian")
         .def_property("B22S", [](cfpars const &self) { return self.get(cfpars::Blm::B22S); }, [](cfpars &self, double v) { self.set(cfpars::Blm::B22S, v); })
         .def_property("B21S", [](cfpars const &self) { return self.get(cfpars::Blm::B21S); }, [](cfpars &self, double v) { self.set(cfpars::Blm::B21S, v); })
         .def_property("B20", [](cfpars const &self) { return self.get(cfpars::Blm::B20); }, [](cfpars &self, double v) { self.set(cfpars::Blm::B20, v); })
@@ -168,6 +174,16 @@ PYBIND11_MODULE(libMcPhase, m) {
         .def_property("B64", [](cfpars const &self) { return self.get(cfpars::Blm::B64); }, [](cfpars &self, double v) { self.set(cfpars::Blm::B64, v); })
         .def_property("B65", [](cfpars const &self) { return self.get(cfpars::Blm::B65); }, [](cfpars &self, double v) { self.set(cfpars::Blm::B65, v); })
         .def_property("B66", [](cfpars const &self) { return self.get(cfpars::Blm::B66); }, [](cfpars &self, double v) { self.set(cfpars::Blm::B66, v); });
+
+    py::class_<cf1ion, cfpars> pycf1ion(m, "cf1ion");
+    
+    pycf1ion.def(py::init<>())
+        .def(py::init<const std::string &>(), py::arg("ionname"))
+        .def(py::init<const double &>(), py::arg("J"))
+        .def(py::init(&cf1ion_init), cfpars_init_str)
+        .def("hamiltonian", &cf1ion::hamiltonian, "the crystal field Hamiltonian", "upper"_a=true)
+        .def("eigensystem", &cf1ion::eigensystem, "the eigenvectors and eigenvalues of the crystal field Hamiltonian");
+
 }
 
 

@@ -18,7 +18,6 @@
 #include<string>
 #include<unordered_map>
 
-#include "eigen.hpp"
 #include "racah.hpp"
 
 namespace libMcPhase {
@@ -34,13 +33,14 @@ class cfpars {
                     B66S = 14, B65S = 15, B64S = 16, B63S = 17, B62S = 18, B61S = 19, 
                     B60 = 20, B61 = 21, B62 = 22, B63 = 23, B64 = 24, B65 = 25, B66 = 26};
 
-    private:
+    protected:
         std::array<double, 27> m_Bi{};                        // Internal array of values (in Wybourne/theta_k in meV)
         std::array<double, 27> m_Bo{};                        // Output array of parameters.
         std::array<double, 3> m_rk{};                         // Radial integrals <r^k> (if constructed from ionname)
         std::array<double, 3> m_stevfact = {{1., 1., 1.}};    // Stevens factors \theta_k
         std::array<double, 3> m_invstevfact = {{1., 1., 1.}}; // Inverse Stevens factors
         std::array<double, 27> m_convfact;                    // Conversion factor from internal to external parameters
+        double m_econv = 1.;                                  // Conversion factor from internal to external energy
         Units m_unit = Units::meV;                            // Energy units of parameters
         Normalisation m_norm = Normalisation::Stevens;        // Normalisation (Stevens or Wybourne)
         Type m_type = Type::Blm;                              // Type of crystal field parameters
@@ -73,9 +73,6 @@ class cfpars {
         cfpars(const int J2);
         cfpars(const double J);
         cfpars(const std::string &ionname);
-        // Methods
-        RowMatrixXcd hamiltonian(bool upper=true);
-        std::tuple<RowMatrixXcd, VectorXd> eigensystem();
     
 }; // class cfpars
 

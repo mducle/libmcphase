@@ -1,6 +1,6 @@
 message(STATUS "PYTHON_SITE_PACKAGES = ${PYTHON_SITE_PACKAGES_DIR}" )
 
-pybind11_add_module(libMcPhase libmcphase.cpp $<TARGET_OBJECTS:cfpars>)
+pybind11_add_module(libMcPhase libmcphase.cpp $<TARGET_OBJECTS:singleion>)
 
 set_target_properties (libMcPhase PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libMcPhase)
 add_custom_command (TARGET libMcPhase POST_BUILD
