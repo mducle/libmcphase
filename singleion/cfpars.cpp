@@ -21,8 +21,6 @@ static const std::array<double, 27> lambda = {
      sqrt(231.)/16., 3*sqrt(77.)/8., 3*sqrt(14.)/16., sqrt(105.)/8., sqrt(105.)/16., sqrt(42.)/8., // l=6, m=-6 to m=-1
      1./16., sqrt(42.)/8., sqrt(105.)/16., sqrt(105.)/8., 3*sqrt(14.)/16., 3*sqrt(77.)/8., sqrt(231.)/16.} };
 
-static const std::array<double, 27> half = { {.5,.5,1.,.5,.5, .5,.5,.5,.5,1.,.5,.5,.5,.5, .5,.5,.5,.5,.5,.5,1.,.5,.5,.5,.5,.5,.5} };
-
 static const std::array<int, 27> id2l = { {0,0,0,0,0, 1,1,1,1,1,1,1,1,1, 2,2,2,2,2,2,2,2,2,2,2,2,2} };
 
 // Matching ion names to number of unfilled electrons in f-shell
@@ -194,12 +192,6 @@ void cfpars::set_type(const cfpars::Type newtype) {
             break;
         case cfpars::Type::Blm:
             for (int id=0; id<27; id++) m_convfact[id] = lambda[id];
-            break;
-        case cfpars::Type::Vlm:
-            for (int id=0; id<27; id++) m_convfact[id] = lambda[id] * half[id];
-            break;
-        case cfpars::Type::Wlm:
-            for (int id=0; id<27; id++) m_convfact[id] = lambda[id] * half[id] / m_rk[id2l[id]];
             break;
         case cfpars::Type::Llm:
             for (int id=0; id<27; id++) m_convfact[id] = 1. / m_stevfact[id2l[id]];

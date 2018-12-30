@@ -27,7 +27,7 @@ class cfpars {
     public:
     enum class Units {meV = 0, cm = 1, K = 2};
     enum class Normalisation {Stevens, Wybourne};
-    enum class Type {Alm, Blm, Vlm, Wlm, Llm, ARlm};
+    enum class Type {Alm, Blm, Llm, ARlm};
     enum class Blm {B22S = 0, B21S = 1, B20 = 2, B21 = 3, B22 = 4,
                     B44S = 5, B43S = 6, B42S = 7, B41S = 8, B40 = 9, B41 = 10, B42 = 11, B43 = 12, B44 = 13,
                     B66S = 14, B65S = 15, B64S = 16, B63S = 17, B62S = 18, B61S = 19, 

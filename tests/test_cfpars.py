@@ -69,12 +69,6 @@ class cfparsTests(unittest.TestCase):
         cfp.type = 'Alm'
         for ii, par in enumerate([cfp.B20, cfp.B40, cfp.B60]):
             self.assertAlmostEqual(par, par0[ii] / theta_k[ii] / rk[ii])
-        cfp.type = 'Vlm'
-        for ii, par in enumerate([cfp.B20, cfp.B40, cfp.B60]):
-            self.assertAlmostEqual(par, par0[ii])
-        cfp.type = 'Wlm'
-        for ii, par in enumerate([cfp.B20, cfp.B40, cfp.B60]):
-            self.assertAlmostEqual(par, par0[ii] / rk[ii])
         cfp.type = 'Llm'
         for ii, par in enumerate([cfp.B20, cfp.B40, cfp.B60]):
             self.assertAlmostEqual(par, par0[ii] / lamb[ii] / theta_k[ii])
@@ -92,12 +86,6 @@ class cfparsTests(unittest.TestCase):
         cfp.type = 'Alm'
         for ii, par in enumerate([cfp.B20, cfp.B40, cfp.B60]):
             self.assertAlmostEqual(par, par0[ii] * lamb[ii] / rk[ii])
-        cfp.type = 'Vlm'
-        for ii, par in enumerate([cfp.B20, cfp.B40, cfp.B60]):
-            self.assertAlmostEqual(par, par0[ii] * lamb[ii] * theta_k[ii])
-        cfp.type = 'Wlm'
-        for ii, par in enumerate([cfp.B20, cfp.B40, cfp.B60]):
-            self.assertAlmostEqual(par, par0[ii] * lamb[ii] * theta_k[ii] / rk[ii])
         cfp.type = 'Llm'
         for ii, par in enumerate([cfp.B20, cfp.B40, cfp.B60]):
             self.assertAlmostEqual(par, par0[ii], places=15)

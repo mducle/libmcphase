@@ -26,8 +26,7 @@ static const std::unordered_map<std::string, cfpars::Blm> Blm_names = {
     {"B63", cfpars::Blm::B63}, {"B64", cfpars::Blm::B64}, {"B65", cfpars::Blm::B65}, {"B66", cfpars::Blm::B66} };
 
 static const std::unordered_map<std::string, cfpars::Type> type_names = {
-    {"Alm", cfpars::Type::Alm}, {"Blm", cfpars::Type::Blm}, {"Vlm", cfpars::Type::Vlm},
-    {"Wlm", cfpars::Type::Wlm}, {"Llm", cfpars::Type::Llm}, {"ARlm", cfpars::Type::ARlm} };
+    {"Alm", cfpars::Type::Alm}, {"Blm", cfpars::Type::Blm}, {"Llm", cfpars::Type::Llm}, {"ARlm", cfpars::Type::ARlm} };
 
 static const std::unordered_map<std::string, cfpars::Units> unit_names = { 
     {"meV", cfpars::Units::meV}, {"cm", cfpars::Units::cm}, {"K", cfpars::Units::K} };
@@ -131,8 +130,6 @@ PYBIND11_MODULE(libMcPhase, m) {
         .value("Alm", cfpars::Type::Alm)
         .value("Blm", cfpars::Type::Blm)
         .value("Llm", cfpars::Type::Llm)
-        .value("Vlm", cfpars::Type::Vlm)
-        .value("Wlm", cfpars::Type::Wlm)
         .value("ARlm", cfpars::Type::ARlm);
 
     pycfpars.def(py::init<>())
