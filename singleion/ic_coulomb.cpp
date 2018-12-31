@@ -36,7 +36,7 @@
  *       Rajnak and Wybourne, Phys. Rev., 132, 280 (1963)
  */
 
-#include "ic_states.hpp"
+#include "ic1ion.hpp"
 #include "eigen.hpp"
 
 namespace libMcPhase {
@@ -546,7 +546,7 @@ double racah_phi(qG2 U, qG2 Up, orbital Lp, orbital L)
 // --------------------------------------------------------------------------------------------------------------- //
 // Function to calculate the eigenvalues of Casimir's operators for the group G2, after Racah IV
 // --------------------------------------------------------------------------------------------------------------- //
-double racah_g(qG2 U, bool R5flag=false)
+double racah_g(qG2 U, bool R5flag)
 {
    if(R5flag)
       return (U.u1*(U.u1+3.) + U.u2*(U.u2+1.))/6.;                        // From Racah IV, eqn 19, or Judd, 5-50

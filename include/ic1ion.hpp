@@ -12,7 +12,56 @@
 #ifndef IC1ION_H
 #define IC1ION_H
 
+#include "cfpars.hpp"
+#include "eigen.hpp"
+#include "ic_states.hpp"
+
 namespace libMcPhase {
+
+class ic1ion : public cfpars {
+
+    protected:
+        bool m_ham_calc = false;                              // Flag to indicate if Hamiltonian calculated
+        bool m_ev_calc = false;                               // Flag to indicate if eigenvectors/values calculated
+        RowMatrixXcd m_hamiltonian;                           // Cached Hamiltonian
+        RowMatrixXcd m_eigenvectors;                          // Cached eigenvectors
+        VectorXd m_eigenvalues;                               // Cached eigenvalues
+		// Declarations for functions in so_cf.cpp
+		RowMatrixXd racah_so(int n, double xi, orbital e_l=F);                   // Calculates the spin-orbit matrix
+		RowMatrixXd racah_Umat(int n, int k, orbital e_l=F);                     // Calculates the reduced matrix U^k
+		RowMatrixXd racah_uJ(int n, int k, orbital e_l=F);                       // Calculates the U^k redmat in |LSJ>
+		RowMatrixXd racah_ukq(int n, int k, int q, orbital e_l=F);               // Calculates the tensor operator U^k_q 
+		RowMatrixXd fast_ukq(int n, int k, int q, orbital e_l=F);                // Calculates the tensor operator U^k_q 
+		RowMatrixXd racah_mumat(int n, int q, orbital e_l=F);                    // Calculates the magnetic moment operator
+		void racah_mumat(int n,int q,RowMatrixXd&L, RowMatrixXd&S, orbital l=F); // Calculates the magnetic moment operators
+		void chanlam_mumat(int n,int q,RowMatrixXd&mu, orbital l=F);             // Calculates the magnetic moment operator
+		// Declarations for functions in lovesey.cpp
+		bool lovesey_aKK(RowMatrixXd &aKK, int K, int Kp, int n, orbital l);     // Calculates the matrix a(K,K')
+		bool lovesey_cKK(RowMatrixXd &aKK, int K, int Kp, int n, orbital l);     // Calculates the matrix c(K,K')
+		void lovesey_Qq(std::vector<RowMatrixXd >&Q, int q, int n, orbital l,    // Calculates the transition matrix Qq
+		       std::vector<double>&);
+		RowMatrixXd balcar_MSq(int q, int K, int Q, int n, orbital l);           // Calculates the coeff. of the spin density
+		RowMatrixXd balcar_MLq(int q, int K, int Q, int n, orbital l);           // Calculates the coeff. of the orbital dens.
+		RowMatrixXcd balcar_Mq(int xyz,int K,int Q,int n,orbital l);             // Driver for calculation of density coeff.
+
+    public:
+        // Setters
+        virtual void set_unit(const Units newunit);
+        virtual void set_type(const Type newtype);
+        virtual void set_name(const std::string &ionname);
+        virtual void set_J(const double J);
+        virtual void set(const Blm blm, double val);
+        virtual void set(int l, int m, double val);
+        // Constructors
+        ic1ion() : cfpars() {};
+        ic1ion(const int J2) : cfpars(J2) {};
+        ic1ion(const double J) : cfpars(J) {};
+        ic1ion(const std::string &ionname) : cfpars(ionname) {};
+        // Methods
+        RowMatrixXcd hamiltonian(bool upper=true);
+        std::tuple<RowMatrixXcd, VectorXd> eigensystem();
+
+}; // class ic1ion
 
 // --------------------------------------------------------------------------------------------------------------- //
 // Declarations for functions in coulomb.cpp
@@ -54,50 +103,8 @@ std::vector<cfpls> racah_parents(int n, int S2, orbital L);               // Cal
 //  RowMatrixXd cfp_orthog_test(int n, const char* LS);                   // These two functions are for testing the
 //  RowMatrixXd cfp_cowan_test(int n, const char* LSp);                   //    calculations of the cfp's.
 
+
 /*
-// --------------------------------------------------------------------------------------------------------------- //
-// Declarations for functions in mmio.cpp
-// --------------------------------------------------------------------------------------------------------------- //
-void mm_gout(RowMatrixXd M, const char*filename, const char*comments="");// Outputs a matrix to MatrixMarket format
-RowMatrixXd mm_gin(const char *filename);                                // Reads in a MatrixMarket sparse matrix
-void mm_sout(RowMatrixXd M, const char*filename, const char*comments="");// Output to file a sparse symmetrix matrix
-RowMatrixXd mm_sin(const char *filename);                                // Reads in a sparse symmetrix matrix
-
-// --------------------------------------------------------------------------------------------------------------- //
-// Declarations for functions in njsyms.cpp
-// --------------------------------------------------------------------------------------------------------------- //
-//long int factorial(int i);                                              // Calculates the factorial operation !
-double factorial(int i);                                                  // Calculates the factorial operation !
-double racahW(int a, int b, int c, int d, int e, int f);                  // Calculates Racah's W(abcd;ef) symbol
-double wigner(int a, int b, int c, int d, int e, int f);                  // Calculates Wigner coeff. (abcd|ef)
-double wigner(int a, int b, int c, int d, int e, int f, int g, int h);    // Calculates Wigner coeff. (abcd|abef)
-double threej(int a, int b, int c, int d, int e, int f);                  // Calculates the 3j symbol (abc;def)
-double sixj(int a, int b, int c, int d, int e, int f);                    // Calculates the 6j symbol {abc;def}
-double ninej(int a,int b,int c,int d,int e,int f,int g,int h,int i);      // Calculates the 9j symbol (abc;def;ghi)
-
-// --------------------------------------------------------------------------------------------------------------- //
-// Declarations for functions in so_cf.cpp
-// --------------------------------------------------------------------------------------------------------------- //
-RowMatrixXd racah_so(int n, double xi, orbital e_l=F);                   // Calculates the spin-orbit matrix
-RowMatrixXd racah_Umat(int n, int k, orbital e_l=F);                     // Calculates the reduced matrix U^k
-RowMatrixXd racah_uJ(int n, int k, orbital e_l=F);                       // Calculates the U^k redmat in |LSJ>
-RowMatrixXd racah_ukq(int n, int k, int q, orbital e_l=F);               // Calculates the tensor operator U^k_q 
-RowMatrixXd fast_ukq(int n, int k, int q, orbital e_l=F);                // Calculates the tensor operator U^k_q 
-RowMatrixXd racah_mumat(int n, int q, orbital e_l=F);                    // Calculates the magnetic moment operator
-void racah_mumat(int n,int q,RowMatrixXd&L,RowMatrixXd&S, orbital l=F); // Calculates the magnetic moment operators
-void chanlam_mumat(int n,int q,RowMatrixXd&mu, orbital l=F);             // Calculates the magnetic moment operator
-
-// --------------------------------------------------------------------------------------------------------------- //
-// Declarations for functions in lovesey.cpp
-// --------------------------------------------------------------------------------------------------------------- //
-bool lovesey_aKK(RowMatrixXd &aKK, int K, int Kp, int n, orbital l);     // Calculates the matrix a(K,K')
-bool lovesey_cKK(RowMatrixXd &aKK, int K, int Kp, int n, orbital l);     // Calculates the matrix c(K,K')
-void lovesey_Qq(std::vector<RowMatrixXd >&Q, int q, int n, orbital l,    // Calculates the transition matrix Qq
-       std::vector<double>&);
-RowMatrixXd balcar_MSq(int q, int K, int Q, int n, orbital l);           // Calculates the coeff. of the spin density
-RowMatrixXd balcar_MLq(int q, int K, int Q, int n, orbital l);           // Calculates the coeff. of the orbital dens.
-complexdouble*balcar_Mq(int xyz,int K,int Q,int n,orbital l);             // Driver for calculation of density coeff.
-
 // --------------------------------------------------------------------------------------------------------------- //
 // Declarations for functions in ic_hmltn.cpp
 // --------------------------------------------------------------------------------------------------------------- //
