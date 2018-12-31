@@ -1,4 +1,4 @@
-/* so_cf.cpp
+/* ic_socf.cpp
  *
  * Calculates the spin-orbit and crystal field interactions operator matrices, after Racah.
  *
@@ -18,7 +18,7 @@
  * This program is licensed under the GNU General Purpose License, version 2. Please see the COPYING file
  */
 
-#include "ic1ion.hpp"
+#include "ic_states.hpp"
 
 // --------------------------------------------------------------------------------------------------------------- //
 // Calculates the spin orbit Hamilton matrix for a particular f^n configuration with strength xi

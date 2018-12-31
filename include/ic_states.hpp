@@ -1,4 +1,4 @@
-/* states.hpp
+/* ic_states.hpp
  * 
  * Header file for states.cpp
  *
@@ -9,12 +9,14 @@
  * This program is licensed under the GNU General Purpose License, version 2. Please see the COPYING file
  */
 
-#ifndef STATES_H
-#define STATES_H
+#ifndef ICSTATES_H
+#define ICSTATES_H
 
 #include<vector>
 #include<iostream>
 #include<sstream>
+
+namespace libMcPhase {
 
 // --------------------------------------------------------------------------------------------------------------- //
 // Defines an enumeration to contain both the spectroscopic notation and integer value of the orbital quantum number
@@ -185,5 +187,23 @@ class fconf
       fconf(int n, bool mJflag, orbital l=F);                   // Construct matrix in |aLSJ> or |aLSmJ> basis
 
 };
+
+// --------------------------------------------------------------------------------------------------------------- //
+// Defines a class to hold the coefficient of fractional parentage, parent id and parent id number
+// --------------------------------------------------------------------------------------------------------------- //
+class cfpls {
+   public:
+      double cfp;                       // Value of the coefficient
+      fstates_t par;                    // The parent state quantum numbers
+      int ind;                          // Index of the parent state in the parent configuration
+      cfpls() : cfp(0.), ind(-1) {};    // Constructor function
+};
+
+// Templated sign function
+template <typename T> int sign(T val) {
+    return (T(0) < val) - (val < T(0));
+}
+
+} // namespace libMcPhase
 
 #endif

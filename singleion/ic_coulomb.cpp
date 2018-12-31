@@ -1,4 +1,4 @@
-/* coulomb.cpp
+/* ic_coulomb.cpp
  *
  * Calculates the Coulomb (electrostatic) interaction operator matrices, after the method of Racah
  *
@@ -36,7 +36,10 @@
  *       Rajnak and Wybourne, Phys. Rev., 132, 280 (1963)
  */
 
-#include "ic1ion.hpp"
+#include "ic_states.hpp"
+#include "eigen.hpp"
+
+namespace libMcPhase {
 
 // --------------------------------------------------------------------------------------------------------------- //
 // Function to look up the value of the coefficients x(W,UU'), after Racah IV. 
@@ -281,12 +284,12 @@ double racah_e2prod(qR7 W, qG2 U, qG2 Up, orbital L, orbital Lp)
 // --------------------------------------------------------------------------------------------------------------- //
 // Calculates the matrix elements of the coulomb operator e2, after Racah IV, section 6.2
 // --------------------------------------------------------------------------------------------------------------- //
-sMat<double> racah_e2(int n)
+RowMatrixXd racah_e2(int n)
 {
    int i,j,sign,S2,v;
    fconf conf(n);
    int num_states = (int)conf.states.size();
-   sMat<double> e2(num_states,num_states);
+   RowMatrixXd e2(num_states, num_states);
    double elem;
    
    for(j=0; j<num_states; j++)
@@ -543,7 +546,7 @@ double racah_phi(qG2 U, qG2 Up, orbital Lp, orbital L)
 // --------------------------------------------------------------------------------------------------------------- //
 // Function to calculate the eigenvalues of Casimir's operators for the group G2, after Racah IV
 // --------------------------------------------------------------------------------------------------------------- //
-double racah_g(qG2 U, bool R5flag)
+double racah_g(qG2 U, bool R5flag=false)
 {
    if(R5flag)
       return (U.u1*(U.u1+3.) + U.u2*(U.u2+1.))/6.;                        // From Racah IV, eqn 19, or Judd, 5-50
@@ -563,7 +566,7 @@ double racah_g(qR7 W)
 // --------------------------------------------------------------------------------------------------------------- //
 // Calculates the matrix elements of the coulomb operator e3, after Racah IV.
 // --------------------------------------------------------------------------------------------------------------- //
-sMat<double> racah_e3(int n)
+RowMatrixXd racah_e3(int n)
 {
    int i,j,S2,v;
    orbital L;
@@ -571,7 +574,7 @@ sMat<double> racah_e3(int n)
    qR7 W;
    fconf conf(n);
    int num_states = (int)conf.states.size();
-   sMat<double> e3(num_states,num_states);
+   RowMatrixXd e3(num_states, num_states);
    double e;
    
    for(j=0; j<num_states; j++)
@@ -620,20 +623,20 @@ sMat<double> racah_e3(int n)
 // --------------------------------------------------------------------------------------------------------------- //
 // Calculates the coulomb interaction matrix elements, for f-electrons using Racah operators, after Racah IV.
 // --------------------------------------------------------------------------------------------------------------- //
-sMat<double> racah_emat(int n, double E0, double E1, double E2, double E3)
+RowMatrixXd racah_emat(int n, double E0, double E1, double E2, double E3)
 {
    int nn = n;
-   sMat<double> emat;
+   RowMatrixXd emat;
    if (n>7) nn=14-n; if(nn<1) { std::cerr << "racah_emat: number of f-electrons n > 14 or < 1\n"; return emat; }
-   if (nn==1) { emat(0,0) = E0+E1+E2+E3; return emat; }
-   sMat<double> e2 = racah_e2(nn);
-   sMat<double> e3 = racah_e3(nn);
-   emat.zero(e2.nr(),e2.nc());
+   if (nn==1) { emat << E0+E1+E2+E3; return emat; }
+   RowMatrixXd e2 = racah_e2(nn);
+   RowMatrixXd e3 = racah_e3(nn);
+   emat = RowMatrixXd::Zero(e2.rows(), e2.rows());
    fconf conf(nn);
    int i,v;
    double S;
 
-   for(i=0; i<e2.nr(); i++)
+   for(i=0; i<e2.rows(); i++)
    {
       v = conf.states[i].v; S = conf.states[i].S2/2.;
       emat(i,i) = (n*(n-1.)/2)*E0 + ( (9./2)*(n-v) + v*(v+2.)/4 - S*(S+1.) )*E1;
@@ -645,28 +648,28 @@ sMat<double> racah_emat(int n, double E0, double E1, double E2, double E3)
 // --------------------------------------------------------------------------------------------------------------- //
 // Looks up the coulomb interaction matrix elements for d-electrons from Tables from Neilson and Koster, 1963.
 // --------------------------------------------------------------------------------------------------------------- //
-sMat<double> racah_emat(int n, double F0, double F2, double F4)
+RowMatrixXd racah_emat(int n, double F0, double F2, double F4)
 {
    int nn = n;
-   sMat<double> e;
+   RowMatrixXd e;
    if (n>5) nn=10-n; if(nn<1) { std::cerr << "racah_emat: number of d-electrons n > 10 or < 1\n"; return e; }
 
    switch(nn) {
-      case 1: e(0,0) = 0; break; // F0+F2+F4; break;
+      case 1: e = RowMatrixXd::Zero(1, 1); break; // F0+F2+F4; break;
       case 2:
-         e.zero(5,5); 
+         e = RowMatrixXd::Zero(5,5); 
          e(0,0) = F0+F2/7.-4*F4/21.;          e(1,1) = F0-8*F2/49.-F4/49.;          e(2,2) = F0+2*F2/7.+2*F4/7.;
          e(3,3) = F0-3*F2/49.+4*F4/49.;       e(4,4) = F0+4*F2/49.+F4/441.;
          break;
       case 3:
-         e.zero(8,8);
+         e = RowMatrixXd::Zero(8,8);
          e(0,0) = 3*F0-F4/3.;                 e(1,1) = 3*F0-(15*F2+8*F4)/49.;       e(2,2) = 3*F0-6*F2/49.-4*F4/147.; 
          e(3,3) = 3*F0+(F2+F4)/7.;            e(4,4) = 3*F0+3*F2/49.-19*F4/147.;    e(5,5) = 3*F0+9*F2/49.-29*F4/147.;
          e(6,6) = 3*F0-11*F2/49.+13*F4/441.;  e(7,7) = 3*F0-6*F2/49.-4*F4/147.;
          e(3,4) = (3*F2/49.-5*F4/147.)*sqrt(21.);  e(4,3) = e(3,4); 
          break;
       case 4:
-         e.zero(16,16);
+         e = RowMatrixXd::Zero(16,16);
          e(0,0) = 6*F0-3*(F2+F4)/7.;          e(1,1) = 6*F0-F2/7.-2*F4/63.;         e(2,2) = 6*F0-3*F2/49.-139*F4/441.;
          e(3,3) = 6*F0-5*F2/49.-43*F4/147.;   e(4,4) = 6*F0-2*F2/49.-13*F4/147.;    e(5,5) = 6*F0-8*F2/49.-38*F4/147.;
          e(6,6) = 6*F0-12*F2/49.-94*F4/441.;  e(7,7) = 6*F0-17*F2/49.-23*F4/147.;   e(8,8) = 6*F0+2*(F2+F4)/7.;
@@ -680,7 +683,7 @@ sMat<double> racah_emat(int n, double F0, double F2, double F4)
          e(13,14)=(4*F2/49.-20*F4/441.)*sqrt(11.);  e(14,13)=e(13,14);
          break;
       case 5:
-         e.zero(16,16);
+         e = RowMatrixXd::Zero(16,16);
          e(0,0) = 10*F0-5*(F2+F4)/7.;         e(1,1) = 10*F0-4*F2/7.-5*F4/21.;      e(2,2) = 10*F0-(18*F2+25*F4)/49.;
          e(3,3) = 10*F0-(13*F2+20*F4)/49.;    e(4,4) = 10*F0-25*F2/49.-190*F4/441.; e(5,5) = 10*F0-3*F2/49.-65*F4/147.;
          e(6,6) = 10*F0+20*F2/49.-80*F4/147.; e(7,7) = 10*F0;                       e(8,8) = 10*F0-4*F2/49.-40*F4/147.;
@@ -697,10 +700,10 @@ sMat<double> racah_emat(int n, double F0, double F2, double F4)
 // --------------------------------------------------------------------------------------------------------------- //
 // Calculates the coulomb interaction matrix elements for p-electrons from a formula of van Vleck PR 45, 405 (1936)
 // --------------------------------------------------------------------------------------------------------------- //
-sMat<double> racah_emat(int n, double F0, double F2)
+RowMatrixXd racah_emat(int n, double F0, double F2)
 {
    int nn = n;
-   sMat<double> e;
+   RowMatrixXd e;
    if (n>3) nn=6-n;  if(nn<1) { std::cerr << "racah_emat: number of p-electrons n > 6 or < 1\n"; return e; }
 
    int Hsz[]={1,3,3}, L[]={1,1,0,2,0,1,2},                 // p1:2P - p2: 3P,1S,1D - p3: 4S,2P,2D
@@ -709,6 +712,7 @@ sMat<double> racah_emat(int n, double F0, double F2)
    F2/=25; nn--;  // Converts from Slater nomalisation to Condon and Shortley normalisation
 
    for (int ii=0; ii<nn; ii++) st+=Hsz[ii];
+   e = RowMatrixXd::Zero(Hsz[nn], Hsz[nn]);
    // Uses formula 38 of van Vleck
    for (int ii=0; ii<Hsz[nn]; ii++) e(ii,ii) = (n*(n+1.)/2.)*F0 + ((-5*n*n+20*n-3*L[ii+st]*(L[ii+st]+1)-12*(S2[ii+st]/2.)*((S2[ii+st]/2.)+1))/2.)*F2;
 
@@ -761,17 +765,17 @@ std::vector<double> racah_F_ktoF(std::vector<double> F_k)  // Converts from F_k 
 // --------------------------------------------------------------------------------------------------------------- //
 // Calculates the linear configuration interaction Hamilton matrix, after Rajnak and Wybourne, PR, v132, 280 (1963)
 // --------------------------------------------------------------------------------------------------------------- //
-sMat<double> racah_ci(int n, double alpha, double beta, double gamma)    // For f-electrons
+RowMatrixXd racah_ci(int n, double alpha, double beta, double gamma)     // For f-electrons
 {
    int nn = n;
-   sMat<double> ci;
+   RowMatrixXd ci;
    if (n>7) nn=14-n; if(nn<1) { std::cerr << "racah_ci: number of f-electrons n > 14 or < 1\n"; return ci; }
-   if (nn==1) { ci(0,0) = alpha*3.*(3.+1.) + beta/2. + gamma*6./10.; return ci; } // f1 has only 1 state: 2F [100][10]
+   if (nn==1) { ci << alpha*3.*(3.+1.) + beta/2. + gamma*6./10.; return ci; } // f1 has only 1 state: 2F [100][10]
    fconf conf(nn);
-   ci.zero(conf.states.size(),conf.states.size());
+   ci = RowMatrixXd::Zero(conf.states.size(),conf.states.size());
    int i,L;
 
-   for(i=0; i<ci.nr(); i++)
+   for(i=0; i<ci.rows(); i++)
    {
       L = abs(conf.states[i].L);                                         // See Eqn 19 and similar...
       ci(i,i) = alpha*L*(L+1.) + beta*racah_g(conf.states[i].U) + gamma*racah_g(conf.states[i].W);
@@ -780,17 +784,17 @@ sMat<double> racah_ci(int n, double alpha, double beta, double gamma)    // For 
    return ci;
 }
 
-sMat<double> racah_ci(int n, double alpha, double beta)                  // For d-electrons
+RowMatrixXd racah_ci(int n, double alpha, double beta)                   // For d-electrons
 {
    int nn = n;
-   sMat<double> ci;
+   RowMatrixXd ci;
    if (n>5) nn=10-n; if(nn<1) { std::cerr << "racah_ci number of d-electrons n > 10 or < 1\n"; return ci; }
-   if (nn==1) { ci(0,0) = alpha*2.*(2.+1.) + beta*2./3.; return ci; }    // d1 has only 1 state: 2D [10]
+   if (nn==1) { ci <<  alpha*2.*(2.+1.) + beta*2./3.; return ci; }       // d1 has only 1 state: 2D [10]
    fconf conf(nn,D);
-   ci.zero(conf.states.size(),conf.states.size());
+   ci = RowMatrixXd::Zero(conf.states.size(),conf.states.size());
    int i,L;
 
-   for(i=0; i<ci.nr(); i++)
+   for(i=0; i<ci.rows(); i++)
    {
       L = abs(conf.states[i].L);
       ci(i,i) = alpha*L*(L+1.) + beta*racah_g(conf.states[i].U,true);    // Eqn 22 of Rajnak and Wybourne
@@ -799,18 +803,21 @@ sMat<double> racah_ci(int n, double alpha, double beta)                  // For 
    return ci;
 }
 
-sMat<double> racah_ci(int n, double alpha)                               // For p-electrons
+RowMatrixXd racah_ci(int n, double alpha)                                // For p-electrons
 {
    int nn = n;
-   sMat<double> ci;
+   RowMatrixXd ci;
    if (n>3) nn=6-n; if(nn<1) { std::cerr << "racah_ci number of p-electrons n > 6 or < 1\n"; return ci; }
    nn--;
    int Hsz[]={1,3,3}, L[]={1,1,0,2,0,1,2}, st=0;                         // p1:2P - p2: 3P,1S,1D - p3: 4S,2P,2D
    for (int i=1; i<nn; i++) st+=Hsz[i-1];
+   ci = RowMatrixXd::Zero(Hsz[nn], Hsz[nn]);
    for (int i=0; i<Hsz[nn]; i++) ci(i,i)=alpha*L[i+st]*(L[i+st]+1.);     // Eqn 21 of Rajnak and Wybourne
 
    return ci;
 }
+
+} // namespace libMcPhase
 
 // --------------------------------------------------------------------------------------------------------------- //
 // For testing the rest of the code! - Uncomment and compile: g++ coulomb.cpp states.cpp; ./a.out 2

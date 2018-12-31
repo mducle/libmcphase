@@ -1,4 +1,4 @@
-/* states.cpp
+/* ic_states.cpp
  *
  * Defines the states of a particular f^n or d^n configurations on a group theoretical basis, after Racah.
  *
@@ -20,9 +20,11 @@
  *
  */
 
-#include "ic1ion.hpp"
+#include "ic_states.hpp"
 #include <cctype>
 #include <cstdio>
+
+namespace libMcPhase {
 
 // --------------------------------------------------------------------------------------------------------------- //
 // Converts a C++ string to upper case
@@ -830,6 +832,8 @@ fconf::fconf(int n, bool mJflag, orbital l)
       }
    }
 }
+
+} // namespace libMcPhase
 
 // --------------------------------------------------------------------------------------------------------------- //
 // For testing the rest of the code! - Uncomment and compile: g++ states.cpp; ./a.out 1

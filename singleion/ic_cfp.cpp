@@ -1,4 +1,4 @@
-/* cfp.cpp
+/* ic_cfp.cpp
  *
  * Calculates the coefficient of fractional parentage from a group theoretical basis, after the methods of, and 
  * using tables initially derived by chain calculations of Racah. 
@@ -22,7 +22,10 @@
  * This program is licensed under the GNU General Purpose License, version 2. Please see the COPYING file
  */
 
-#include "ic1ion.hpp"
+#include "ic_states.hpp"
+#include <cmath>
+
+namespace libMcPhase {
 
 // --------------------------------------------------------------------------------------------------------------- //
 // Looks up the value of the factor (UL|U'L'+f), after Racah, Wybourne, and Allison
@@ -1156,6 +1159,8 @@ std::vector<cfpls> racah_parents(int n, int S2, orbital L)              // For p
    }
    return cfps;
 }
+
+} // namespace libMcPhase
 
 // --------------------------------------------------------------------------------------------------------------- //
 // For testing the rest of the code! - Uncomment and compile: g++ cfp.cpp states.cpp; ./a.out
