@@ -23,6 +23,8 @@
 #include "ic_states.hpp"
 #include <cctype>
 #include <cstdio>
+#include <utility>
+#include <unordered_map>
 
 namespace libMcPhase {
 
@@ -224,6 +226,7 @@ int racah_wtov(int S2, qR7 W)
    return v;
 }
 
+
 // --------------------------------------------------------------------------------------------------------------- //
 // Member functions and overloaded operators for the fconf class, which represents a particular l^n configuration
 // --------------------------------------------------------------------------------------------------------------- //
@@ -242,10 +245,8 @@ fconf::fconf(orbital l)
       std::cerr << "fconf::fconf() - error, only the case of l=1, l=2 and l=3, p-, d- and f-electrons implemented.\n";
 }
 
-fconf::fconf(int n, orbital l)
+void fconf::set(int n, orbital l)
 {
-   qG2 U; 
-   
    switch(l) {
 
    case S:
@@ -253,7 +254,7 @@ fconf::fconf(int n, orbital l)
    {
       std::cerr << "fconf::fconf() - Invalid value of n = number of s-electrons (must be 1)\n";
    }
-   else { states.push_back(fstates_t(1,S,"2S")); }
+   else { states.clear(); states.push_back(fstates_t(1,S,"2S")); }
    break; // case S:
 
    case P:
@@ -262,6 +263,7 @@ fconf::fconf(int n, orbital l)
       std::cerr << "fconf::fconf() - Invalid value of n = number of p-electrons (must be 1<= n <=5)\n";
    }
    else {
+      states.clear();
       if (n>3) n=6-n;	// Checks to see if we are in the second half of the series
       switch(n)
       {
@@ -292,6 +294,7 @@ fconf::fconf(int n, orbital l)
       std::cerr << "fconf::fconf() - Invalid value of n = number of d-electrons (must be 1<= n <=9)\n";
    }
    else {
+      states.clear();
       if (n>5) n=10-n;	// Checks to see if we are in the second half of the series
       switch(n)
       {
@@ -372,408 +375,409 @@ fconf::fconf(int n, orbital l)
 
       switch(n)
       {
+         states.clear();
          case 1:
-            U.set(1,0); states.push_back(fstates_t(1,F,1,U,"2F"));        // f1    2F	1 100 10
+            states.push_back(fstates_t(1,F,1,qG2(1,0),"2F"));        // f1    2F	1 100 10
             break;
          case 2:
-	    states.reserve(7);
-            U.set(1,1); states.push_back(fstates_t(2,P,2,U,"3P"));        // f2    3P	2 110 11
-            U.set(1,0); states.push_back(fstates_t(2,F,2,U,"3F"));        //       3F	2 110 10
-            U.set(1,1); states.push_back(fstates_t(2,H,2,U,"3H"));        //       3H	2 110 11
-            U.set(0,0); states.push_back(fstates_t(0,S,0,U,"1S"));        //       1S	0 000 00
-            U.set(2,0); states.push_back(fstates_t(0,D,2,U,"1D"));        //       1D	2 200 20
-            U.set(2,0); states.push_back(fstates_t(0,G,2,U,"1G"));        //       1G	2 200 20
-            U.set(2,0); states.push_back(fstates_t(0,I,2,U,"1I"));        //       1I	2 200 20
+	     states.reserve(7);
+            states.push_back(fstates_t(2,P,2,qG2(1,1),"3P"));        // f2    3P	2 110 11
+            states.push_back(fstates_t(2,F,2,qG2(1,0),"3F"));        //       3F	2 110 10
+            states.push_back(fstates_t(2,H,2,qG2(1,1),"3H"));        //       3H	2 110 11
+            states.push_back(fstates_t(0,S,0,qG2(0,0),"1S"));        //       1S	0 000 00
+            states.push_back(fstates_t(0,D,2,qG2(2,0),"1D"));        //       1D	2 200 20
+            states.push_back(fstates_t(0,G,2,qG2(2,0),"1G"));        //       1G	2 200 20
+            states.push_back(fstates_t(0,I,2,qG2(2,0),"1I"));        //       1I	2 200 20
             break;
          case 3:
-	    states.reserve(17);
-            U.set(0,0); states.push_back(fstates_t(3,S,3,U,"4S"));        // f3    4S	3 111 00
-            U.set(2,0); states.push_back(fstates_t(3,D,3,U,"4D"));        //       4D	3 111 20
-            U.set(1,0); states.push_back(fstates_t(3,F,3,U,"4F"));        //       4F	3 111 10
-            U.set(2,0); states.push_back(fstates_t(3,G,3,U,"4G"));        //       4G	3 111 20
-            U.set(2,0); states.push_back(fstates_t(3,I,3,U,"4I"));        //       4I	3 111 20
-            U.set(1,1); states.push_back(fstates_t(1,P,3,U,"2P"));        //       2P	3 210 11
-            U.set(2,0); states.push_back(fstates_t(1,D,3,U,"2D1"));       //       2D1	3 210 20
-            U.set(2,1); states.push_back(fstates_t(1,D,3,U,"2D2"));       //       2D2	3 210 21
-            U.set(1,0); states.push_back(fstates_t(1,F,1,U,"2F1"));       //       2F1	1 100 10
-            U.set(2,1); states.push_back(fstates_t(1,F,3,U,"2F2"));       //       2F2	3 210 21
-            U.set(2,0); states.push_back(fstates_t(1,G,3,U,"2G1"));       //       2G1	3 210 20
-            U.set(2,1); states.push_back(fstates_t(1,G,3,U,"2G2"));       //       2G2	3 210 21
-            U.set(1,1); states.push_back(fstates_t(1,H,3,U,"2H1"));       //       2H1	3 210 11
-            U.set(2,1); states.push_back(fstates_t(1,H,3,U,"2H2"));       //       2H2	3 210 21
-            U.set(2,0); states.push_back(fstates_t(1,I,3,U,"2I"));        //       2I	3 210 20
-            U.set(2,1); states.push_back(fstates_t(1,K,3,U,"2K"));        //       2K	3 210 21
-            U.set(2,1); states.push_back(fstates_t(1,L,3,U,"2L"));        //       2L	3 210 21
+	     states.reserve(17);
+            states.push_back(fstates_t(3,S,3,qG2(0,0),"4S"));        // f3    4S	3 111 00
+            states.push_back(fstates_t(3,D,3,qG2(2,0),"4D"));        //       4D	3 111 20
+            states.push_back(fstates_t(3,F,3,qG2(1,0),"4F"));        //       4F	3 111 10
+            states.push_back(fstates_t(3,G,3,qG2(2,0),"4G"));        //       4G	3 111 20
+            states.push_back(fstates_t(3,I,3,qG2(2,0),"4I"));        //       4I	3 111 20
+            states.push_back(fstates_t(1,P,3,qG2(1,1),"2P"));        //       2P	3 210 11
+            states.push_back(fstates_t(1,D,3,qG2(2,0),"2D1"));       //       2D1	3 210 20
+            states.push_back(fstates_t(1,D,3,qG2(2,1),"2D2"));       //       2D2	3 210 21
+            states.push_back(fstates_t(1,F,1,qG2(1,0),"2F1"));       //       2F1	1 100 10
+            states.push_back(fstates_t(1,F,3,qG2(2,1),"2F2"));       //       2F2	3 210 21
+            states.push_back(fstates_t(1,G,3,qG2(2,0),"2G1"));       //       2G1	3 210 20
+            states.push_back(fstates_t(1,G,3,qG2(2,1),"2G2"));       //       2G2	3 210 21
+            states.push_back(fstates_t(1,H,3,qG2(1,1),"2H1"));       //       2H1	3 210 11
+            states.push_back(fstates_t(1,H,3,qG2(2,1),"2H2"));       //       2H2	3 210 21
+            states.push_back(fstates_t(1,I,3,qG2(2,0),"2I"));        //       2I	3 210 20
+            states.push_back(fstates_t(1,K,3,qG2(2,1),"2K"));        //       2K	3 210 21
+            states.push_back(fstates_t(1,L,3,qG2(2,1),"2L"));        //       2L	3 210 21
             break;
          case 4:
-	    states.reserve(47);
-            U.set(0,0); states.push_back(fstates_t(4,S,4,U,"5S"));        // f4    5S	4 111 00
-            U.set(2,0); states.push_back(fstates_t(4,D,4,U,"5D"));        //       5D	4 111 20
-            U.set(1,0); states.push_back(fstates_t(4,F,4,U,"5F"));        //       5F	4 111 10
-            U.set(2,0); states.push_back(fstates_t(4,G,4,U,"5G"));        //       5G	4 111 20
-            U.set(2,0); states.push_back(fstates_t(4,I,4,U,"5I"));        //       5I	4 111 20
-            U.set(1,1); states.push_back(fstates_t(2,P,2,U,"3P1"));       //       3P1	2 110 11
-            U.set(1,1); states.push_back(fstates_t(2,P,4,U,"3P2"));       //       3P2	4 211 11
-            U.set(3,0); states.push_back(fstates_t(2,P,4,U,"3P3"));       //       3P3	4 211 30
-            U.set(2,0); states.push_back(fstates_t(2,D,4,U,"3D1"));       //       3D1	4 211 20
-            U.set(2,1); states.push_back(fstates_t(2,D,4,U,"3D2"));       //       3D2	4 211 21
-            U.set(1,0); states.push_back(fstates_t(2,F,2,U,"3F1"));       //       3F1	2 110 10
-            U.set(1,0); states.push_back(fstates_t(2,F,4,U,"3F2"));       //       3F2	4 211 10
-            U.set(2,1); states.push_back(fstates_t(2,F,4,U,"3F3"));       //       3F3	4 211 21
-            U.set(3,0); states.push_back(fstates_t(2,F,4,U,"3F4"));       //       3F4	4 211 30
-            U.set(2,0); states.push_back(fstates_t(2,G,4,U,"3G1"));       //       3G1	4 211 20
-            U.set(2,1); states.push_back(fstates_t(2,G,4,U,"3G2"));       //       3G2	4 211 21
-            U.set(3,0); states.push_back(fstates_t(2,G,4,U,"3G3"));       //       3G3	4 211 30
-            U.set(1,1); states.push_back(fstates_t(2,H,2,U,"3H1"));       //       3H1	2 110 11
-            U.set(1,1); states.push_back(fstates_t(2,H,4,U,"3H2"));       //       3H2	4 211 11
-            U.set(2,1); states.push_back(fstates_t(2,H,4,U,"3H3"));       //       3H3	4 211 21
-            U.set(3,0); states.push_back(fstates_t(2,H,4,U,"3H4"));       //       3H4	4 211 30
-            U.set(2,0); states.push_back(fstates_t(2,I,4,U,"3I1"));       //       3I1	4 211 20
-            U.set(3,0); states.push_back(fstates_t(2,I,4,U,"3I2"));       //       3I2	4 211 30
-            U.set(2,1); states.push_back(fstates_t(2,K,4,U,"3K1"));       //       3K1	4 211 21
-            U.set(3,0); states.push_back(fstates_t(2,K,4,U,"3K2"));       //       3K2	4 211 30
-            U.set(2,1); states.push_back(fstates_t(2,L,4,U,"3L"));        //       3L	4 211 21
-            U.set(3,0); states.push_back(fstates_t(2,M,4,U,"3M"));        //       3M	4 211 30
-            U.set(0,0); states.push_back(fstates_t(0,S,0,U,"1S1"));       //       1S1	0 000 00
-            U.set(2,2); states.push_back(fstates_t(0,S,4,U,"1S2"));       //       1S2	4 220 22
-            U.set(2,0); states.push_back(fstates_t(0,D,2,U,"1D1"));       //       1D1	2 200 20
-            U.set(2,0); states.push_back(fstates_t(0,D,4,U,"1D2"));       //       1D2	4 220 20
-            U.set(2,1); states.push_back(fstates_t(0,D,4,U,"1D3"));       //       1D3	4 220 21
-            U.set(2,2); states.push_back(fstates_t(0,D,4,U,"1D4"));       //       1D4	4 220 22
-            U.set(2,1); states.push_back(fstates_t(0,F,4,U,"1F"));        //       1F	4 220 21
-            U.set(2,0); states.push_back(fstates_t(0,G,2,U,"1G1"));       //       1G1	2 200 20
-            U.set(2,0); states.push_back(fstates_t(0,G,4,U,"1G2"));       //       1G2	4 220 20
-            U.set(2,1); states.push_back(fstates_t(0,G,4,U,"1G3"));       //       1G3	4 220 21
-            U.set(2,2); states.push_back(fstates_t(0,G,4,U,"1G4"));       //       1G4	4 220 22
-            U.set(2,1); states.push_back(fstates_t(0,H,4,U,"1H1"));       //       1H1	4 220 21
-            U.set(2,2); states.push_back(fstates_t(0,H,4,U,"1H2"));       //       1H2	4 220 22
-            U.set(2,0); states.push_back(fstates_t(0,I,2,U,"1I1"));       //       1I1	2 200 20
-            U.set(2,0); states.push_back(fstates_t(0,I,4,U,"1I2"));       //       1I2	4 220 20
-            U.set(2,2); states.push_back(fstates_t(0,I,4,U,"1I3"));       //       1I3	4 220 22
-            U.set(2,1); states.push_back(fstates_t(0,K,4,U,"1K"));        //       1K	4 220 21
-            U.set(2,1); states.push_back(fstates_t(0,L,4,U,"1L1"));       //       1L1	4 220 21
-            U.set(2,2); states.push_back(fstates_t(0,L,4,U,"1L2"));       //       1L2	4 220 22
-            U.set(2,2); states.push_back(fstates_t(0,N,4,U,"1N"));        //       1N	4 220 22
+	     states.reserve(47);
+            states.push_back(fstates_t(4,S,4,qG2(0,0),"5S"));        // f4    5S	4 111 00
+            states.push_back(fstates_t(4,D,4,qG2(2,0),"5D"));        //       5D	4 111 20
+            states.push_back(fstates_t(4,F,4,qG2(1,0),"5F"));        //       5F	4 111 10
+            states.push_back(fstates_t(4,G,4,qG2(2,0),"5G"));        //       5G	4 111 20
+            states.push_back(fstates_t(4,I,4,qG2(2,0),"5I"));        //       5I	4 111 20
+            states.push_back(fstates_t(2,P,2,qG2(1,1),"3P1"));       //       3P1	2 110 11
+            states.push_back(fstates_t(2,P,4,qG2(1,1),"3P2"));       //       3P2	4 211 11
+            states.push_back(fstates_t(2,P,4,qG2(3,0),"3P3"));       //       3P3	4 211 30
+            states.push_back(fstates_t(2,D,4,qG2(2,0),"3D1"));       //       3D1	4 211 20
+            states.push_back(fstates_t(2,D,4,qG2(2,1),"3D2"));       //       3D2	4 211 21
+            states.push_back(fstates_t(2,F,2,qG2(1,0),"3F1"));       //       3F1	2 110 10
+            states.push_back(fstates_t(2,F,4,qG2(1,0),"3F2"));       //       3F2	4 211 10
+            states.push_back(fstates_t(2,F,4,qG2(2,1),"3F3"));       //       3F3	4 211 21
+            states.push_back(fstates_t(2,F,4,qG2(3,0),"3F4"));       //       3F4	4 211 30
+            states.push_back(fstates_t(2,G,4,qG2(2,0),"3G1"));       //       3G1	4 211 20
+            states.push_back(fstates_t(2,G,4,qG2(2,1),"3G2"));       //       3G2	4 211 21
+            states.push_back(fstates_t(2,G,4,qG2(3,0),"3G3"));       //       3G3	4 211 30
+            states.push_back(fstates_t(2,H,2,qG2(1,1),"3H1"));       //       3H1	2 110 11
+            states.push_back(fstates_t(2,H,4,qG2(1,1),"3H2"));       //       3H2	4 211 11
+            states.push_back(fstates_t(2,H,4,qG2(2,1),"3H3"));       //       3H3	4 211 21
+            states.push_back(fstates_t(2,H,4,qG2(3,0),"3H4"));       //       3H4	4 211 30
+            states.push_back(fstates_t(2,I,4,qG2(2,0),"3I1"));       //       3I1	4 211 20
+            states.push_back(fstates_t(2,I,4,qG2(3,0),"3I2"));       //       3I2	4 211 30
+            states.push_back(fstates_t(2,K,4,qG2(2,1),"3K1"));       //       3K1	4 211 21
+            states.push_back(fstates_t(2,K,4,qG2(3,0),"3K2"));       //       3K2	4 211 30
+            states.push_back(fstates_t(2,L,4,qG2(2,1),"3L"));        //       3L	4 211 21
+            states.push_back(fstates_t(2,M,4,qG2(3,0),"3M"));        //       3M	4 211 30
+            states.push_back(fstates_t(0,S,0,qG2(0,0),"1S1"));       //       1S1	0 000 00
+            states.push_back(fstates_t(0,S,4,qG2(2,2),"1S2"));       //       1S2	4 220 22
+            states.push_back(fstates_t(0,D,2,qG2(2,0),"1D1"));       //       1D1	2 200 20
+            states.push_back(fstates_t(0,D,4,qG2(2,0),"1D2"));       //       1D2	4 220 20
+            states.push_back(fstates_t(0,D,4,qG2(2,1),"1D3"));       //       1D3	4 220 21
+            states.push_back(fstates_t(0,D,4,qG2(2,2),"1D4"));       //       1D4	4 220 22
+            states.push_back(fstates_t(0,F,4,qG2(2,1),"1F"));        //       1F	4 220 21
+            states.push_back(fstates_t(0,G,2,qG2(2,0),"1G1"));       //       1G1	2 200 20
+            states.push_back(fstates_t(0,G,4,qG2(2,0),"1G2"));       //       1G2	4 220 20
+            states.push_back(fstates_t(0,G,4,qG2(2,1),"1G3"));       //       1G3	4 220 21
+            states.push_back(fstates_t(0,G,4,qG2(2,2),"1G4"));       //       1G4	4 220 22
+            states.push_back(fstates_t(0,H,4,qG2(2,1),"1H1"));       //       1H1	4 220 21
+            states.push_back(fstates_t(0,H,4,qG2(2,2),"1H2"));       //       1H2	4 220 22
+            states.push_back(fstates_t(0,I,2,qG2(2,0),"1I1"));       //       1I1	2 200 20
+            states.push_back(fstates_t(0,I,4,qG2(2,0),"1I2"));       //       1I2	4 220 20
+            states.push_back(fstates_t(0,I,4,qG2(2,2),"1I3"));       //       1I3	4 220 22
+            states.push_back(fstates_t(0,K,4,qG2(2,1),"1K"));        //       1K	4 220 21
+            states.push_back(fstates_t(0,L,4,qG2(2,1),"1L1"));       //       1L1	4 220 21
+            states.push_back(fstates_t(0,L,4,qG2(2,2),"1L2"));       //       1L2	4 220 22
+            states.push_back(fstates_t(0,N,4,qG2(2,2),"1N"));        //       1N	4 220 22
    	    break;
          case 5:
 	    states.reserve(73);
-            U.set(1,1); states.push_back(fstates_t(5,P,5,U,"6P"));        // f5    6P	5 110 11
-            U.set(1,0); states.push_back(fstates_t(5,F,5,U,"6F"));        //       6F	5 110 10
-            U.set(1,1); states.push_back(fstates_t(5,H,5,U,"6H"));        //       6H	5 110 11
-            U.set(0,0); states.push_back(fstates_t(3,S,3,U,"4S"));        //       4S	3 111 00
-            U.set(1,1); states.push_back(fstates_t(3,P,5,U,"4P1"));       //       4P1	5 211 11
-            U.set(3,0); states.push_back(fstates_t(3,P,5,U,"4P2"));       //       4P2	5 211 30
-            U.set(2,0); states.push_back(fstates_t(3,D,3,U,"4D1"));       //       4D1	3 111 20
-            U.set(2,0); states.push_back(fstates_t(3,D,5,U,"4D2"));       //       4D2	5 211 20
-            U.set(2,1); states.push_back(fstates_t(3,D,5,U,"4D3"));       //       4D3	5 211 21
-            U.set(1,0); states.push_back(fstates_t(3,F,3,U,"4F1"));       //       4F1	3 111 10
-            U.set(1,0); states.push_back(fstates_t(3,F,5,U,"4F2"));       //       4F2	5 211 10
-            U.set(2,1); states.push_back(fstates_t(3,F,5,U,"4F3"));       //       4F3	5 211 21
-            U.set(3,0); states.push_back(fstates_t(3,F,5,U,"4F4"));       //       4F4	5 211 30
-            U.set(2,0); states.push_back(fstates_t(3,G,3,U,"4G1"));       //       4G1	3 111 20
-            U.set(2,0); states.push_back(fstates_t(3,G,5,U,"4G2"));       //       4G2	5 211 20
-            U.set(2,1); states.push_back(fstates_t(3,G,5,U,"4G3"));       //       4G3	5 211 21
-            U.set(3,0); states.push_back(fstates_t(3,G,5,U,"4G4"));       //       4G4	5 211 30
-            U.set(1,1); states.push_back(fstates_t(3,H,5,U,"4H1"));       //       4H1	5 211 11
-            U.set(2,1); states.push_back(fstates_t(3,H,5,U,"4H2"));       //       4H2	5 211 21
-            U.set(3,0); states.push_back(fstates_t(3,H,5,U,"4H3"));       //       4H3	5 211 30
-            U.set(2,0); states.push_back(fstates_t(3,I,3,U,"4I1"));       //       4I1	3 111 20
-            U.set(2,0); states.push_back(fstates_t(3,I,5,U,"4I2"));       //       4I2	5 211 20
-            U.set(3,0); states.push_back(fstates_t(3,I,5,U,"4I3"));       //       4I3	5 211 30
-            U.set(2,1); states.push_back(fstates_t(3,K,5,U,"4K1"));       //       4K1	5 211 21
-            U.set(3,0); states.push_back(fstates_t(3,K,5,U,"4K2"));       //       4K2	5 211 30
-            U.set(2,1); states.push_back(fstates_t(3,L,5,U,"4L"));        //       4L	5 211 21
-            U.set(3,0); states.push_back(fstates_t(3,M,5,U,"4M"));        //       4M	5 211 30
-            U.set(1,1); states.push_back(fstates_t(1,P,3,U,"2P1"));       //       2P1	3 210 11
-            U.set(1,1); states.push_back(fstates_t(1,P,5,U,"2P2"));       //       2P2	5 211 11
-            U.set(3,0); states.push_back(fstates_t(1,P,5,U,"2P3"));       //       2P3	5 211 30
-            U.set(3,1); states.push_back(fstates_t(1,P,5,U,"2P4"));       //       2P4	5 211 31
-            U.set(2,0); states.push_back(fstates_t(1,D,3,U,"2D1"));       //       2D1	3 210 20
-            U.set(2,1); states.push_back(fstates_t(1,D,3,U,"2D2"));       //       2D2	3 210 21
-            U.set(2,0); states.push_back(fstates_t(1,D,5,U,"2D3"));       //       2D3	5 211 20
-            U.set(2,1); states.push_back(fstates_t(1,D,5,U,"2D4"));       //       2D4 	5 211 21
-            U.set(3,1); states.push_back(fstates_t(1,D,5,U,"2D5"));       //       2D5	5 211 31
-            U.set(1,0); states.push_back(fstates_t(1,F,1,U,"2F1"));       //       2F1	1 100 10
-            U.set(2,1); states.push_back(fstates_t(1,F,3,U,"2F2"));       //       2F2	3 210 21
-            U.set(1,0); states.push_back(fstates_t(1,F,5,U,"2F3"));       //       2F3	5 221 10
-            U.set(2,1); states.push_back(fstates_t(1,F,5,U,"2F4"));       //       2F4	5 221 21
-            U.set(3,0); states.push_back(fstates_t(1,F,5,U,"2F5"));       //       2F5	5 221 30
-            U.set(3,1); states.push_back(fstates_t(1,F,5,U,"2F6"));       //       2F6	5 221 31A
-            U.set(3,1); states.push_back(fstates_t(1,Fp,5,U,"2F7",1));    //       2F7	5 221 31B
-            U.set(2,0); states.push_back(fstates_t(1,G,3,U,"2G1"));       //       2G1	3 210 20
-            U.set(2,1); states.push_back(fstates_t(1,G,3,U,"2G2"));       //       2G2	3 210 21
-            U.set(2,0); states.push_back(fstates_t(1,G,5,U,"2G3"));       //       2G3	5 221 20
-            U.set(2,1); states.push_back(fstates_t(1,G,5,U,"2G4"));       //       2G4 	5 221 21
-            U.set(3,0); states.push_back(fstates_t(1,G,5,U,"2G5"));       //       2G5	5 221 30
-            U.set(3,1); states.push_back(fstates_t(1,G,5,U,"2G6"));       //       2G6	5 221 31
-            U.set(1,1); states.push_back(fstates_t(1,H,3,U,"2H1"));       //       2H1	3 210 11
-            U.set(2,1); states.push_back(fstates_t(1,H,3,U,"2H2"));       //       2H2	3 210 21
-            U.set(1,1); states.push_back(fstates_t(1,H,5,U,"2H3"));       //       2H3	5 221 11
-            U.set(2,1); states.push_back(fstates_t(1,H,5,U,"2H4"));       //       2H4 	5 221 21
-            U.set(3,0); states.push_back(fstates_t(1,H,5,U,"2H5"));       //       2H5	5 221 30
-            U.set(3,1); states.push_back(fstates_t(1,H,5,U,"2H6"));       //       2H6	5 221 31A
-            U.set(3,1); states.push_back(fstates_t(1,Hp,5,U,"2H7",1));    //       2H7	5 221 31B
-            U.set(2,0); states.push_back(fstates_t(1,I,3,U,"2I1"));       //       2I1	3 210 20
-            U.set(2,0); states.push_back(fstates_t(1,I,5,U,"2I2"));       //       2I2	5 221 20
-            U.set(3,0); states.push_back(fstates_t(1,I,5,U,"2I3"));       //       2I3	5 221 30
-            U.set(3,1); states.push_back(fstates_t(1,I,5,U,"2I4"));       //       2I4	5 221 31A
-            U.set(3,1); states.push_back(fstates_t(1,Ip,5,U,"2I5",1));    //       2I5	5 221 31B
-            U.set(2,1); states.push_back(fstates_t(1,K,3,U,"2K1"));       //       2K1	3 210 21
-            U.set(2,1); states.push_back(fstates_t(1,K,5,U,"2K2"));       //       2K2	5 221 21
-            U.set(3,0); states.push_back(fstates_t(1,K,5,U,"2K3"));       //       2K3	5 221 30
-            U.set(3,1); states.push_back(fstates_t(1,K,5,U,"2K4"));       //       2K4	5 221 31A
-            U.set(3,1); states.push_back(fstates_t(1,Kp,5,U,"2K5",1));    //       2K5	5 221 31B
-            U.set(2,1); states.push_back(fstates_t(1,L,3,U,"2L1"));       //       2L1	3 210 21
-            U.set(2,1); states.push_back(fstates_t(1,L,5,U,"2L2"));       //       2L2	5 221 21
-            U.set(3,1); states.push_back(fstates_t(1,L,5,U,"2L3"));       //       2L3	5 221 31
-            U.set(3,0); states.push_back(fstates_t(1,M,5,U,"2M1"));       //       2M1	5 221 30
-            U.set(3,1); states.push_back(fstates_t(1,M,5,U,"2M2"));       //       2M2	5 221 31
-            U.set(3,1); states.push_back(fstates_t(1,N,5,U,"2N"));        //       2N	5 221 31
-            U.set(3,1); states.push_back(fstates_t(1,O,5,U,"2O"));        //       2O	5 221 31
+            states.push_back(fstates_t(5,P,5,qG2(1,1),"6P"));        // f5    6P	5 110 11
+            states.push_back(fstates_t(5,F,5,qG2(1,0),"6F"));        //       6F	5 110 10
+            states.push_back(fstates_t(5,H,5,qG2(1,1),"6H"));        //       6H	5 110 11
+            states.push_back(fstates_t(3,S,3,qG2(0,0),"4S"));        //       4S	3 111 00
+            states.push_back(fstates_t(3,P,5,qG2(1,1),"4P1"));       //       4P1	5 211 11
+            states.push_back(fstates_t(3,P,5,qG2(3,0),"4P2"));       //       4P2	5 211 30
+            states.push_back(fstates_t(3,D,3,qG2(2,0),"4D1"));       //       4D1	3 111 20
+            states.push_back(fstates_t(3,D,5,qG2(2,0),"4D2"));       //       4D2	5 211 20
+            states.push_back(fstates_t(3,D,5,qG2(2,1),"4D3"));       //       4D3	5 211 21
+            states.push_back(fstates_t(3,F,3,qG2(1,0),"4F1"));       //       4F1	3 111 10
+            states.push_back(fstates_t(3,F,5,qG2(1,0),"4F2"));       //       4F2	5 211 10
+            states.push_back(fstates_t(3,F,5,qG2(2,1),"4F3"));       //       4F3	5 211 21
+            states.push_back(fstates_t(3,F,5,qG2(3,0),"4F4"));       //       4F4	5 211 30
+            states.push_back(fstates_t(3,G,3,qG2(2,0),"4G1"));       //       4G1	3 111 20
+            states.push_back(fstates_t(3,G,5,qG2(2,0),"4G2"));       //       4G2	5 211 20
+            states.push_back(fstates_t(3,G,5,qG2(2,1),"4G3"));       //       4G3	5 211 21
+            states.push_back(fstates_t(3,G,5,qG2(3,0),"4G4"));       //       4G4	5 211 30
+            states.push_back(fstates_t(3,H,5,qG2(1,1),"4H1"));       //       4H1	5 211 11
+            states.push_back(fstates_t(3,H,5,qG2(2,1),"4H2"));       //       4H2	5 211 21
+            states.push_back(fstates_t(3,H,5,qG2(3,0),"4H3"));       //       4H3	5 211 30
+            states.push_back(fstates_t(3,I,3,qG2(2,0),"4I1"));       //       4I1	3 111 20
+            states.push_back(fstates_t(3,I,5,qG2(2,0),"4I2"));       //       4I2	5 211 20
+            states.push_back(fstates_t(3,I,5,qG2(3,0),"4I3"));       //       4I3	5 211 30
+            states.push_back(fstates_t(3,K,5,qG2(2,1),"4K1"));       //       4K1	5 211 21
+            states.push_back(fstates_t(3,K,5,qG2(3,0),"4K2"));       //       4K2	5 211 30
+            states.push_back(fstates_t(3,L,5,qG2(2,1),"4L"));        //       4L	5 211 21
+            states.push_back(fstates_t(3,M,5,qG2(3,0),"4M"));        //       4M	5 211 30
+            states.push_back(fstates_t(1,P,3,qG2(1,1),"2P1"));       //       2P1	3 210 11
+            states.push_back(fstates_t(1,P,5,qG2(1,1),"2P2"));       //       2P2	5 211 11
+            states.push_back(fstates_t(1,P,5,qG2(3,0),"2P3"));       //       2P3	5 211 30
+            states.push_back(fstates_t(1,P,5,qG2(3,1),"2P4"));       //       2P4	5 211 31
+            states.push_back(fstates_t(1,D,3,qG2(2,0),"2D1"));       //       2D1	3 210 20
+            states.push_back(fstates_t(1,D,3,qG2(2,1),"2D2"));       //       2D2	3 210 21
+            states.push_back(fstates_t(1,D,5,qG2(2,0),"2D3"));       //       2D3	5 211 20
+            states.push_back(fstates_t(1,D,5,qG2(2,1),"2D4"));       //       2D4 	5 211 21
+            states.push_back(fstates_t(1,D,5,qG2(3,1),"2D5"));       //       2D5	5 211 31
+            states.push_back(fstates_t(1,F,1,qG2(1,0),"2F1"));       //       2F1	1 100 10
+            states.push_back(fstates_t(1,F,3,qG2(2,1),"2F2"));       //       2F2	3 210 21
+            states.push_back(fstates_t(1,F,5,qG2(1,0),"2F3"));       //       2F3	5 221 10
+            states.push_back(fstates_t(1,F,5,qG2(2,1),"2F4"));       //       2F4	5 221 21
+            states.push_back(fstates_t(1,F,5,qG2(3,0),"2F5"));       //       2F5	5 221 30
+            states.push_back(fstates_t(1,F,5,qG2(3,1),"2F6"));       //       2F6	5 221 31A
+            states.push_back(fstates_t(1,Fp,5,qG2(3,1),"2F7",1));    //       2F7	5 221 31B
+            states.push_back(fstates_t(1,G,3,qG2(2,0),"2G1"));       //       2G1	3 210 20
+            states.push_back(fstates_t(1,G,3,qG2(2,1),"2G2"));       //       2G2	3 210 21
+            states.push_back(fstates_t(1,G,5,qG2(2,0),"2G3"));       //       2G3	5 221 20
+            states.push_back(fstates_t(1,G,5,qG2(2,1),"2G4"));       //       2G4 	5 221 21
+            states.push_back(fstates_t(1,G,5,qG2(3,0),"2G5"));       //       2G5	5 221 30
+            states.push_back(fstates_t(1,G,5,qG2(3,1),"2G6"));       //       2G6	5 221 31
+            states.push_back(fstates_t(1,H,3,qG2(1,1),"2H1"));       //       2H1	3 210 11
+            states.push_back(fstates_t(1,H,3,qG2(2,1),"2H2"));       //       2H2	3 210 21
+            states.push_back(fstates_t(1,H,5,qG2(1,1),"2H3"));       //       2H3	5 221 11
+            states.push_back(fstates_t(1,H,5,qG2(2,1),"2H4"));       //       2H4 	5 221 21
+            states.push_back(fstates_t(1,H,5,qG2(3,0),"2H5"));       //       2H5	5 221 30
+            states.push_back(fstates_t(1,H,5,qG2(3,1),"2H6"));       //       2H6	5 221 31A
+            states.push_back(fstates_t(1,Hp,5,qG2(3,1),"2H7",1));    //       2H7	5 221 31B
+            states.push_back(fstates_t(1,I,3,qG2(2,0),"2I1"));       //       2I1	3 210 20
+            states.push_back(fstates_t(1,I,5,qG2(2,0),"2I2"));       //       2I2	5 221 20
+            states.push_back(fstates_t(1,I,5,qG2(3,0),"2I3"));       //       2I3	5 221 30
+            states.push_back(fstates_t(1,I,5,qG2(3,1),"2I4"));       //       2I4	5 221 31A
+            states.push_back(fstates_t(1,Ip,5,qG2(3,1),"2I5",1));    //       2I5	5 221 31B
+            states.push_back(fstates_t(1,K,3,qG2(2,1),"2K1"));       //       2K1	3 210 21
+            states.push_back(fstates_t(1,K,5,qG2(2,1),"2K2"));       //       2K2	5 221 21
+            states.push_back(fstates_t(1,K,5,qG2(3,0),"2K3"));       //       2K3	5 221 30
+            states.push_back(fstates_t(1,K,5,qG2(3,1),"2K4"));       //       2K4	5 221 31A
+            states.push_back(fstates_t(1,Kp,5,qG2(3,1),"2K5",1));    //       2K5	5 221 31B
+            states.push_back(fstates_t(1,L,3,qG2(2,1),"2L1"));       //       2L1	3 210 21
+            states.push_back(fstates_t(1,L,5,qG2(2,1),"2L2"));       //       2L2	5 221 21
+            states.push_back(fstates_t(1,L,5,qG2(3,1),"2L3"));       //       2L3	5 221 31
+            states.push_back(fstates_t(1,M,5,qG2(3,0),"2M1"));       //       2M1	5 221 30
+            states.push_back(fstates_t(1,M,5,qG2(3,1),"2M2"));       //       2M2	5 221 31
+            states.push_back(fstates_t(1,N,5,qG2(3,1),"2N"));        //       2N	5 221 31
+            states.push_back(fstates_t(1,O,5,qG2(3,1),"2O"));        //       2O	5 221 31
    	    break;
          case 6:
 	    states.reserve(119);
-            U.set(1,0); states.push_back(fstates_t(6,F,6,U,"7F"));        // f6    7F	6 100 10
-            U.set(0,0); states.push_back(fstates_t(4,S,4,U,"5S"));        //       5S	4 111 00
-            U.set(1,1); states.push_back(fstates_t(4,P,6,U,"5P"));        //       5P	6 210 11
-            U.set(2,0); states.push_back(fstates_t(4,D,4,U,"5D1"));       //       5D1	4 111 20
-            U.set(2,0); states.push_back(fstates_t(4,D,6,U,"5D2"));       //       5D2	6 210 20
-            U.set(2,1); states.push_back(fstates_t(4,D,6,U,"5D3"));       //       5D3	6 210 21
-            U.set(1,0); states.push_back(fstates_t(4,F,4,U,"5F1"));       //       5F1	4 111 10
-            U.set(2,1); states.push_back(fstates_t(4,F,6,U,"5F2"));       //       5F2	6 210 21
-            U.set(2,0); states.push_back(fstates_t(4,G,4,U,"5G1"));       //       5G1	4 111 20
-            U.set(2,0); states.push_back(fstates_t(4,G,6,U,"5G2"));       //       5G2	6 210 20
-            U.set(2,1); states.push_back(fstates_t(4,G,6,U,"5G3"));       //       5G3	6 210 21
-            U.set(1,1); states.push_back(fstates_t(4,H,6,U,"5H1"));       //       5H1	6 210 11
-            U.set(2,1); states.push_back(fstates_t(4,H,6,U,"5H2"));       //       5H2	6 210 21
-            U.set(2,0); states.push_back(fstates_t(4,I,4,U,"5I1"));       //       5I1	4 111 20
-            U.set(2,0); states.push_back(fstates_t(4,I,6,U,"5I2"));       //       5I2	6 210 20
-            U.set(2,1); states.push_back(fstates_t(4,K,6,U,"5K"));        //       5K	6 210 21
-            U.set(2,1); states.push_back(fstates_t(4,L,6,U,"5L"));        //       5L	6 210 21
-            U.set(1,1); states.push_back(fstates_t(2,P,2,U,"3P1"));       //       3P1	2 110 11
-            U.set(1,1); states.push_back(fstates_t(2,P,4,U,"3P2"));       //       3P2	4 211 11
-            U.set(3,0); states.push_back(fstates_t(2,P,4,U,"3P3"));       //       3P3	4 211 30
-            U.set(1,1); states.push_back(fstates_t(2,P,6,U,"3P4"));       //       3P4	6 221 11
-            U.set(3,0); states.push_back(fstates_t(2,P,6,U,"3P5"));       //       3P5	6 221 30
-            U.set(3,1); states.push_back(fstates_t(2,P,6,U,"3P6"));       //       3P6	6 221 31
-            U.set(2,0); states.push_back(fstates_t(2,D,4,U,"3D1"));       //       3D1	4 211 20
-            U.set(2,1); states.push_back(fstates_t(2,D,4,U,"3D2"));       //       3D2	4 211 21
-            U.set(2,0); states.push_back(fstates_t(2,D,6,U,"3D3"));       //       3D3	6 221 20
-            U.set(2,1); states.push_back(fstates_t(2,D,6,U,"3D4"));       //       3D4	6 221 21
-            U.set(3,1); states.push_back(fstates_t(2,D,6,U,"3D5"));       //       3D5	6 221 31
-            U.set(1,0); states.push_back(fstates_t(2,F,2,U,"3F1"));       //       3F1	2 110 10
-            U.set(1,0); states.push_back(fstates_t(2,F,4,U,"3F2"));       //       3F1	4 211 10
-            U.set(2,1); states.push_back(fstates_t(2,F,4,U,"3F3"));       //       3F3	4 211 21
-            U.set(3,0); states.push_back(fstates_t(2,F,4,U,"3F4"));       //       3F4	4 211 30
-            U.set(1,0); states.push_back(fstates_t(2,F,6,U,"3F5"));       //       3F5	6 221 10
-            U.set(2,1); states.push_back(fstates_t(2,F,6,U,"3F6"));       //       3F6	6 221 21
-            U.set(3,0); states.push_back(fstates_t(2,F,6,U,"3F7"));       //       3F7	6 221 30
-            U.set(3,1); states.push_back(fstates_t(2,F,6,U,"3F8"));       //       3F8	6 221 31A
-            U.set(3,1); states.push_back(fstates_t(2,Fp,6,U,"3F9",1));    //       3F9	6 221 31B
-            U.set(2,0); states.push_back(fstates_t(2,G,4,U,"3G1"));       //       3G1	4 211 20
-            U.set(2,1); states.push_back(fstates_t(2,G,4,U,"3G2"));       //       3G2	4 211 21
-            U.set(3,0); states.push_back(fstates_t(2,G,4,U,"3G3"));       //       3G3	4 211 30
-            U.set(2,0); states.push_back(fstates_t(2,G,6,U,"3G4"));       //       3G4	6 221 20
-            U.set(2,1); states.push_back(fstates_t(2,G,6,U,"3G5"));       //       3G5	6 221 21
-            U.set(3,0); states.push_back(fstates_t(2,G,6,U,"3G6"));       //       3G6	6 221 30
-            U.set(3,1); states.push_back(fstates_t(2,G,6,U,"3G7"));       //       3G7	6 221 31
-            U.set(1,1); states.push_back(fstates_t(2,H,2,U,"3H1"));       //       3H1	2 110 11
-            U.set(1,1); states.push_back(fstates_t(2,H,4,U,"3H2"));       //       3H2	4 211 11
-            U.set(2,1); states.push_back(fstates_t(2,H,4,U,"3H3"));       //       3H3	4 211 21
-            U.set(3,0); states.push_back(fstates_t(2,H,4,U,"3H4"));       //       3H4	4 211 30
-            U.set(1,1); states.push_back(fstates_t(2,H,6,U,"3H5"));       //       3H5	6 221 11
-            U.set(2,1); states.push_back(fstates_t(2,H,6,U,"3H6"));       //       3H6	6 221 21
-            U.set(3,0); states.push_back(fstates_t(2,H,6,U,"3H7"));       //       3H7	6 221 30
-            U.set(3,1); states.push_back(fstates_t(2,H,6,U,"3H8"));       //       3H8	6 221 31A
-            U.set(3,1); states.push_back(fstates_t(2,Hp,6,U,"3H9",1));    //       3H9	6 221 31B
-            U.set(2,0); states.push_back(fstates_t(2,I,4,U,"3I1"));       //       3I1	4 211 20
-            U.set(3,0); states.push_back(fstates_t(2,I,4,U,"3I2"));       //       3I2	4 211 30
-            U.set(2,0); states.push_back(fstates_t(2,I,6,U,"3I3"));       //       3I3	6 221 20
-            U.set(3,0); states.push_back(fstates_t(2,I,6,U,"3I4"));       //       3I4	6 221 30
-            U.set(3,1); states.push_back(fstates_t(2,I,6,U,"3I5"));       //       3I5	6 221 31A
-            U.set(3,1); states.push_back(fstates_t(2,Ip,6,U,"3I6",1));    //       3I6	6 221 31B
-            U.set(2,1); states.push_back(fstates_t(2,K,4,U,"3K1"));       //       3K1	4 211 21
-            U.set(3,0); states.push_back(fstates_t(2,K,4,U,"3K2"));       //       3K2	4 211 30
-            U.set(2,1); states.push_back(fstates_t(2,K,6,U,"3K3"));       //       3K3	6 221 21
-            U.set(3,0); states.push_back(fstates_t(2,K,6,U,"3K4"));       //       3K4	6 221 30
-            U.set(3,1); states.push_back(fstates_t(2,K,6,U,"3K5"));       //       3K5	6 221 31A
-            U.set(3,1); states.push_back(fstates_t(2,Kp,6,U,"3K6",1));    //       3K6	6 221 31B
-            U.set(2,1); states.push_back(fstates_t(2,L,4,U,"3L1"));       //       3L1	4 211 21
-            U.set(2,1); states.push_back(fstates_t(2,L,6,U,"3L2"));       //       3L2	6 221 21
-            U.set(3,1); states.push_back(fstates_t(2,L,6,U,"3L3"));       //       3L3	6 221 31
-            U.set(3,0); states.push_back(fstates_t(2,M,4,U,"3M1"));       //       3M1	4 211 30
-            U.set(3,0); states.push_back(fstates_t(2,M,6,U,"3M2"));       //       3M2	6 221 30
-            U.set(3,1); states.push_back(fstates_t(2,M,6,U,"3M3"));       //       3M3	6 221 31
-            U.set(3,1); states.push_back(fstates_t(2,N,6,U,"3N"));        //       3N	6 221 31
-            U.set(3,1); states.push_back(fstates_t(2,O,6,U,"3O"));        //       3O	6 221 31
-            U.set(0,0); states.push_back(fstates_t(0,S,0,U,"1S1"));       //       1S1	0 000 00
-            U.set(2,2); states.push_back(fstates_t(0,S,4,U,"1S2"));       //       1S2	4 220 22
-            U.set(0,0); states.push_back(fstates_t(0,S,6,U,"1S3"));       //       1S3	6 222 00
-            U.set(4,0); states.push_back(fstates_t(0,S,6,U,"1S4"));       //       1S4	6 222 40
-            U.set(3,0); states.push_back(fstates_t(0,P,6,U,"1P"));        //       1P	6 222 30
-            U.set(2,0); states.push_back(fstates_t(0,D,2,U,"1D1"));       //       1D1	2 200 20
-            U.set(2,0); states.push_back(fstates_t(0,D,4,U,"1D2"));       //       1D2	4 220 20
-            U.set(2,1); states.push_back(fstates_t(0,D,4,U,"1D3"));       //       1D3	4 220 21
-            U.set(2,2); states.push_back(fstates_t(0,D,4,U,"1D4"));       //       1D4	4 220 22
-            U.set(2,0); states.push_back(fstates_t(0,D,6,U,"1D5"));       //       1D5	6 222 20
-            U.set(4,0); states.push_back(fstates_t(0,D,6,U,"1D6"));       //       1D6	6 222 40
-            U.set(2,1); states.push_back(fstates_t(0,F,4,U,"1F1"));       //       1F1	4 220 21
-            U.set(1,0); states.push_back(fstates_t(0,F,6,U,"1F2"));       //       1F2	6 222 10
-            U.set(3,0); states.push_back(fstates_t(0,F,6,U,"1F3"));       //       1F3	6 222 30
-            U.set(4,0); states.push_back(fstates_t(0,F,6,U,"1F4"));       //       1F4	6 222 40
-            U.set(2,0); states.push_back(fstates_t(0,G,2,U,"1G1"));       //       1G1	2 200 20
-            U.set(2,0); states.push_back(fstates_t(0,G,4,U,"1G2"));       //       1G2	4 220 20
-            U.set(2,1); states.push_back(fstates_t(0,G,4,U,"1G3"));       //       1G3	4 220 21
-            U.set(2,2); states.push_back(fstates_t(0,G,4,U,"1G4"));       //       1G4	4 220 22
-            U.set(2,0); states.push_back(fstates_t(0,G,6,U,"1G5"));       //       1G5	6 222 20
-            U.set(3,0); states.push_back(fstates_t(0,G,6,U,"1G6"));       //       1G6	6 222 30
-            U.set(4,0); states.push_back(fstates_t(0,G,6,U,"1G7"));       //       1G7	6 222 40A
-            U.set(4,0); states.push_back(fstates_t(0,Gp,6,U,"1G8",1));    //       1G8	6 222 40B
-            U.set(2,1); states.push_back(fstates_t(0,H,4,U,"1H1"));       //       1H1	4 220 21
-            U.set(2,2); states.push_back(fstates_t(0,H,4,U,"1H2"));       //       1H2	4 220 22
-            U.set(3,0); states.push_back(fstates_t(0,H,6,U,"1H3"));       //       1H3	6 222 30
-            U.set(4,0); states.push_back(fstates_t(0,H,6,U,"1H4"));       //       1H4	6 222 40
-            U.set(2,0); states.push_back(fstates_t(0,I,2,U,"1I1"));       //       1I1	2 200 20
-            U.set(2,0); states.push_back(fstates_t(0,I,4,U,"1I2"));       //       1I2	4 220 20
-            U.set(2,2); states.push_back(fstates_t(0,I,4,U,"1I3"));       //       1I3	4 220 22
-            U.set(2,0); states.push_back(fstates_t(0,I,6,U,"1I4"));       //       1I4	6 222 20
-            U.set(3,0); states.push_back(fstates_t(0,I,6,U,"1I5"));       //       1I5	6 222 30
-            U.set(4,0); states.push_back(fstates_t(0,I,6,U,"1I6"));       //       1I6	6 222 40A
-            U.set(4,0); states.push_back(fstates_t(0,Ip,6,U,"1I7",1));    //       1I7	6 222 40B
-            U.set(2,1); states.push_back(fstates_t(0,K,4,U,"1K1"));       //       1K1	4 220 21
-            U.set(3,0); states.push_back(fstates_t(0,K,6,U,"1K2"));       //       1K2	6 222 30
-            U.set(4,0); states.push_back(fstates_t(0,K,6,U,"1K3"));       //       1K3	6 222 40
-            U.set(2,1); states.push_back(fstates_t(0,L,4,U,"1L1"));       //       1L1	4 220 21
-            U.set(2,2); states.push_back(fstates_t(0,L,4,U,"1L2"));       //       1L2	4 220 22
-            U.set(4,0); states.push_back(fstates_t(0,L,6,U,"1L3"));       //       1L3	6 222 40A
-            U.set(4,0); states.push_back(fstates_t(0,Lp,6,U,"1L4",1));    //       1L4	6 222 40B
-            U.set(3,0); states.push_back(fstates_t(0,M,6,U,"1M1"));       //       1M1	6 222 30
-            U.set(4,0); states.push_back(fstates_t(0,M,6,U,"1M2"));       //       1M2	6 222 40
-            U.set(2,2); states.push_back(fstates_t(0,N,4,U,"1N1"));       //       1N1	4 220 22
-            U.set(4,0); states.push_back(fstates_t(0,N,6,U,"1N2"));       //       1N2	6 222 40
-            U.set(4,0); states.push_back(fstates_t(0,Q,6,U,"1Q"));        //       1Q	6 222 40
+            states.push_back(fstates_t(6,F,6,qG2(1,0),"7F"));        // f6    7F	6 100 10
+            states.push_back(fstates_t(4,S,4,qG2(0,0),"5S"));        //       5S	4 111 00
+            states.push_back(fstates_t(4,P,6,qG2(1,1),"5P"));        //       5P	6 210 11
+            states.push_back(fstates_t(4,D,4,qG2(2,0),"5D1"));       //       5D1	4 111 20
+            states.push_back(fstates_t(4,D,6,qG2(2,0),"5D2"));       //       5D2	6 210 20
+            states.push_back(fstates_t(4,D,6,qG2(2,1),"5D3"));       //       5D3	6 210 21
+            states.push_back(fstates_t(4,F,4,qG2(1,0),"5F1"));       //       5F1	4 111 10
+            states.push_back(fstates_t(4,F,6,qG2(2,1),"5F2"));       //       5F2	6 210 21
+            states.push_back(fstates_t(4,G,4,qG2(2,0),"5G1"));       //       5G1	4 111 20
+            states.push_back(fstates_t(4,G,6,qG2(2,0),"5G2"));       //       5G2	6 210 20
+            states.push_back(fstates_t(4,G,6,qG2(2,1),"5G3"));       //       5G3	6 210 21
+            states.push_back(fstates_t(4,H,6,qG2(1,1),"5H1"));       //       5H1	6 210 11
+            states.push_back(fstates_t(4,H,6,qG2(2,1),"5H2"));       //       5H2	6 210 21
+            states.push_back(fstates_t(4,I,4,qG2(2,0),"5I1"));       //       5I1	4 111 20
+            states.push_back(fstates_t(4,I,6,qG2(2,0),"5I2"));       //       5I2	6 210 20
+            states.push_back(fstates_t(4,K,6,qG2(2,1),"5K"));        //       5K	6 210 21
+            states.push_back(fstates_t(4,L,6,qG2(2,1),"5L"));        //       5L	6 210 21
+            states.push_back(fstates_t(2,P,2,qG2(1,1),"3P1"));       //       3P1	2 110 11
+            states.push_back(fstates_t(2,P,4,qG2(1,1),"3P2"));       //       3P2	4 211 11
+            states.push_back(fstates_t(2,P,4,qG2(3,0),"3P3"));       //       3P3	4 211 30
+            states.push_back(fstates_t(2,P,6,qG2(1,1),"3P4"));       //       3P4	6 221 11
+            states.push_back(fstates_t(2,P,6,qG2(3,0),"3P5"));       //       3P5	6 221 30
+            states.push_back(fstates_t(2,P,6,qG2(3,1),"3P6"));       //       3P6	6 221 31
+            states.push_back(fstates_t(2,D,4,qG2(2,0),"3D1"));       //       3D1	4 211 20
+            states.push_back(fstates_t(2,D,4,qG2(2,1),"3D2"));       //       3D2	4 211 21
+            states.push_back(fstates_t(2,D,6,qG2(2,0),"3D3"));       //       3D3	6 221 20
+            states.push_back(fstates_t(2,D,6,qG2(2,1),"3D4"));       //       3D4	6 221 21
+            states.push_back(fstates_t(2,D,6,qG2(3,1),"3D5"));       //       3D5	6 221 31
+            states.push_back(fstates_t(2,F,2,qG2(1,0),"3F1"));       //       3F1	2 110 10
+            states.push_back(fstates_t(2,F,4,qG2(1,0),"3F2"));       //       3F1	4 211 10
+            states.push_back(fstates_t(2,F,4,qG2(2,1),"3F3"));       //       3F3	4 211 21
+            states.push_back(fstates_t(2,F,4,qG2(3,0),"3F4"));       //       3F4	4 211 30
+            states.push_back(fstates_t(2,F,6,qG2(1,0),"3F5"));       //       3F5	6 221 10
+            states.push_back(fstates_t(2,F,6,qG2(2,1),"3F6"));       //       3F6	6 221 21
+            states.push_back(fstates_t(2,F,6,qG2(3,0),"3F7"));       //       3F7	6 221 30
+            states.push_back(fstates_t(2,F,6,qG2(3,1),"3F8"));       //       3F8	6 221 31A
+            states.push_back(fstates_t(2,Fp,6,qG2(3,1),"3F9",1));    //       3F9	6 221 31B
+            states.push_back(fstates_t(2,G,4,qG2(2,0),"3G1"));       //       3G1	4 211 20
+            states.push_back(fstates_t(2,G,4,qG2(2,1),"3G2"));       //       3G2	4 211 21
+            states.push_back(fstates_t(2,G,4,qG2(3,0),"3G3"));       //       3G3	4 211 30
+            states.push_back(fstates_t(2,G,6,qG2(2,0),"3G4"));       //       3G4	6 221 20
+            states.push_back(fstates_t(2,G,6,qG2(2,1),"3G5"));       //       3G5	6 221 21
+            states.push_back(fstates_t(2,G,6,qG2(3,0),"3G6"));       //       3G6	6 221 30
+            states.push_back(fstates_t(2,G,6,qG2(3,1),"3G7"));       //       3G7	6 221 31
+            states.push_back(fstates_t(2,H,2,qG2(1,1),"3H1"));       //       3H1	2 110 11
+            states.push_back(fstates_t(2,H,4,qG2(1,1),"3H2"));       //       3H2	4 211 11
+            states.push_back(fstates_t(2,H,4,qG2(2,1),"3H3"));       //       3H3	4 211 21
+            states.push_back(fstates_t(2,H,4,qG2(3,0),"3H4"));       //       3H4	4 211 30
+            states.push_back(fstates_t(2,H,6,qG2(1,1),"3H5"));       //       3H5	6 221 11
+            states.push_back(fstates_t(2,H,6,qG2(2,1),"3H6"));       //       3H6	6 221 21
+            states.push_back(fstates_t(2,H,6,qG2(3,0),"3H7"));       //       3H7	6 221 30
+            states.push_back(fstates_t(2,H,6,qG2(3,1),"3H8"));       //       3H8	6 221 31A
+            states.push_back(fstates_t(2,Hp,6,qG2(3,1),"3H9",1));    //       3H9	6 221 31B
+            states.push_back(fstates_t(2,I,4,qG2(2,0),"3I1"));       //       3I1	4 211 20
+            states.push_back(fstates_t(2,I,4,qG2(3,0),"3I2"));       //       3I2	4 211 30
+            states.push_back(fstates_t(2,I,6,qG2(2,0),"3I3"));       //       3I3	6 221 20
+            states.push_back(fstates_t(2,I,6,qG2(3,0),"3I4"));       //       3I4	6 221 30
+            states.push_back(fstates_t(2,I,6,qG2(3,1),"3I5"));       //       3I5	6 221 31A
+            states.push_back(fstates_t(2,Ip,6,qG2(3,1),"3I6",1));    //       3I6	6 221 31B
+            states.push_back(fstates_t(2,K,4,qG2(2,1),"3K1"));       //       3K1	4 211 21
+            states.push_back(fstates_t(2,K,4,qG2(3,0),"3K2"));       //       3K2	4 211 30
+            states.push_back(fstates_t(2,K,6,qG2(2,1),"3K3"));       //       3K3	6 221 21
+            states.push_back(fstates_t(2,K,6,qG2(3,0),"3K4"));       //       3K4	6 221 30
+            states.push_back(fstates_t(2,K,6,qG2(3,1),"3K5"));       //       3K5	6 221 31A
+            states.push_back(fstates_t(2,Kp,6,qG2(3,1),"3K6",1));    //       3K6	6 221 31B
+            states.push_back(fstates_t(2,L,4,qG2(2,1),"3L1"));       //       3L1	4 211 21
+            states.push_back(fstates_t(2,L,6,qG2(2,1),"3L2"));       //       3L2	6 221 21
+            states.push_back(fstates_t(2,L,6,qG2(3,1),"3L3"));       //       3L3	6 221 31
+            states.push_back(fstates_t(2,M,4,qG2(3,0),"3M1"));       //       3M1	4 211 30
+            states.push_back(fstates_t(2,M,6,qG2(3,0),"3M2"));       //       3M2	6 221 30
+            states.push_back(fstates_t(2,M,6,qG2(3,1),"3M3"));       //       3M3	6 221 31
+            states.push_back(fstates_t(2,N,6,qG2(3,1),"3N"));        //       3N	6 221 31
+            states.push_back(fstates_t(2,O,6,qG2(3,1),"3O"));        //       3O	6 221 31
+            states.push_back(fstates_t(0,S,0,qG2(0,0),"1S1"));       //       1S1	0 000 00
+            states.push_back(fstates_t(0,S,4,qG2(2,2),"1S2"));       //       1S2	4 220 22
+            states.push_back(fstates_t(0,S,6,qG2(0,0),"1S3"));       //       1S3	6 222 00
+            states.push_back(fstates_t(0,S,6,qG2(4,0),"1S4"));       //       1S4	6 222 40
+            states.push_back(fstates_t(0,P,6,qG2(3,0),"1P"));        //       1P	6 222 30
+            states.push_back(fstates_t(0,D,2,qG2(2,0),"1D1"));       //       1D1	2 200 20
+            states.push_back(fstates_t(0,D,4,qG2(2,0),"1D2"));       //       1D2	4 220 20
+            states.push_back(fstates_t(0,D,4,qG2(2,1),"1D3"));       //       1D3	4 220 21
+            states.push_back(fstates_t(0,D,4,qG2(2,2),"1D4"));       //       1D4	4 220 22
+            states.push_back(fstates_t(0,D,6,qG2(2,0),"1D5"));       //       1D5	6 222 20
+            states.push_back(fstates_t(0,D,6,qG2(4,0),"1D6"));       //       1D6	6 222 40
+            states.push_back(fstates_t(0,F,4,qG2(2,1),"1F1"));       //       1F1	4 220 21
+            states.push_back(fstates_t(0,F,6,qG2(1,0),"1F2"));       //       1F2	6 222 10
+            states.push_back(fstates_t(0,F,6,qG2(3,0),"1F3"));       //       1F3	6 222 30
+            states.push_back(fstates_t(0,F,6,qG2(4,0),"1F4"));       //       1F4	6 222 40
+            states.push_back(fstates_t(0,G,2,qG2(2,0),"1G1"));       //       1G1	2 200 20
+            states.push_back(fstates_t(0,G,4,qG2(2,0),"1G2"));       //       1G2	4 220 20
+            states.push_back(fstates_t(0,G,4,qG2(2,1),"1G3"));       //       1G3	4 220 21
+            states.push_back(fstates_t(0,G,4,qG2(2,2),"1G4"));       //       1G4	4 220 22
+            states.push_back(fstates_t(0,G,6,qG2(2,0),"1G5"));       //       1G5	6 222 20
+            states.push_back(fstates_t(0,G,6,qG2(3,0),"1G6"));       //       1G6	6 222 30
+            states.push_back(fstates_t(0,G,6,qG2(4,0),"1G7"));       //       1G7	6 222 40A
+            states.push_back(fstates_t(0,Gp,6,qG2(4,0),"1G8",1));    //       1G8	6 222 40B
+            states.push_back(fstates_t(0,H,4,qG2(2,1),"1H1"));       //       1H1	4 220 21
+            states.push_back(fstates_t(0,H,4,qG2(2,2),"1H2"));       //       1H2	4 220 22
+            states.push_back(fstates_t(0,H,6,qG2(3,0),"1H3"));       //       1H3	6 222 30
+            states.push_back(fstates_t(0,H,6,qG2(4,0),"1H4"));       //       1H4	6 222 40
+            states.push_back(fstates_t(0,I,2,qG2(2,0),"1I1"));       //       1I1	2 200 20
+            states.push_back(fstates_t(0,I,4,qG2(2,0),"1I2"));       //       1I2	4 220 20
+            states.push_back(fstates_t(0,I,4,qG2(2,2),"1I3"));       //       1I3	4 220 22
+            states.push_back(fstates_t(0,I,6,qG2(2,0),"1I4"));       //       1I4	6 222 20
+            states.push_back(fstates_t(0,I,6,qG2(3,0),"1I5"));       //       1I5	6 222 30
+            states.push_back(fstates_t(0,I,6,qG2(4,0),"1I6"));       //       1I6	6 222 40A
+            states.push_back(fstates_t(0,Ip,6,qG2(4,0),"1I7",1));    //       1I7	6 222 40B
+            states.push_back(fstates_t(0,K,4,qG2(2,1),"1K1"));       //       1K1	4 220 21
+            states.push_back(fstates_t(0,K,6,qG2(3,0),"1K2"));       //       1K2	6 222 30
+            states.push_back(fstates_t(0,K,6,qG2(4,0),"1K3"));       //       1K3	6 222 40
+            states.push_back(fstates_t(0,L,4,qG2(2,1),"1L1"));       //       1L1	4 220 21
+            states.push_back(fstates_t(0,L,4,qG2(2,2),"1L2"));       //       1L2	4 220 22
+            states.push_back(fstates_t(0,L,6,qG2(4,0),"1L3"));       //       1L3	6 222 40A
+            states.push_back(fstates_t(0,Lp,6,qG2(4,0),"1L4",1));    //       1L4	6 222 40B
+            states.push_back(fstates_t(0,M,6,qG2(3,0),"1M1"));       //       1M1	6 222 30
+            states.push_back(fstates_t(0,M,6,qG2(4,0),"1M2"));       //       1M2	6 222 40
+            states.push_back(fstates_t(0,N,4,qG2(2,2),"1N1"));       //       1N1	4 220 22
+            states.push_back(fstates_t(0,N,6,qG2(4,0),"1N2"));       //       1N2	6 222 40
+            states.push_back(fstates_t(0,Q,6,qG2(4,0),"1Q"));        //       1Q	6 222 40
    	    break;
          case 7:
 	    states.reserve(119);
-            U.set(0,0); states.push_back(fstates_t(7,S,7,U,"8S"));        // f7    8S	7 000 00
-            U.set(1,1); states.push_back(fstates_t(5,P,5,U,"6P"));        //       6P	5 110 11
-            U.set(2,0); states.push_back(fstates_t(5,D,7,U,"6D"));        //       6D	7 200 20
-            U.set(1,0); states.push_back(fstates_t(5,F,5,U,"6F"));        //       6F	5 110 10
-            U.set(2,0); states.push_back(fstates_t(5,G,7,U,"6G"));        //       6G	7 200 20
-            U.set(1,1); states.push_back(fstates_t(5,H,5,U,"6H"));        //       6H	5 110 11
-            U.set(2,0); states.push_back(fstates_t(5,I,7,U,"6I"));        //       6I	7 200 20
-            U.set(0,0); states.push_back(fstates_t(3,S,3,U,"4S1"));       //       4S1	3 111 00
-            U.set(2,2); states.push_back(fstates_t(3,S,7,U,"4S2"));       //       4S2	7 220 22
-            U.set(1,1); states.push_back(fstates_t(3,P,5,U,"4P1"));       //       4P1	5 211 11
-            U.set(3,0); states.push_back(fstates_t(3,P,5,U,"4P2"));       //       4P2	5 211 30
-            U.set(2,0); states.push_back(fstates_t(3,D,3,U,"4D1"));       //       4D1	3 111 20
-            U.set(2,0); states.push_back(fstates_t(3,D,5,U,"4D2"));       //       4D2	5 211 20
-            U.set(2,1); states.push_back(fstates_t(3,D,5,U,"4D3"));       //       4D3	5 211 21
-            U.set(2,0); states.push_back(fstates_t(3,D,7,U,"4D4"));       //       4D4	7 220 20
-            U.set(2,1); states.push_back(fstates_t(3,D,7,U,"4D5"));       //       4D5	7 220 21
-            U.set(2,2); states.push_back(fstates_t(3,D,7,U,"4D6"));       //       4D6	7 220 22
-            U.set(1,0); states.push_back(fstates_t(3,F,3,U,"4F1"));       //       4F1	3 111 10
-            U.set(1,0); states.push_back(fstates_t(3,F,5,U,"4F2"));       //       4F2	5 211 10
-            U.set(2,1); states.push_back(fstates_t(3,F,5,U,"4F3"));       //       4F3	5 211 21
-            U.set(3,0); states.push_back(fstates_t(3,F,5,U,"4F4"));       //       4F4	5 211 30
-            U.set(2,1); states.push_back(fstates_t(3,F,7,U,"4F5"));       //       4F5	7 220 21
-            U.set(2,0); states.push_back(fstates_t(3,G,3,U,"4G1"));       //       4G1	3 111 20
-            U.set(2,0); states.push_back(fstates_t(3,G,5,U,"4G2"));       //       4G2	5 211 20
-            U.set(2,1); states.push_back(fstates_t(3,G,5,U,"4G3"));       //       4G3	5 211 21
-            U.set(3,0); states.push_back(fstates_t(3,G,5,U,"4G4"));       //       4G4	5 211 30
-            U.set(2,0); states.push_back(fstates_t(3,G,7,U,"4G5"));       //       4G5	7 220 20
-            U.set(2,1); states.push_back(fstates_t(3,G,7,U,"4G6"));       //       4G6	7 220 21
-            U.set(2,2); states.push_back(fstates_t(3,G,7,U,"4G7"));       //       4G7	7 220 22
-            U.set(1,1); states.push_back(fstates_t(3,H,5,U,"4H1"));       //       4H1	5 211 11
-            U.set(2,1); states.push_back(fstates_t(3,H,5,U,"4H2"));       //       4H2	5 211 21
-            U.set(3,0); states.push_back(fstates_t(3,H,5,U,"4H3"));       //       4H3	5 211 30
-            U.set(2,1); states.push_back(fstates_t(3,H,7,U,"4H4"));       //       4H4	7 220 21
-            U.set(2,2); states.push_back(fstates_t(3,H,7,U,"4H5"));       //       4H5	7 220 22
-            U.set(2,0); states.push_back(fstates_t(3,I,3,U,"4I1"));       //       4I1	3 111 20
-            U.set(2,0); states.push_back(fstates_t(3,I,5,U,"4I2"));       //       4I2	5 211 20
-            U.set(3,0); states.push_back(fstates_t(3,I,5,U,"4I3"));       //       4I3	5 211 30
-            U.set(2,0); states.push_back(fstates_t(3,I,7,U,"4I4"));       //       4I4	7 220 20
-            U.set(2,2); states.push_back(fstates_t(3,I,7,U,"4I5"));       //       4I5	7 220 22
-            U.set(2,1); states.push_back(fstates_t(3,K,5,U,"4K1"));       //       4K1	5 211 21
-            U.set(3,0); states.push_back(fstates_t(3,K,5,U,"4K2"));       //       4K2	5 211 30
-            U.set(2,1); states.push_back(fstates_t(3,K,7,U,"4K3"));       //       4K3	7 220 21
-            U.set(2,1); states.push_back(fstates_t(3,L,5,U,"4L1"));       //       4L1	5 211 21
-            U.set(2,1); states.push_back(fstates_t(3,L,7,U,"4L2"));       //       4L2	7 220 21
-            U.set(2,2); states.push_back(fstates_t(3,L,7,U,"4L3"));       //       4L3	7 220 22
-            U.set(3,0); states.push_back(fstates_t(3,M,5,U,"4M"));        //       4M	5 211 30
-            U.set(2,2); states.push_back(fstates_t(3,N,7,U,"4N"));        //       4N	7 220 22
-            U.set(0,0); states.push_back(fstates_t(1,S,7,U,"2S1"));       //       2S1	7 222 00
-            U.set(4,0); states.push_back(fstates_t(1,S,7,U,"2S2"));       //       2S2	7 222 40
-            U.set(1,1); states.push_back(fstates_t(1,P,3,U,"2P1"));       //       2P1	3 210 11
-            U.set(1,1); states.push_back(fstates_t(1,P,5,U,"2P2"));       //       2P2	5 221 11
-            U.set(3,0); states.push_back(fstates_t(1,P,5,U,"2P3"));       //       2P3	5 221 30
-            U.set(3,1); states.push_back(fstates_t(1,P,5,U,"2P4"));       //       2P4	5 221 31
-            U.set(3,0); states.push_back(fstates_t(1,P,7,U,"2P5"));       //       2P5	7 222 30
-            U.set(2,0); states.push_back(fstates_t(1,D,3,U,"2D1"));       //       2D1	3 210 20
-            U.set(2,1); states.push_back(fstates_t(1,D,3,U,"2D2"));       //       2D2	3 210 21
-            U.set(2,0); states.push_back(fstates_t(1,D,5,U,"2D3"));       //       2D3	5 221 20
-            U.set(2,1); states.push_back(fstates_t(1,D,5,U,"2D4"));       //       2D4	5 221 21
-            U.set(3,1); states.push_back(fstates_t(1,D,5,U,"2D5"));       //       2D5	5 221 31
-            U.set(2,0); states.push_back(fstates_t(1,D,7,U,"2D6"));       //       2D6	7 222 20
-            U.set(4,0); states.push_back(fstates_t(1,D,7,U,"2D7"));       //       2D7	7 222 40
-            U.set(1,0); states.push_back(fstates_t(1,F,1,U,"2F1"));       //       2F1	1 100 10
-            U.set(2,1); states.push_back(fstates_t(1,F,3,U,"2F2"));       //       2F2	3 210 21
-            U.set(1,0); states.push_back(fstates_t(1,F,5,U,"2F3"));       //       2F3	5 221 10
-            U.set(2,1); states.push_back(fstates_t(1,F,5,U,"2F4"));       //       2F4	5 221 21
-            U.set(3,0); states.push_back(fstates_t(1,F,5,U,"2F5"));       //       2F5	5 221 30
-            U.set(3,1); states.push_back(fstates_t(1,F,5,U,"2F6"));       //       2F6	5 221 31A
-            U.set(3,1); states.push_back(fstates_t(1,Fp,5,U,"2F7",1));    //       2F7	5 221 31B
-            U.set(1,0); states.push_back(fstates_t(1,F,7,U,"2F8"));       //       2F8	7 222 10
-            U.set(3,0); states.push_back(fstates_t(1,F,7,U,"2F9"));       //       2F9	7 222 30
-            U.set(4,0); states.push_back(fstates_t(1,F,7,U,"2F10"));      //       2F10	7 222 40
-            U.set(2,0); states.push_back(fstates_t(1,G,3,U,"2G1"));       //       2G1	3 210 20
-            U.set(2,1); states.push_back(fstates_t(1,G,3,U,"2G2"));       //       2G2	3 210 21
-            U.set(2,0); states.push_back(fstates_t(1,G,5,U,"2G3"));       //       2G3	5 221 20
-            U.set(2,1); states.push_back(fstates_t(1,G,5,U,"2G4"));       //       2G4	5 221 21
-            U.set(3,0); states.push_back(fstates_t(1,G,5,U,"2G5"));       //       2G5	5 221 30
-            U.set(3,1); states.push_back(fstates_t(1,G,5,U,"2G6"));       //       2G6	5 221 31
-            U.set(2,0); states.push_back(fstates_t(1,G,7,U,"2G7"));       //       2G7	7 222 20
-            U.set(3,0); states.push_back(fstates_t(1,G,7,U,"2G8"));       //       2G8	7 222 30
-            U.set(4,0); states.push_back(fstates_t(1,G,7,U,"2G9"));       //       2G9	7 222 40A
-            U.set(4,0); states.push_back(fstates_t(1,Gp,7,U,"2G10",1));   //       2G10	7 222 40B
-            U.set(1,1); states.push_back(fstates_t(1,H,3,U,"2H1"));       //       2H1	3 210 11
-            U.set(2,1); states.push_back(fstates_t(1,H,3,U,"2H2"));       //       2H2	3 210 21
-            U.set(1,1); states.push_back(fstates_t(1,H,5,U,"2H3"));       //       2H3	5 221 11
-            U.set(2,1); states.push_back(fstates_t(1,H,5,U,"2H4"));       //       2H4	5 221 21
-            U.set(3,0); states.push_back(fstates_t(1,H,5,U,"2H5"));       //       2H5	5 221 30
-            U.set(3,1); states.push_back(fstates_t(1,H,5,U,"2H6"));       //       2H6	5 221 31A
-            U.set(3,1); states.push_back(fstates_t(1,Hp,5,U,"2H7",1));    //       2H7	7 222 31B
-            U.set(3,0); states.push_back(fstates_t(1,H,7,U,"2H8"));       //       2H8	7 222 30
-            U.set(4,0); states.push_back(fstates_t(1,H,7,U,"2H9"));       //       2H9	7 222 40
-            U.set(2,0); states.push_back(fstates_t(1,I,3,U,"2I1"));       //       2I1	3 210 20
-            U.set(2,0); states.push_back(fstates_t(1,I,5,U,"2I2"));       //       2I2	5 221 20
-            U.set(3,0); states.push_back(fstates_t(1,I,5,U,"2I3"));       //       2I3	5 221 30
-            U.set(3,1); states.push_back(fstates_t(1,I,5,U,"2I4"));       //       2I4	5 221 31A
-            U.set(3,1); states.push_back(fstates_t(1,Ip,5,U,"2I5",1));    //       2I5	5 221 31B
-            U.set(2,0); states.push_back(fstates_t(1,I,7,U,"2I6"));       //       2I6	7 222 20
-            U.set(3,0); states.push_back(fstates_t(1,I,7,U,"2I7"));       //       2I7	7 222 30
-            U.set(4,0); states.push_back(fstates_t(1,I,7,U,"2I8"));       //       2I8	7 222 40A
-            U.set(4,0); states.push_back(fstates_t(1,Ip,7,U,"2I9",1));    //       2I9	7 222 40B
-            U.set(2,1); states.push_back(fstates_t(1,K,3,U,"2K1"));       //       2K1	3 210 21
-            U.set(2,1); states.push_back(fstates_t(1,K,5,U,"2K2"));       //       2K2	5 221 21
-            U.set(3,0); states.push_back(fstates_t(1,K,5,U,"2K3"));       //       2K3	5 221 30
-            U.set(3,1); states.push_back(fstates_t(1,K,5,U,"2K4"));       //       2K4	5 221 31A
-            U.set(3,1); states.push_back(fstates_t(1,Kp,5,U,"2K5",1));    //       2K5	5 221 31B
-            U.set(3,0); states.push_back(fstates_t(1,K,7,U,"2K6"));       //       2K6	7 222 30
-            U.set(4,0); states.push_back(fstates_t(1,K,7,U,"2K7"));       //       2K7	7 222 40
-            U.set(2,1); states.push_back(fstates_t(1,L,3,U,"2L1"));       //       2L1	3 210 21
-            U.set(2,1); states.push_back(fstates_t(1,L,5,U,"2L2"));       //       2L2	5 221 21
-            U.set(3,1); states.push_back(fstates_t(1,L,5,U,"2L3"));       //       2L3	5 221 31
-            U.set(4,0); states.push_back(fstates_t(1,L,7,U,"2L4"));       //       2L4	7 222 40A
-            U.set(4,0); states.push_back(fstates_t(1,Lp,7,U,"2L5",1));    //       2L5	7 222 40B
-            U.set(3,0); states.push_back(fstates_t(1,M,5,U,"2M1"));       //       2M1	5 221 30
-            U.set(3,1); states.push_back(fstates_t(1,M,5,U,"2M2"));       //       2M2	5 221 31
-            U.set(3,0); states.push_back(fstates_t(1,M,7,U,"2M3"));       //       2M3	7 222 30
-            U.set(4,0); states.push_back(fstates_t(1,M,7,U,"2M4"));       //       2M4	7 222 40
-            U.set(3,1); states.push_back(fstates_t(1,N,5,U,"2N1"));       //       2N1	5 221 31
-            U.set(4,0); states.push_back(fstates_t(1,N,7,U,"2N2"));       //       2N2	7 222 40
-            U.set(3,1); states.push_back(fstates_t(1,O,5,U,"2O"));        //       2O	5 221 31
-            U.set(4,0); states.push_back(fstates_t(1,Q,7,U,"2Q"));        //       2Q	7 222 40
+            states.push_back(fstates_t(7,S,7,qG2(0,0),"8S"));        // f7    8S	7 000 00
+            states.push_back(fstates_t(5,P,5,qG2(1,1),"6P"));        //       6P	5 110 11
+            states.push_back(fstates_t(5,D,7,qG2(2,0),"6D"));        //       6D	7 200 20
+            states.push_back(fstates_t(5,F,5,qG2(1,0),"6F"));        //       6F	5 110 10
+            states.push_back(fstates_t(5,G,7,qG2(2,0),"6G"));        //       6G	7 200 20
+            states.push_back(fstates_t(5,H,5,qG2(1,1),"6H"));        //       6H	5 110 11
+            states.push_back(fstates_t(5,I,7,qG2(2,0),"6I"));        //       6I	7 200 20
+            states.push_back(fstates_t(3,S,3,qG2(0,0),"4S1"));       //       4S1	3 111 00
+            states.push_back(fstates_t(3,S,7,qG2(2,2),"4S2"));       //       4S2	7 220 22
+            states.push_back(fstates_t(3,P,5,qG2(1,1),"4P1"));       //       4P1	5 211 11
+            states.push_back(fstates_t(3,P,5,qG2(3,0),"4P2"));       //       4P2	5 211 30
+            states.push_back(fstates_t(3,D,3,qG2(2,0),"4D1"));       //       4D1	3 111 20
+            states.push_back(fstates_t(3,D,5,qG2(2,0),"4D2"));       //       4D2	5 211 20
+            states.push_back(fstates_t(3,D,5,qG2(2,1),"4D3"));       //       4D3	5 211 21
+            states.push_back(fstates_t(3,D,7,qG2(2,0),"4D4"));       //       4D4	7 220 20
+            states.push_back(fstates_t(3,D,7,qG2(2,1),"4D5"));       //       4D5	7 220 21
+            states.push_back(fstates_t(3,D,7,qG2(2,2),"4D6"));       //       4D6	7 220 22
+            states.push_back(fstates_t(3,F,3,qG2(1,0),"4F1"));       //       4F1	3 111 10
+            states.push_back(fstates_t(3,F,5,qG2(1,0),"4F2"));       //       4F2	5 211 10
+            states.push_back(fstates_t(3,F,5,qG2(2,1),"4F3"));       //       4F3	5 211 21
+            states.push_back(fstates_t(3,F,5,qG2(3,0),"4F4"));       //       4F4	5 211 30
+            states.push_back(fstates_t(3,F,7,qG2(2,1),"4F5"));       //       4F5	7 220 21
+            states.push_back(fstates_t(3,G,3,qG2(2,0),"4G1"));       //       4G1	3 111 20
+            states.push_back(fstates_t(3,G,5,qG2(2,0),"4G2"));       //       4G2	5 211 20
+            states.push_back(fstates_t(3,G,5,qG2(2,1),"4G3"));       //       4G3	5 211 21
+            states.push_back(fstates_t(3,G,5,qG2(3,0),"4G4"));       //       4G4	5 211 30
+            states.push_back(fstates_t(3,G,7,qG2(2,0),"4G5"));       //       4G5	7 220 20
+            states.push_back(fstates_t(3,G,7,qG2(2,1),"4G6"));       //       4G6	7 220 21
+            states.push_back(fstates_t(3,G,7,qG2(2,2),"4G7"));       //       4G7	7 220 22
+            states.push_back(fstates_t(3,H,5,qG2(1,1),"4H1"));       //       4H1	5 211 11
+            states.push_back(fstates_t(3,H,5,qG2(2,1),"4H2"));       //       4H2	5 211 21
+            states.push_back(fstates_t(3,H,5,qG2(3,0),"4H3"));       //       4H3	5 211 30
+            states.push_back(fstates_t(3,H,7,qG2(2,1),"4H4"));       //       4H4	7 220 21
+            states.push_back(fstates_t(3,H,7,qG2(2,2),"4H5"));       //       4H5	7 220 22
+            states.push_back(fstates_t(3,I,3,qG2(2,0),"4I1"));       //       4I1	3 111 20
+            states.push_back(fstates_t(3,I,5,qG2(2,0),"4I2"));       //       4I2	5 211 20
+            states.push_back(fstates_t(3,I,5,qG2(3,0),"4I3"));       //       4I3	5 211 30
+            states.push_back(fstates_t(3,I,7,qG2(2,0),"4I4"));       //       4I4	7 220 20
+            states.push_back(fstates_t(3,I,7,qG2(2,2),"4I5"));       //       4I5	7 220 22
+            states.push_back(fstates_t(3,K,5,qG2(2,1),"4K1"));       //       4K1	5 211 21
+            states.push_back(fstates_t(3,K,5,qG2(3,0),"4K2"));       //       4K2	5 211 30
+            states.push_back(fstates_t(3,K,7,qG2(2,1),"4K3"));       //       4K3	7 220 21
+            states.push_back(fstates_t(3,L,5,qG2(2,1),"4L1"));       //       4L1	5 211 21
+            states.push_back(fstates_t(3,L,7,qG2(2,1),"4L2"));       //       4L2	7 220 21
+            states.push_back(fstates_t(3,L,7,qG2(2,2),"4L3"));       //       4L3	7 220 22
+            states.push_back(fstates_t(3,M,5,qG2(3,0),"4M"));        //       4M	5 211 30
+            states.push_back(fstates_t(3,N,7,qG2(2,2),"4N"));        //       4N	7 220 22
+            states.push_back(fstates_t(1,S,7,qG2(0,0),"2S1"));       //       2S1	7 222 00
+            states.push_back(fstates_t(1,S,7,qG2(4,0),"2S2"));       //       2S2	7 222 40
+            states.push_back(fstates_t(1,P,3,qG2(1,1),"2P1"));       //       2P1	3 210 11
+            states.push_back(fstates_t(1,P,5,qG2(1,1),"2P2"));       //       2P2	5 221 11
+            states.push_back(fstates_t(1,P,5,qG2(3,0),"2P3"));       //       2P3	5 221 30
+            states.push_back(fstates_t(1,P,5,qG2(3,1),"2P4"));       //       2P4	5 221 31
+            states.push_back(fstates_t(1,P,7,qG2(3,0),"2P5"));       //       2P5	7 222 30
+            states.push_back(fstates_t(1,D,3,qG2(2,0),"2D1"));       //       2D1	3 210 20
+            states.push_back(fstates_t(1,D,3,qG2(2,1),"2D2"));       //       2D2	3 210 21
+            states.push_back(fstates_t(1,D,5,qG2(2,0),"2D3"));       //       2D3	5 221 20
+            states.push_back(fstates_t(1,D,5,qG2(2,1),"2D4"));       //       2D4	5 221 21
+            states.push_back(fstates_t(1,D,5,qG2(3,1),"2D5"));       //       2D5	5 221 31
+            states.push_back(fstates_t(1,D,7,qG2(2,0),"2D6"));       //       2D6	7 222 20
+            states.push_back(fstates_t(1,D,7,qG2(4,0),"2D7"));       //       2D7	7 222 40
+            states.push_back(fstates_t(1,F,1,qG2(1,0),"2F1"));       //       2F1	1 100 10
+            states.push_back(fstates_t(1,F,3,qG2(2,1),"2F2"));       //       2F2	3 210 21
+            states.push_back(fstates_t(1,F,5,qG2(1,0),"2F3"));       //       2F3	5 221 10
+            states.push_back(fstates_t(1,F,5,qG2(2,1),"2F4"));       //       2F4	5 221 21
+            states.push_back(fstates_t(1,F,5,qG2(3,0),"2F5"));       //       2F5	5 221 30
+            states.push_back(fstates_t(1,F,5,qG2(3,1),"2F6"));       //       2F6	5 221 31A
+            states.push_back(fstates_t(1,Fp,5,qG2(3,1),"2F7",1));    //       2F7	5 221 31B
+            states.push_back(fstates_t(1,F,7,qG2(1,0),"2F8"));       //       2F8	7 222 10
+            states.push_back(fstates_t(1,F,7,qG2(3,0),"2F9"));       //       2F9	7 222 30
+            states.push_back(fstates_t(1,F,7,qG2(4,0),"2F10"));      //       2F10	7 222 40
+            states.push_back(fstates_t(1,G,3,qG2(2,0),"2G1"));       //       2G1	3 210 20
+            states.push_back(fstates_t(1,G,3,qG2(2,1),"2G2"));       //       2G2	3 210 21
+            states.push_back(fstates_t(1,G,5,qG2(2,0),"2G3"));       //       2G3	5 221 20
+            states.push_back(fstates_t(1,G,5,qG2(2,1),"2G4"));       //       2G4	5 221 21
+            states.push_back(fstates_t(1,G,5,qG2(3,0),"2G5"));       //       2G5	5 221 30
+            states.push_back(fstates_t(1,G,5,qG2(3,1),"2G6"));       //       2G6	5 221 31
+            states.push_back(fstates_t(1,G,7,qG2(2,0),"2G7"));       //       2G7	7 222 20
+            states.push_back(fstates_t(1,G,7,qG2(3,0),"2G8"));       //       2G8	7 222 30
+            states.push_back(fstates_t(1,G,7,qG2(4,0),"2G9"));       //       2G9	7 222 40A
+            states.push_back(fstates_t(1,Gp,7,qG2(4,0),"2G10",1));   //       2G10	7 222 40B
+            states.push_back(fstates_t(1,H,3,qG2(1,1),"2H1"));       //       2H1	3 210 11
+            states.push_back(fstates_t(1,H,3,qG2(2,1),"2H2"));       //       2H2	3 210 21
+            states.push_back(fstates_t(1,H,5,qG2(1,1),"2H3"));       //       2H3	5 221 11
+            states.push_back(fstates_t(1,H,5,qG2(2,1),"2H4"));       //       2H4	5 221 21
+            states.push_back(fstates_t(1,H,5,qG2(3,0),"2H5"));       //       2H5	5 221 30
+            states.push_back(fstates_t(1,H,5,qG2(3,1),"2H6"));       //       2H6	5 221 31A
+            states.push_back(fstates_t(1,Hp,5,qG2(3,1),"2H7",1));    //       2H7	7 222 31B
+            states.push_back(fstates_t(1,H,7,qG2(3,0),"2H8"));       //       2H8	7 222 30
+            states.push_back(fstates_t(1,H,7,qG2(4,0),"2H9"));       //       2H9	7 222 40
+            states.push_back(fstates_t(1,I,3,qG2(2,0),"2I1"));       //       2I1	3 210 20
+            states.push_back(fstates_t(1,I,5,qG2(2,0),"2I2"));       //       2I2	5 221 20
+            states.push_back(fstates_t(1,I,5,qG2(3,0),"2I3"));       //       2I3	5 221 30
+            states.push_back(fstates_t(1,I,5,qG2(3,1),"2I4"));       //       2I4	5 221 31A
+            states.push_back(fstates_t(1,Ip,5,qG2(3,1),"2I5",1));    //       2I5	5 221 31B
+            states.push_back(fstates_t(1,I,7,qG2(2,0),"2I6"));       //       2I6	7 222 20
+            states.push_back(fstates_t(1,I,7,qG2(3,0),"2I7"));       //       2I7	7 222 30
+            states.push_back(fstates_t(1,I,7,qG2(4,0),"2I8"));       //       2I8	7 222 40A
+            states.push_back(fstates_t(1,Ip,7,qG2(4,0),"2I9",1));    //       2I9	7 222 40B
+            states.push_back(fstates_t(1,K,3,qG2(2,1),"2K1"));       //       2K1	3 210 21
+            states.push_back(fstates_t(1,K,5,qG2(2,1),"2K2"));       //       2K2	5 221 21
+            states.push_back(fstates_t(1,K,5,qG2(3,0),"2K3"));       //       2K3	5 221 30
+            states.push_back(fstates_t(1,K,5,qG2(3,1),"2K4"));       //       2K4	5 221 31A
+            states.push_back(fstates_t(1,Kp,5,qG2(3,1),"2K5",1));    //       2K5	5 221 31B
+            states.push_back(fstates_t(1,K,7,qG2(3,0),"2K6"));       //       2K6	7 222 30
+            states.push_back(fstates_t(1,K,7,qG2(4,0),"2K7"));       //       2K7	7 222 40
+            states.push_back(fstates_t(1,L,3,qG2(2,1),"2L1"));       //       2L1	3 210 21
+            states.push_back(fstates_t(1,L,5,qG2(2,1),"2L2"));       //       2L2	5 221 21
+            states.push_back(fstates_t(1,L,5,qG2(3,1),"2L3"));       //       2L3	5 221 31
+            states.push_back(fstates_t(1,L,7,qG2(4,0),"2L4"));       //       2L4	7 222 40A
+            states.push_back(fstates_t(1,Lp,7,qG2(4,0),"2L5",1));    //       2L5	7 222 40B
+            states.push_back(fstates_t(1,M,5,qG2(3,0),"2M1"));       //       2M1	5 221 30
+            states.push_back(fstates_t(1,M,5,qG2(3,1),"2M2"));       //       2M2	5 221 31
+            states.push_back(fstates_t(1,M,7,qG2(3,0),"2M3"));       //       2M3	7 222 30
+            states.push_back(fstates_t(1,M,7,qG2(4,0),"2M4"));       //       2M4	7 222 40
+            states.push_back(fstates_t(1,N,5,qG2(3,1),"2N1"));       //       2N1	5 221 31
+            states.push_back(fstates_t(1,N,7,qG2(4,0),"2N2"));       //       2N2	7 222 40
+            states.push_back(fstates_t(1,O,5,qG2(3,1),"2O"));        //       2O	5 221 31
+            states.push_back(fstates_t(1,Q,7,qG2(4,0),"2Q"));        //       2Q	7 222 40
    	    break;
       } // switch(n)
    }    // else (n>0 && n<15)
@@ -783,11 +787,12 @@ fconf::fconf(int n, orbital l)
    }    // switch(l)
 }
 
-fconf::fconf(int n, bool mJflag, orbital l)
+void fconf::set(int n, bool mJflag, orbital l)
 {
    if(l!=S && l!=P && l!=D && l!=F) { 
       std::cerr << "fconf::fconf() - error, only the case of l=0,1,2, and 3, s-, p-, d- and f-electrons implemented.\n"; return; }
      
+   states.clear();
    fconf confLS(n,l);
    int num_states = (int)confLS.states.size();
    int i,j,J2min,J2max,mj;

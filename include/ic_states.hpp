@@ -15,6 +15,7 @@
 #include<vector>
 #include<iostream>
 #include<sstream>
+#include<array>
 
 namespace libMcPhase {
 
@@ -183,9 +184,11 @@ class fconf
 
       // Constructors //
       fconf(orbital l=F);                                       // Default looks up |vLS> (d-) or |vULS> (f-electrons)
-      fconf(int n, orbital l=F);                                // n = number of equivalent electrons
-      fconf(int n, bool mJflag, orbital l=F);                   // Construct matrix in |aLSJ> or |aLSmJ> basis
+      fconf(int n, orbital l=F) { set(n, l); };                 // n = number of equivalent electrons
+      fconf(int n, bool f, orbital l=F) { set(n, f, l); };      // Construct matrix in |aLSJ> or |aLSmJ> basis
 
+      void set(int n, orbital l=F);
+      void set(int n, bool mJflag, orbital l=F);
 };
 
 // --------------------------------------------------------------------------------------------------------------- //

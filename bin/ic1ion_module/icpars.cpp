@@ -153,48 +153,6 @@ void conv_e_units(icpars &pars, std::string &newunit)
 }
 
 // --------------------------------------------------------------------------------------------------------------- //
-// Calculates the Stevens operator equivalent factors after Elliot, Judd and Runciman.
-// --------------------------------------------------------------------------------------------------------------- //
-std::vector<double> stev_thetak(int n, orbital l)
-{
-   std::vector<double> theta_k(3); 
-   if(n==1) { theta_k[0] = -2/35.; theta_k[1] = 2/315.; theta_k[2] = 0.; return theta_k; }
-   theta_k[0] = -8.*sqrt(7./15.); theta_k[1] = 16.*sqrt(14./11.); theta_k[2] = -640.*sqrt(7./429.);
-
-   orbital L;
-   int S2,J2;
-   int ml, Li = 0, lm = abs(l), ln = (n<=(2*l+1)) ? (abs(l)-n) : (abs(l)-n+(2*l+1)); 
-   fconf conf(n,l);
-   fconf confp(n-1,l);
-   std::vector<cfpls> cfps;
-   double sumcfp,noncfpprod;
-   int k,is,ic;
-
-   // Calculates L,S,J from Hund's rules
-   S2 = (n<=(2*l+1)) ? n : ((4*l+2)-n);                       // Maximise S.
-   for(ml=lm; ml>ln; ml--) Li+=ml;                            // Maximise L.
-   J2 = (n<=(2*l+1)) ? abs(2*Li-S2) : (2*Li+S2);              // J=|L-S| for <half-full, J=L+S for >half-full shell.
-   L = (orbital)Li;
-
-   // Finds the seniority and other quantum numbers from the list of states
-   for(is=0; is<(int)conf.states.size(); is++) { if(conf.states[is].S2==S2 && conf.states[is].L==L) break; }
-
-   noncfpprod = pow(-1.,-(double)l-Li) * (2.*Li+1.);
-   if(l==D) cfps = racah_parents(n,conf.states[is].v,S2,L); else cfps = racah_parents(n,conf.states[is].v,conf.states[is].U,S2,L);
-
-   // We use the formulae of Elliot, Judd and Runciman, Proc. R. Soc. Lon. A, v240, pp509, 1957 to calculate theta_k
-   for(k=0; k<3; k++)
-   {
-      sumcfp = 0.;
-      for(ic=0; ic<(int)cfps.size(); ic++) 
-         sumcfp += racahW(l*2,Li*2,l*2,Li*2,abs(confp.states[cfps[ic].ind].L)*2,(k+1)*4) * cfps[ic].cfp*cfps[ic].cfp 
-	           * pow(-1.,(double)abs(confp.states[cfps[ic].ind].L)+2.*(k+1.)) * noncfpprod;
-      theta_k[k] *= sqrt(factorial(J2-2*(k+1))/factorial(J2+2*(k+1)+1)) * n * sumcfp * pow(-1.,2.*(k+1.)+Li+(S2+J2)/2.) 
-                    * (J2+1) * sixj(Li*2,J2,S2,J2,Li*2,4*(k+1));
-   }
-   return theta_k;
-}
-// --------------------------------------------------------------------------------------------------------------- //
 // Looks up value of radial integrals
 // --------------------------------------------------------------------------------------------------------------- //
 #define IONCMP ionname.compare
@@ -377,24 +335,6 @@ void cfpars::assign(std::string &S, int &k, int &q, double v) // Assign a partic
    else { std::cerr << "cfpars::assign() parameter type " << S << " not recognised. Must be either A,W,B,V,L,D,AR\n"; }
 }
 // --------------------------------------------------------------------------------------------------------------- //
-void cfpars::calc_stevfact(int n, orbital l)
-{
-   if(op_equiv==undef) { op_equiv = (l==D)?Lt:Jt; }
-   if(op_equiv==Lt)  // <L||theta||L> from Abragam and Bleaney, EPR, Appendix B, Table 19, page 873
-   {
-      for(int i=0; i<3; i++) { _stevfact[i]=0; _istevfact[i]=0; }
-      if(n==5) return;
-      int S2 = (n<=5) ? n : (10-n);                // Maximise S.  (Hund's Rules with l=2 substituted in)
-      int L = 0, ln = (n<=5) ? (2-n) : (7-n); 
-      for(int ml=2; ml>ln; ml--) L+=ml;            // Maximise L.
-      _stevfact[0] = 2*(5-2*S2)/21./(2.*L-1);      // <L||alpha||L> = -/+ 2(2l+1-4S)/(2l-1)/(2l+3)/(2L-1)
-      if(n<5) _stevfact[0] = -_stevfact[0];
-      // <L||beta||L> = <L||alpha||L> * ( 3*(3(l-1)(l+2)-7(l-2S)(l+1-2S)) / 2(2l-3)(2l+5)(L-1)(2L-3) )
-      _stevfact[1] = _stevfact[0]*3*(12-7*(2-S2)*(3-S2))/18./(L-1.)/(2*L-3.);
-   }
-   else _stevfact = stev_thetak(n,l);
-   int i; for(i=0; i<3; i++) if(_stevfact[i]!=0) _istevfact[i] = 1/_stevfact[i]; else _istevfact[i] = 0.;
-}
 // --------------------------------------------------------------------------------------------------------------- //
 void cfpars::find_rk(std::string &ionname)
 {

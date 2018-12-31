@@ -3,12 +3,12 @@
  * Calculates the spin-orbit and crystal field interactions operator matrices, after Racah.
  *
  * Functions:
- *    sMat<double> racah_so(int n, double xi, orbital e_l=F);                   // Calculates the spin-orbit matrix
- *    sMat<double> racah_Umat(int n, int k, orbital e_l=F);                     // Calculates the reduced matrix U^k
- *    sMat<double> racah_ukq(int n, int k, int q, orbital e_l=F);               // Calculates the tensor operator U^k_q 
- *    sMat<double> fast_ukq(int n, int k, int q, orbital e_l=F);                // Calculates the tensor operator U^k_q 
+ *    sMat<double> racah_so(int n, double xi, orbital m_l=F);                   // Calculates the spin-orbit matrix
+ *    sMat<double> racah_Umat(int n, int k, orbital m_l=F);                     // Calculates the reduced matrix U^k
+ *    sMat<double> racah_ukq(int n, int k, int q, orbital m_l=F);               // Calculates the tensor operator U^k_q 
+ *    sMat<double> fast_ukq(int n, int k, int q, orbital m_l=F);                // Calculates the tensor operator U^k_q 
  *        ("fast" algorithm... buggy! don't use!)
- *    sMat<double> racah_mumat(int n, int q, orbital e_l=F);                    // Calculates the magnetic moment operator
+ *    sMat<double> racah_mumat(int n, int q, orbital m_l=F);                    // Calculates the magnetic moment operator
  *    void racah_mumat(int n,int q,sMat<double>&L,sMat<double>&S, orbital l=F); // Calculates the magnetic moment operator
  *
  * This file is part of the ic1ionmodule of the McPhase package, calculating the single-ion properties of a rare
@@ -25,11 +25,9 @@ namespace libMcPhase {
 // --------------------------------------------------------------------------------------------------------------- //
 // Calculates the spin orbit Hamilton matrix for a particular f^n configuration with strength xi
 // --------------------------------------------------------------------------------------------------------------- //
-RowMatrixXd ic1ion::racah_so(int n, double xi, orbital e_l)  // Defaults to f-electrons (see ic1ion.hpp - e_l=F by default)
+RowMatrixXd ic1ion::racah_so()
 {
-   if(e_l!=S&&e_l!=P&&e_l!=D&&e_l!=F) {  std::cerr << "racah_so(): Only s-, p-, d- and f- configurations are implemented.\n"; exit(EXIT_FAILURE); }
-
-   fconf conf(n,0,e_l);
+   fconf conf(m_n, 0, m_l);
    int num_states = (int)conf.states.size();
    std::vector<cfpls> cfpsi,cfpsj;
    int i,j,k,l,isz,jsz;
@@ -37,27 +35,27 @@ RowMatrixXd ic1ion::racah_so(int n, double xi, orbital e_l)  // Defaults to f-el
    RowMatrixXd so(num_states, num_states);
 
    // Single electron configurations are programed directly in
-   if(n==1)
+   if(m_n==1)
    {
       int J2, S2, L2;
       S2 = conf.states[0].S2; L2 = 2*abs(conf.states[0].L);      // There is only 1 |LS> state in a 1-electron conf.
-      double rmS=sqrt(3/2.), rmL=sqrt(e_l*(e_l+1)*(2*e_l+1));    // Reduce matrix elements, with s=1/2 substituted in.
+      double rmS=sqrt(3/2.), rmL=sqrt(m_l*(m_l+1)*(2*m_l+1));    // Reduce matrix elements, with s=1/2 substituted in.
       for(i=0; i<num_states; i++)                                // H_so is diagonal in J.
       {
          J2 = conf.states[i].J2;                                 // Equation 3-36 or 4-12 of Judd 1963
          so(i,i) = pow(-1.,(S2+L2+J2)/2.) * m_racah.sixj(S2,S2,2,L2,L2,J2) * rmS * rmL;
       }
-      return so*xi;
+      return so * m_xi;
    }
 
-   fconf confp(n-1,e_l);
+   fconf confp(m_n-1, m_l);
 
    for(i=0; i<num_states; i++)
    {
-      switch(e_l) {
-         case P: cfpsi = racah_parents(n,conf.states[i].S2,conf.states[i].L); break;
-         case D: cfpsi = racah_parents(n,conf.states[i].v,conf.states[i].S2,conf.states[i].L); break;
-	 default:cfpsi = racah_parents(n,conf.states[i].v,conf.states[i].U,conf.states[i].S2,conf.states[i].L);  }
+      switch(m_l) {
+         case P: cfpsi = racah_parents(m_n,conf.states[i].S2,conf.states[i].L); break;
+         case D: cfpsi = racah_parents(m_n,conf.states[i].v,conf.states[i].S2,conf.states[i].L); break;
+      default:cfpsi = racah_parents(m_n,conf.states[i].v,conf.states[i].U,conf.states[i].S2,conf.states[i].L);  }
       for(j=i; j<num_states; j++)
       {
          if(abs(conf.states[i].S2-conf.states[j].S2)>2) continue;
@@ -66,30 +64,30 @@ RowMatrixXd ic1ion::racah_so(int n, double xi, orbital e_l)  // Defaults to f-el
          if(abs(conf.states[i].v-conf.states[j].v)>2) continue;  //    see Judd book, sections 8-3, and 8-4.
          if(conf.states[i].J2==conf.states[j].J2)
          {
-            switch(e_l) {
-               case P: cfpsj = racah_parents(n,conf.states[j].S2,conf.states[j].L); break;
-               case D: cfpsj = racah_parents(n,conf.states[j].v,conf.states[j].S2,conf.states[j].L); break;
-	       default:cfpsj = racah_parents(n,conf.states[j].v,conf.states[j].U,conf.states[j].S2,conf.states[j].L);  }
+            switch(m_l) {
+               case P: cfpsj = racah_parents(m_n,conf.states[j].S2,conf.states[j].L); break;
+               case D: cfpsj = racah_parents(m_n,conf.states[j].v,conf.states[j].S2,conf.states[j].L); break;
+            default:cfpsj = racah_parents(m_n,conf.states[j].v,conf.states[j].U,conf.states[j].S2,conf.states[j].L);  }
             sumcfp = 0.;
             isz = (int)cfpsi.size(); jsz = (int)cfpsj.size();
             for(k=0; k<isz; k++)
                for(l=0; l<jsz; l++)
                   if(cfpsi[k].ind==cfpsj[l].ind)
 //                   sumcfp += m_racah.racahW(confp.states[cfpsi[k].ind].S2,conf.states[i].S2,1,2,1,conf.states[j].S2)
-//                             * m_racah.racahW(abs(confp.states[cfpsi[k].ind].L)*2,abs(conf.states[i].L)*2,2*e_l,2,2*e_l,abs(conf.states[j].L)*2)
+//                             * m_racah.racahW(abs(confp.states[cfpsi[k].ind].L)*2,abs(conf.states[i].L)*2,2*m_l,2,2*m_l,abs(conf.states[j].L)*2)
 //                             * cfpsi[k].cfp * cfpsj[l].cfp;
 //          so(i,j) = -n*xi * m_racah.racahW(conf.states[i].J2,abs(conf.states[i].L)*2,conf.states[j].S2,2,conf.states[i].S2,abs(conf.states[j].L)*2)
 //                    * sqrt( (2.*abs(conf.states[i].L)+1.)*(2.*abs(conf.states[j].L)+1.)*(conf.states[i].S2+1.)*(conf.states[j].S2+1.) )
-//                    * sqrt( (9./6)*e_l*(e_l+1)*(2*e_l+1) ) * sumcfp;
-                     sumcfp += pow(-1.,abs(conf.states[i].L)+abs(confp.states[cfpsi[k].ind].L)+e_l + (conf.states[i].S2+confp.states[cfpsi[k].ind].S2+1.)/2.) 
+//                    * sqrt( (9./6)*m_l*(m_l+1)*(2*m_l+1) ) * sumcfp;
+                     sumcfp += pow(-1.,abs(conf.states[i].L)+abs(confp.states[cfpsi[k].ind].L)+m_l + (conf.states[i].S2+confp.states[cfpsi[k].ind].S2+1.)/2.) 
                                * m_racah.sixj(conf.states[i].S2,2,conf.states[j].S2,1,confp.states[cfpsi[k].ind].S2,1)
-                               * m_racah.sixj(abs(conf.states[i].L)*2,2,abs(conf.states[j].L)*2,2*e_l,abs(confp.states[cfpsi[k].ind].L)*2,2*e_l)
+                               * m_racah.sixj(abs(conf.states[i].L)*2,2,abs(conf.states[j].L)*2,2*m_l,abs(confp.states[cfpsi[k].ind].L)*2,2*m_l)
                                * cfpsi[k].cfp * cfpsj[l].cfp;
-            so(i,j) = -n*xi * pow(-1.,abs(conf.states[i].L)+(conf.states[j].S2+conf.states[i].J2)/2.+1.) 
+            so(i,j) = -m_n*m_xi * pow(-1.,abs(conf.states[i].L)+(conf.states[j].S2+conf.states[i].J2)/2.+1.) 
                       * m_racah.sixj(conf.states[i].S2,2,conf.states[j].S2,abs(conf.states[j].L)*2,conf.states[i].J2,abs(conf.states[i].L)*2)
                       * sqrt( (2.*abs(conf.states[i].L)+1.)*(2.*abs(conf.states[j].L)+1.)*(conf.states[i].S2+1.)*(conf.states[j].S2+1.) )
-                      * sqrt( (3./2)*e_l*(e_l+1.)*(2.*e_l+1.) ) * sumcfp;
-            if(n>(2*e_l+1)) so(i,j) = -so(i,j);   // Phase factor difference for >half-filled shell. See Nielson/Koster or Racah III
+                      * sqrt( (3./2)*m_l*(m_l+1.)*(2.*m_l+1.) ) * sumcfp;
+            if(m_n>(2*m_l+1)) so(i,j) = -so(i,j);   // Phase factor difference for >half-filled shell. See Nielson/Koster or Racah III
             if(i!=j) so(j,i) = so(i,j);
          }
       }
@@ -100,53 +98,53 @@ RowMatrixXd ic1ion::racah_so(int n, double xi, orbital e_l)  // Defaults to f-el
 // --------------------------------------------------------------------------------------------------------------- //
 // Calculates the U^k reduced matrix which may be used to calculate the tensor operators U^k_q
 // --------------------------------------------------------------------------------------------------------------- //
-RowMatrixXd ic1ion::racah_Umat(int n, int k, orbital e_l)
+RowMatrixXd ic1ion::racah_Umat(int k)
 {
    RowMatrixXd U;
-   if(n==1) { U << 1.; return U; }      // See Judd 1963, Eqn 5-13. with U^k=V^k/sqrt(2k+1)
-// if(n==(4*e_l+1)) { sMat<double> U(1,1); U(0,0) = -1.; return U; }  // Error! Removed 21.11.10 After checking with Carnall paper.
-   if(e_l!=P&&e_l!=D&&e_l!=F) { std::cerr << "racah_Umat(): Only p-, d- and f- configurations are implemented.\n"; exit(EXIT_FAILURE); }
-   fconf conf(n,e_l);
-   fconf confp(n-1,e_l);
+   if(m_n==1) { U << 1.; return U; }      // See Judd 1963, Eqn 5-13. with U^k=V^k/sqrt(2k+1)
+// if(n==(4*m_l+1)) { sMat<double> U(1,1); U(0,0) = -1.; return U; }  // Error! Removed 21.11.10 After checking with Carnall paper.
+   if(m_l!=P&&m_l!=D&&m_l!=F) { std::cerr << "racah_Umat(): Only p-, d- and f- configurations are implemented.\n"; exit(EXIT_FAILURE); }
+   fconf conf(m_n, m_l);
+   fconf confp(m_n-1, m_l);
    int num_states = (int)conf.states.size();
    std::vector<cfpls> cfpsi,cfpsj;
    int i,j,ii,jj,isz,jsz;
    double sumcfp,noncfpprod;
    U = RowMatrixXd::Zero(num_states, num_states);
-// if(k>e_l*2) return U;                      // Condition from reduced matrix element
+// if(k>m_l*2) return U;                      // Condition from reduced matrix element
 
    for(i=0; i<num_states; i++)
    {
-      switch(e_l) {
-         case P: cfpsi = racah_parents(n,conf.states[i].S2,conf.states[i].L); break;
-         case D: cfpsi = racah_parents(n,conf.states[i].v,conf.states[i].S2,conf.states[i].L); break;
-	 default:cfpsi = racah_parents(n,conf.states[i].v,conf.states[i].U,conf.states[i].S2,conf.states[i].L);  }
+      switch(m_l) {
+         case P: cfpsi = racah_parents(m_n,conf.states[i].S2,conf.states[i].L); break;
+         case D: cfpsi = racah_parents(m_n,conf.states[i].v,conf.states[i].S2,conf.states[i].L); break;
+      default:cfpsi = racah_parents(m_n,conf.states[i].v,conf.states[i].U,conf.states[i].S2,conf.states[i].L);  }
       for(j=i; j<num_states; j++)
       {
          if(abs(abs(conf.states[i].L)-abs(conf.states[j].L))>k) continue;
          if(conf.states[i].S2==conf.states[j].S2)
          {
-            switch(e_l) {
-               case P: cfpsj = racah_parents(n,conf.states[j].S2,conf.states[j].L); break;
-               case D: cfpsj = racah_parents(n,conf.states[j].v,conf.states[j].S2,conf.states[j].L); break;
-	       default:cfpsj = racah_parents(n,conf.states[j].v,conf.states[j].U,conf.states[j].S2,conf.states[j].L);  }
+            switch(m_l) {
+               case P: cfpsj = racah_parents(m_n,conf.states[j].S2,conf.states[j].L); break;
+               case D: cfpsj = racah_parents(m_n,conf.states[j].v,conf.states[j].S2,conf.states[j].L); break;
+            default:cfpsj = racah_parents(m_n,conf.states[j].v,conf.states[j].U,conf.states[j].S2,conf.states[j].L);  }
             sumcfp = 0.; 
-//          noncfpprod = pow(-1.,-(double)e_l-abs(conf.states[j].L)) * sqrt( (2.*abs(conf.states[i].L)+1.)*(2.*abs(conf.states[j].L)+1.) );
+//          noncfpprod = pow(-1.,-(double)m_l-abs(conf.states[j].L)) * sqrt( (2.*abs(conf.states[i].L)+1.)*(2.*abs(conf.states[j].L)+1.) );
             noncfpprod =                                               sqrt( (2.*abs(conf.states[i].L)+1.)*(2.*abs(conf.states[j].L)+1.) );
             isz = (int)cfpsi.size(); jsz = (int)cfpsj.size();
             for(ii=0; ii<isz; ii++)
                for(jj=0; jj<jsz; jj++)
                   if(cfpsi[ii].ind==cfpsj[jj].ind)
-//                   sumcfp += m_racah.racahW(e_l*2,abs(conf.states[i].L)*2,e_l*2,abs(conf.states[j].L)*2,abs(confp.states[cfpsi[ii].ind].L)*2,k*2)
+//                   sumcfp += m_racah.racahW(m_l*2,abs(conf.states[i].L)*2,m_l*2,abs(conf.states[j].L)*2,abs(confp.states[cfpsi[ii].ind].L)*2,k*2)
 //                             * cfpsi[ii].cfp * cfpsj[jj].cfp * pow(-1.,(double)abs(confp.states[cfpsi[ii].ind].L)+k) * noncfpprod;
-                     sumcfp += pow(-1.,(double)abs(confp.states[cfpsi[ii].ind].L)+abs(conf.states[i].L)+k+e_l)
-                               * m_racah.sixj(2*abs(conf.states[j].L),2*k,2*abs(conf.states[i].L),2*e_l,2*abs(confp.states[cfpsi[ii].ind].L),2*e_l)
+                     sumcfp += pow(-1.,(double)abs(confp.states[cfpsi[ii].ind].L)+abs(conf.states[i].L)+k+m_l)
+                               * m_racah.sixj(2*abs(conf.states[j].L),2*k,2*abs(conf.states[i].L),2*m_l,2*abs(confp.states[cfpsi[ii].ind].L),2*m_l)
                                * cfpsi[ii].cfp * cfpsj[jj].cfp * noncfpprod;
             if(fabs(sumcfp)!=0.) 
             {
-             //if(n>(2*e_l+1)) sumcfp = -sumcfp; // Phase difference: [4l+2-n] = -(-1)^K [n] 
-               U(i,j) = n * sumcfp;
-               if(i!=j) U(j,i) = pow(-1.,abs(conf.states[i].L)-conf.states[i].S2/2.-abs(conf.states[j].L)+conf.states[j].S2/2.) * n * sumcfp;
+             //if(n>(2*m_l+1)) sumcfp = -sumcfp; // Phase difference: [4l+2-n] = -(-1)^K [n] 
+               U(i,j) = m_n * sumcfp;
+               if(i!=j) U(j,i) = pow(-1.,abs(conf.states[i].L)-conf.states[i].S2/2.-abs(conf.states[j].L)+conf.states[j].S2/2.) * m_n * sumcfp;
             }
          }
       }
@@ -158,12 +156,12 @@ RowMatrixXd ic1ion::racah_Umat(int n, int k, orbital e_l)
 // --------------------------------------------------------------------------------------------------------------- //
 // Calculates the matrix elements of the tensor operators U^k_q which describes (amongst other things) the CF.
 // --------------------------------------------------------------------------------------------------------------- //
-RowMatrixXd ic1ion::racah_ukq(int n, int k, int q, orbital e_l)
+RowMatrixXd ic1ion::racah_ukq(int k, int q)
 {
-   fconf conf(n,e_l);
+   fconf conf(m_n, m_l);
    int num_states = (int)conf.states.size();
- //int nn = n; if(nn>(2*e_l+1)) n = 4*e_l+2-n; 
-   RowMatrixXd redmat = racah_Umat(n,k,e_l);
+ //int nn = n; if(nn>(2*m_l+1)) n = 4*m_l+2-n; 
+   RowMatrixXd redmat = racah_Umat(k);
    int i,j,m,ns=0;
    int j2min,j2max;
    std::vector<int> L2,S2,J2,Jz2,irm;
@@ -182,7 +180,7 @@ RowMatrixXd ic1ion::racah_ukq(int n, int k, int q, orbital e_l)
             irm.push_back(i);
             J2.push_back(j);
             Jz2.push_back(m);
-	    ns++;
+            ns++;
          }
       }
    }
@@ -196,7 +194,7 @@ RowMatrixXd ic1ion::racah_ukq(int n, int k, int q, orbital e_l)
 //          rm = pow(-1.,(S2[i]-L2[i]-J2[j])/2.+k) * sqrt((J2[i]+1.)*(J2[j]+1.)) * m_racah.racahW(L2[i],J2[i],L2[j],J2[j],S2[i],2*k) * redmat(irm[i],irm[j]);
             rm = pow(-1.,(S2[i]+L2[j]+J2[i])/2.+k) * sqrt((J2[i]+1.)*(J2[j]+1.)) *   m_racah.sixj(J2[j],2*k,J2[i],L2[i],S2[i],L2[j]) * redmat(irm[i],irm[j]); // changed MR 26.1.10
 //          rm = pow(-1.,(S2[i]-L2[i]-J2[j])/2.+k) * sqrt((J2[i]+1.)*(J2[j]+1.)) * m_racah.racahW(L2[i],J2[i],L2[j],J2[j],S2[i],2*k) * redmat(irm[i],irm[j]);
-          //if(nn>(2*e_l+1)) rm = -rm;
+          //if(nn>(2*m_l+1)) rm = -rm;
 //          Ukq(i,j) = pow(-1.,(J2[i]+Jz2[i])/2.+k+q) * rm * m_racah.wigner(J2[i],J2[j],0-Jz2[i],Jz2[j],2*k,-2*q) / sqrt(2.*k+1.);
 //          Ukq(i,j) = pow(-1.,(J2[i]-Jz2[i])/2.) * m_racah.threej(J2[j],2*k,J2[i],-Jz2[j],2*q,Jz2[i]) * rm; // changed MR 26.1.10
 //          Ukq(i,j) = pow(-1.,(J2[i]+Jz2[i])/2.+k  ) * rm * m_racah.wigner(J2[i],J2[j],0-Jz2[i],Jz2[j],2*k,-2*q) / sqrt(2.*k+1.);
@@ -211,12 +209,12 @@ RowMatrixXd ic1ion::racah_ukq(int n, int k, int q, orbital e_l)
 // --------------------------------------------------------------------------------------------------------------- //
 // Calculates the matrix elements of the tensor operators U^k in the |LSJ> basis
 // --------------------------------------------------------------------------------------------------------------- //
-RowMatrixXd ic1ion::racah_uJ(int n, int k, orbital e_l)
+RowMatrixXd ic1ion::racah_uJ(int k)
 {
-   fconf conf(n,e_l);
+   fconf conf(m_n, m_l);
    int num_states = (int)conf.states.size();
-// int nn = n; if(nn>(2*e_l+1)) n = 4*e_l+2-n; 
-   RowMatrixXd redmat = racah_Umat(n,k,e_l);
+// int nn = n; if(nn>(2*m_l+1)) n = 4*m_l+2-n; 
+   RowMatrixXd redmat = racah_Umat(k);
    int i,j,ns=0;
    int j2min,j2max;
    std::vector<int> L2,S2,J2,irm;
@@ -243,7 +241,7 @@ RowMatrixXd ic1ion::racah_uJ(int n, int k, orbital e_l)
          {
 //          Ukq(i,j) = pow(-1.,(S2[i]+L2[i]+J2[j])/2.+k) * sqrt((J2[i]+1.)*(J2[j]+1.)) * m_racah.sixj(L2[i],J2[i],S2[i],J2[j],L2[j],2*k) * redmat(irm[i],irm[j]);
             Ukq(i,j) = pow(-1.,(S2[i]+L2[j]+J2[i])/2.+k) * sqrt((J2[i]+1.)*(J2[j]+1.)) * m_racah.sixj(J2[j],2*k,J2[i],L2[i],S2[i],L2[j]) * redmat(irm[i],irm[j]);
-         // if(nn>(2*e_l+1)) Ukq(i,j) = -Ukq(i,j);
+         // if(nn>(2*m_l+1)) Ukq(i,j) = -Ukq(i,j);
          }
 
    return Ukq;
@@ -253,7 +251,7 @@ RowMatrixXd ic1ion::racah_uJ(int n, int k, orbital e_l)
 // --------------------------------------------------------------------------------------------------------------- //
 // Calculates the matrix elements of U_k^q by a fast method -- currently buggy!
 // --------------------------------------------------------------------------------------------------------------- //
-sMat<double> fast_ukq(int n, int k, int q, orbital e_l)
+sMat<double> fast_ukq(int n, int k, int q, orbital m_l)
 {
    // The function calculates first the reduce matrix elements <vULS||U^k||v'U'L'S> using the racah_Umat function. 
    // It then only calculates the subsequent J- and mJ-dependent matrix elements for the values of the reduced matrix
@@ -265,9 +263,9 @@ sMat<double> fast_ukq(int n, int k, int q, orbital e_l)
    // The equations to calculate the matrix elements may be found in Elliot, Judd, Runciman, Proc. R. Soc. Lon. A
    // vol. 240, no. 1223, pp. 509-523, equations 25(mJ-dependent part), 26(J-dependent part), 27(reduced m.e.).
 
-   fconf conf(n,e_l);
+   fconf conf(n,m_l);
    int num_states = (int)conf.states.size();
-   sMat<double> redmat = racah_Umat(n,k,e_l);
+   sMat<double> redmat = racah_Umat(n,k,m_l);
    std::vector< std::vector<int> > nz = redmat.find();
    int sz = (int)nz.size();
    int i,j,ns,minJ2,maxJ2,valJ,valJ_i,valJ_j;
@@ -349,12 +347,12 @@ sMat<double> fast_ukq(int n, int k, int q, orbital e_l)
 // --------------------------------------------------------------------------------------------------------------- //
 // Calculates the magnetic moment operator matrix mu_{x,y,z} = L + gS, in the |vSLJM> basis
 // --------------------------------------------------------------------------------------------------------------- //
-sMat<double> racah_mumat(int n, int q, orbital e_l)
+sMat<double> racah_mumat(int n, int q, orbital m_l)
 {
    const double g_s = 2.0023193043622;   // electronic g-factor, from NIST - http://physics.nist.gov/cuu/Constants/
 
-   if(e_l!=S && e_l!=P && e_l!=D && e_l!=F) { std::cerr << "racah_mumat(): Only s-, p-, d- and f- configurations are implemented.\n"; }
-   fconf conf(n,e_l);
+   if(m_l!=S && m_l!=P && m_l!=D && m_l!=F) { std::cerr << "racah_mumat(): Only s-, p-, d- and f- configurations are implemented.\n"; }
+   fconf conf(n,m_l);
    int num_states = (int)conf.states.size();
    int i,j,ns,minJ2,maxJ2,valJ,valJ_i,valJ_j;
    int j2min,j2max,j2pmin,j2pmax,count,countp;
@@ -395,8 +393,8 @@ sMat<double> racah_mumat(int n, int q, orbital e_l)
       L2 = abs(conf.states[i].L)*2; L2p = abs(conf.states[j].L)*2; S2 = conf.states[i].S2; S2p = conf.states[j].S2;
 
       if(S2!=S2p || L2!=L2p) continue;
-      if(e_l>1 && conf.states[i].v!=conf.states[j].v) continue;
-      if(e_l>2 && conf.states[i].U!=conf.states[j].U) continue;
+      if(m_l>1 && conf.states[i].v!=conf.states[j].v) continue;
+      if(m_l>2 && conf.states[i].U!=conf.states[j].U) continue;
       
       // Caculate the J-dependent reduced matrix elements 
       j2min = abs(L2-S2); j2max = L2+S2; j2pmin = abs(L2p-S2); j2pmax = L2p+S2;
@@ -406,8 +404,8 @@ sMat<double> racah_mumat(int n, int q, orbital e_l)
          countp = 0; valJ_i = (J2-minJ2)/2;
          for(J2p=j2pmin; J2p<=j2pmax; J2p+=2)
          {
-	    Lrm = pow(-1.,(S2p+L2p+J2)/2.)  * sqrt((L2p+1.)*(J2+1.)*(J2p+1.)*(L2p/2.)*(L2p/2.+1.)) * sixj(L2,J2,S2p,J2p,L2p,2);
-	    Srm = pow(-1.,(S2p+L2p+J2p)/2.) * sqrt((S2p+1.)*(J2+1.)*(J2p+1.)*(S2p/2.)*(S2p/2.+1.)) * sixj(S2,J2,L2p,J2p,S2p,2);
+            Lrm = pow(-1.,(S2p+L2p+J2)/2.)  * sqrt((L2p+1.)*(J2+1.)*(J2p+1.)*(L2p/2.)*(L2p/2.+1.)) * sixj(L2,J2,S2p,J2p,L2p,2);
+            Srm = pow(-1.,(S2p+L2p+J2p)/2.) * sqrt((S2p+1.)*(J2+1.)*(J2p+1.)*(S2p/2.)*(S2p/2.+1.)) * sixj(S2,J2,L2p,J2p,S2p,2);
 //          Lrm /= pow(-1.,L2p/2.)*(L2p+1.); Srm /= pow(-1.,S2p/2.)*(S2p+1.);
 //          Lrm /= pow(-1.,L2p/2.); Srm /= pow(-1.,S2p/2.);
 //          Lrm /= (L2p+1.); Srm /= (S2p+1.);
@@ -442,10 +440,10 @@ sMat<double> racah_mumat(int n, int q, orbital e_l)
 // --------------------------------------------------------------------------------------------------------------- //
 // Calculates the magnetic moment operator as separate matrices, L_{x,y,z} and S_{x,y,z}, in the |vSLJM> basis
 // --------------------------------------------------------------------------------------------------------------- //
-void racah_mumat(int n, int q, sMat<double> &L1q, sMat<double> &S1q, orbital e_l)
+void racah_mumat(int n, int q, sMat<double> &L1q, sMat<double> &S1q, orbital m_l)
 {
-   if(e_l!=S && e_l!=P && e_l!=D && e_l!=F) { std::cerr << "racah_mumat(): Only s-, p-, d- and f- configurations are implemented.\n"; }
-   fconf conf(n,e_l);
+   if(m_l!=S && m_l!=P && m_l!=D && m_l!=F) { std::cerr << "racah_mumat(): Only s-, p-, d- and f- configurations are implemented.\n"; }
+   fconf conf(n,m_l);
    int num_states = (int)conf.states.size();
    int i,j,ns,minJ2,maxJ2,valJ,valJ_i,valJ_j;
    int j2min,j2max,j2pmin,j2pmax,count,countp;
@@ -486,8 +484,8 @@ void racah_mumat(int n, int q, sMat<double> &L1q, sMat<double> &S1q, orbital e_l
       L2 = abs(conf.states[i].L)*2; L2p = abs(conf.states[j].L)*2; S2 = conf.states[i].S2; S2p = conf.states[j].S2;
 
       if(S2!=S2p || L2!=L2p) continue;
-      if(e_l>1 && conf.states[i].v!=conf.states[j].v) continue;
-      if(e_l>2 && conf.states[i].U!=conf.states[j].U) continue;
+      if(m_l>1 && conf.states[i].v!=conf.states[j].v) continue;
+      if(m_l>2 && conf.states[i].U!=conf.states[j].U) continue;
       
       // Caculate the J-dependent reduced matrix elements 
       j2min = abs(L2-S2); j2max = L2+S2; j2pmin = abs(L2p-S2); j2pmax = L2p+S2;
@@ -532,10 +530,10 @@ void racah_mumat(int n, int q, sMat<double> &L1q, sMat<double> &S1q, orbital e_l
 // --------------------------------------------------------------------------------------------------------------- //
 // Calculates the magnetic moment operator as separate matrices, L_{x,y,z} and S_{x,y,z}, in the |vSLJM> basis
 // --------------------------------------------------------------------------------------------------------------- //
-void chanlam_mumat(int n, int q, sMat<double> &mu, orbital e_l)
+void chanlam_mumat(int n, int q, sMat<double> &mu, orbital m_l)
 {
-   if(e_l!=S && e_l!=P && e_l!=D && e_l!=F) { std::cerr << "racah_mumat(): Only s-, p-, d- and f- configurations are implemented.\n"; }
-   fconf conf(n,e_l);
+   if(m_l!=S && m_l!=P && m_l!=D && m_l!=F) { std::cerr << "racah_mumat(): Only s-, p-, d- and f- configurations are implemented.\n"; }
+   fconf conf(n,m_l);
    int num_states = (int)conf.states.size();
    int i,j,ns,k,j2min,j2max,L2,L2p,S2,S2p;
    std::vector<int> index, J2, Jz2;
@@ -561,14 +559,14 @@ void chanlam_mumat(int n, int q, sMat<double> &mu, orbital e_l)
          L2 = abs(conf.states[index[i]].L)*2; L2p = abs(conf.states[index[j]].L)*2; S2 = conf.states[index[i]].S2; S2p = conf.states[index[j]].S2;
 
          if(S2!=S2p || L2!=L2p) continue;
-         if(e_l>1 && conf.states[i].v!=conf.states[j].v) continue;
-         if(e_l>2 && conf.states[i].U!=conf.states[j].U) continue;
+         if(m_l>1 && conf.states[i].v!=conf.states[j].v) continue;
+         if(m_l>2 && conf.states[i].U!=conf.states[j].U) continue;
       
          J = J2[i]/2.; M=Jz2[i]/2.; denom = (J*J*(2*J+1.)*(2*J-1.));
          if(fabs(denom)<DBL_EPSILON) f=0.; else f = sqrt( ((S2+L2+2*J)/2.+1)*((S2+L2-2*J)/2.+1)*((S2+2*J-L2)/2.)*((L2+2*J-S2)/2.) / denom );
          denom = ((J+1)*(J+1)*(2*(J+1)+1)*(2*(J+1)-1));
          if(fabs(denom)<DBL_EPSILON) fp=0.; else fp = sqrt( ((S2+L2)/2.+(J+1)+1)*((S2+L2)/2.-(J+1)+1)*((S2-L2)/2.+(J+1))*((L2-S2)/2.+(J+1)) / denom );
-	 if (J2[i]!=0) g = 1 + (g_s-1) * (J*(J+1) - (L2/2.)*((L2/2.)+1) + (S2/2.)*((S2/2.)+1)) / (2*J*(J+1)); else g = 0;
+         if (J2[i]!=0) g = 1 + (g_s-1) * (J*(J+1) - (L2/2.)*((L2/2.)+1) + (S2/2.)*((S2/2.)+1)) / (2*J*(J+1)); else g = 0;
 
          if(J2[i]==J2[j])
          {
