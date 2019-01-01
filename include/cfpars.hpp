@@ -71,7 +71,7 @@ class cfpars {
         cfpars();
         cfpars(const int J2);
         cfpars(const double J);
-        cfpars(const std::string &ionname);
+        cfpars(const std::string &ionname, bool ignore_unknown=false);
     
 }; // class cfpars
 

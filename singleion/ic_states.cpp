@@ -226,7 +226,6 @@ int racah_wtov(int S2, qR7 W)
    return v;
 }
 
-
 // --------------------------------------------------------------------------------------------------------------- //
 // Member functions and overloaded operators for the fconf class, which represents a particular l^n configuration
 // --------------------------------------------------------------------------------------------------------------- //

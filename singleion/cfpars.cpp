@@ -279,12 +279,17 @@ cfpars::cfpars(const double J) {
     m_convfact = lambda;
 }
 
-cfpars::cfpars(const std::string &ionname) {
+cfpars::cfpars(const std::string &ionname, bool ignore_unknown) {
 	std::string ion = ionname;
 	std::transform(ion.begin(), ion.end(), ion.begin(), [](unsigned char c) { return std::tolower(c); });
     auto ion_number = ION_NUMBER_MAP.find(ion);
     if (ion_number == ION_NUMBER_MAP.end()) {
-        throw std::runtime_error("Unknown ion");
+        if (ignore_unknown) {
+            m_convfact = lambda;
+            return;
+        } else {
+            throw std::runtime_error("Unknown ion");
+        }
     }
     m_ionname = ion;
     double n = ion_number->second;

@@ -289,7 +289,7 @@ RowMatrixXd racah_e2(int n)
    int i,j,sign,S2,v;
    fconf conf(n);
    int num_states = (int)conf.states.size();
-   RowMatrixXd e2(num_states, num_states);
+   RowMatrixXd e2 = RowMatrixXd::Zero(num_states, num_states);
    double elem;
    
    for(j=0; j<num_states; j++)
@@ -574,7 +574,7 @@ RowMatrixXd racah_e3(int n)
    qR7 W;
    fconf conf(n);
    int num_states = (int)conf.states.size();
-   RowMatrixXd e3(num_states, num_states);
+   RowMatrixXd e3 = RowMatrixXd::Zero(num_states, num_states);
    double e;
    
    for(j=0; j<num_states; j++)

@@ -8,6 +8,7 @@
 
 #include "cfpars.hpp"
 #include "cf1ion.hpp"
+#include "ic1ion.hpp"
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
 
@@ -110,6 +111,12 @@ cf1ion *cf1ion_init(py::args args, py::kwargs kwargs) {
     return cls;
 }
 
+ic1ion *ic1ion_init(py::args args, py::kwargs kwargs) {
+    ic1ion *cls = new ic1ion;
+    cf_parse(static_cast<cfpars*>(cls), args, kwargs);
+    return cls;
+}
+
 } // Anonymous namespace
 
 PYBIND11_MODULE(libMcPhase, m) {
@@ -180,6 +187,14 @@ PYBIND11_MODULE(libMcPhase, m) {
         .def(py::init(&cf1ion_init), cfpars_init_str)
         .def("hamiltonian", &cf1ion::hamiltonian, "the crystal field Hamiltonian", "upper"_a=true)
         .def("eigensystem", &cf1ion::eigensystem, "the eigenvectors and eigenvalues of the crystal field Hamiltonian");
+
+    py::class_<ic1ion, cfpars> pyic1ion(m, "ic1ion");
+    
+    pyic1ion.def(py::init<>())
+        .def(py::init<const std::string &>(), py::arg("ionname"))
+        .def(py::init(&ic1ion_init), cfpars_init_str)
+        .def("hamiltonian", &ic1ion::hamiltonian, "the crystal field Hamiltonian")
+        .def("eigensystem", &ic1ion::eigensystem, "the eigenvectors and eigenvalues of the crystal field Hamiltonian");
 
 }
 

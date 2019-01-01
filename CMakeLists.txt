@@ -26,7 +26,7 @@ include_directories(include)
 
 add_library(singleion OBJECT singleion/cfpars.cpp singleion/cf1ion.cpp singleion/racah.cpp
                              singleion/ic_states.cpp singleion/ic_cfp.cpp singleion/ic_coulomb.cpp
-                             singleion/ic_socf.cpp)
+                             singleion/ic_socf.cpp singleion/ic1ion.cpp)
 set_property(TARGET singleion PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 add_subdirectory(pythonapi)

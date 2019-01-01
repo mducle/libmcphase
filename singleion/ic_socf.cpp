@@ -32,7 +32,7 @@ RowMatrixXd ic1ion::racah_so()
    std::vector<cfpls> cfpsi,cfpsj;
    int i,j,k,l,isz,jsz;
    double sumcfp;
-   RowMatrixXd so(num_states, num_states);
+   RowMatrixXd so = RowMatrixXd::Zero(num_states, num_states);
 
    // Single electron configurations are programed directly in
    if(m_n==1)
@@ -185,7 +185,7 @@ RowMatrixXd ic1ion::racah_ukq(int k, int q)
       }
    }
 
-   RowMatrixXd Ukq(ns, ns);
+   RowMatrixXd Ukq = RowMatrixXd::Zero(ns, ns);
 
    for(i=0; i<ns; i++)
       for(j=0; j<ns; j++)
@@ -233,7 +233,7 @@ RowMatrixXd ic1ion::racah_uJ(int k)
       }
    }
 
-   RowMatrixXd Ukq(ns,ns);
+   RowMatrixXd Ukq = RowMatrixXd::Zero(ns,ns);
 
    for(i=0; i<ns; i++)
       for(j=0; j<ns; j++)

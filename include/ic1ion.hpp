@@ -34,6 +34,7 @@ class ic1ion : public cfpars {
         double m_xi;                                          // Internal spin-orbit parameters for calculations
         std::vector<double> m_alpha;                          // Internal CI parameters in meV for calculations
 		
+    public:
 		// Declarations for functions in so_cf.cpp
 		RowMatrixXd racah_so();                                // Calculates the spin-orbit matrix
 		RowMatrixXd racah_Umat(int k);                         // Calculates the reduced matrix U^k
@@ -53,9 +54,9 @@ class ic1ion : public cfpars {
 		RowMatrixXcd balcar_Mq(int xyz,int K,int Q);           // Driver for calculation of density coeff.
         // Declarations for functions in ic1ion.cpp
         void getfromionname(const std::string &ionname);
-        std::vector<double> stev_thetak();
+        void calc_stevfact();
+        RowMatrixXd ic_Hcso();
 
-    public:
         // Setters
         virtual void set_unit(const Units newunit);
         virtual void set_type(const Type newtype);
@@ -66,9 +67,9 @@ class ic1ion : public cfpars {
         ic1ion() : cfpars() {};
         ic1ion(const int J2) = delete;                        // ic1ion should be constructed from ion name only.
         ic1ion(const double J) = delete;
-        ic1ion(const std::string &ion) : cfpars(ion) { getfromionname(ion); };
+        ic1ion(const std::string &ion) : cfpars(ion, true) { getfromionname(ion); };
         // Methods
-        RowMatrixXcd hamiltonian(bool upper=true);
+        RowMatrixXcd hamiltonian();
         std::tuple<RowMatrixXcd, VectorXd> eigensystem();
 
 }; // class ic1ion
