@@ -18,6 +18,14 @@ namespace libMcPhase {
 #define F425    0.14218                    // Ratios of F_4/F_2 slater integrals for 5f hydrogenic wavefunctions
 #define F625    0.016104                   // Ratios of F_6/F_2 slater integrals for 5f hydrogenic wavefunctions
 
+// Conversion factors for different energy units[from][to], order: [meV, cm, K].
+static const std::array<double, 3> ICENERGYCONV = { {0.1239841973, 1., 1.4387773587} };
+// Helper vectors for indexing into CF parameters array
+static const std::array<std::array<int, 4>, 12> idq = { {{2,2,0,4}, {2,1,1,3}, {4,4,5,13}, {4,3,6,12}, {4,2,7,11}, {4,1,8,10},
+                                                        {6,6,14,26}, {6,5,15,25}, {6,4,16,24}, {6,3,17,23}, {6,2,18,22}, {6,1,19,21}} };
+static const std::array<std::array<int, 2>, 3> idq0 = { {{2,2}, {4,9}, {6,20}} };
+static const std::array<int, 27> id2l = { {0,0,0,0,0, 1,1,1,1,1,1,1,1,1, 2,2,2,2,2,2,2,2,2,2,2,2,2} };
+
 // --------------------------------------------------------------------------------------------------------------- //
 // Setter/getter methods for cfpars class
 // --------------------------------------------------------------------------------------------------------------- //
@@ -34,13 +42,28 @@ void ic1ion::set(int l, int m, double val) {
 }
 
 void ic1ion::set_unit(cfpars::Units const newunit) {
-    cfpars::set_unit(newunit);
+    if (m_unit == newunit)
+        return;
+    m_unit = newunit;
+    m_econv = ICENERGYCONV[(int)m_unit];
+    for (int id=0; id<27; id++) {
+        m_Bo[id] = m_Bi[id] * m_econv * m_convfact[id];
+    }
     m_ham_calc = false;
     m_ev_calc = false;
+    m_xi = m_xi_i * m_econv;
+    for (int ii=0; ii<4; ii++) {
+        m_F[ii] = m_F_i[ii] * m_econv;
+        m_alpha[ii] = m_alpha_i[ii] * m_econv;
+    }
 }
 
 void ic1ion::set_type(const cfpars::Type newtype) {
     cfpars::set_type(newtype);
+    for (int id=0; id<27; id++) {
+        m_convfact[id] *= m_stevfact[id2l[id]];
+        m_Bi[id] *= m_stevfact[id2l[id]];
+    }
     m_ham_calc = false;
     m_ev_calc = false;
 }
@@ -48,6 +71,10 @@ void ic1ion::set_type(const cfpars::Type newtype) {
 void ic1ion::set_name(const std::string &ionname) {
     cfpars::set_name(ionname);
     getfromionname(ionname);
+    for (int id=0; id<27; id++) {
+        m_convfact[id] *= m_stevfact[id2l[id]];
+        m_Bi[id] *= m_stevfact[id2l[id]];
+    }
     m_ham_calc = false;
     m_ev_calc = false;
 }
@@ -57,6 +84,7 @@ ic1ion::ic1ion(const std::string &ion) {
         cfpars::getfromionname(ion);
     } catch(const std::runtime_error &e) {}
     getfromionname(ion);
+    m_econv = 0.1239841973;
 }
 
 // --------------------------------------------------------------------------------------------------------------- //
@@ -79,10 +107,9 @@ void ic1ion::getfromionname(const std::string &ionname)
 {
     int n,i; 
     orbital l = (orbital)3;    // Defaults for f-electrons
-    std::vector<double> F,a;
+    std::array<double, 4> F{}, a{};
     double xi = 0.;
     double B=0.,C=0.; bool flg3d = false, flgBC = false; int S2;
-    F.assign(4,0.); a.assign(3,0.);
     std::string ion = ionname;
     std::transform(ion.begin(), ion.end(), ion.begin(), [](unsigned char c) { return std::tolower(c); });
     ion.erase(ion.find("+")+1);
@@ -226,9 +253,14 @@ void ic1ion::getfromionname(const std::string &ionname)
 
     m_n = n; 
     m_l = l;
-    m_F = F;
-    m_xi = xi;
-    m_alpha = a;
+    m_xi_i = xi;
+    m_xi = m_xi_i * m_econv;
+    for (int ii=0; ii<4; ii++) {
+        m_F_i[ii] = F[ii];
+        m_alpha_i[ii] = a[ii];
+        m_F[ii] = F[ii] * m_econv;
+        m_alpha[ii] = a[ii] * m_econv;
+    }
     m_ionname = ion;
     calc_stevfact();
 }
@@ -283,9 +315,9 @@ void ic1ion::calc_stevfact()
         for(k=0; k<3; k++)
         {
             sumcfp = 0.;
-            for(ic=0; ic<(int)cfps.size(); ic++) 
+            for(ic=0; ic<(int)cfps.size(); ic++)
                 sumcfp += m_racah.racahW(m_l*2,Li*2,m_l*2,Li*2,abs(confp.states[cfps[ic].ind].L)*2,(k+1)*4) * cfps[ic].cfp*cfps[ic].cfp 
-                    pow(-1.,(double)abs(confp.states[cfps[ic].ind].L)+2.*(k+1.)) * noncfpprod;
+                    * pow(-1.,(double)abs(confp.states[cfps[ic].ind].L)+2.*(k+1.)) * noncfpprod;
             m_stevfact[k] *= sqrt(m_racah.f_quotient(J2-2*(k+1), J2+2*(k+1)+1)) * m_n * sumcfp * pow(-1.,2.*(k+1.)+Li+(S2+J2)/2.) 
                           * (J2+1) * m_racah.sixj(Li*2,J2,S2,J2,Li*2,4*(k+1));
         }
@@ -348,7 +380,7 @@ void convH2H(RowMatrixXcd &Hin, RowMatrixXcd &Hout, int lnIn, int lnOut, std::ve
 RowMatrixXd ic1ion::ic_Hcso()
 {
    RowMatrixXd emat, H_so = racah_so();
-   std::vector<double> E;
+   std::array<double, 4> E;
    int nn = m_n; if(nn>(2*m_l+1)) nn = 4*m_l+2-nn; 
 
    switch(m_l)
@@ -390,7 +422,7 @@ RowMatrixXd ic1ion::ic_Hcso()
 
 RowMatrixXd ic1ion::emat() {
    RowMatrixXd emat;
-   std::vector<double> E;
+   std::array<double, 4> E;
    switch(m_l)
    {
       case F: 
@@ -446,7 +478,7 @@ RowMatrixXcd ic1ion::hamiltonian()
  //if(pars.B.check()==false) { std::cerr << "ic_hmltn(): Internal Wybourne and external CF parameters do not agree. Check sipf.\n"; exit(0); }
 
    RowMatrixXd Upq, Umq, emat, H_so = racah_so();
-   std::vector<double> E;
+   std::array<double, 4> E;
    double p = pow(-1.,(double)abs(m_l))*(2.*m_l+1.);
    double icfact[] = {0, 0, p*m_racah.threej(2*m_l,  4, 2*m_l, 0, 0, 0),
                          0, p*m_racah.threej(2*m_l,  8, 2*m_l, 0, 0, 0),
@@ -524,61 +556,83 @@ RowMatrixXcd ic1ion::hamiltonian()
 //
 #define NSTR(K,Q) nstr[1] = K+48; nstr[2] = Q+48; nstr[3] = 0
 #define MSTR(K,Q) nstr[1] = K+48; nstr[2] = 109;  nstr[3] = Q+48; nstr[4] = 0
-   for(k=2; k<=6; k+=2)
-      for(iq=0; iq<(2*k+1); iq++)           //  racah_ukq is slightly faster as it involves less operations. However,
-      {                                     //     it needs more memory as it stores zero-value entries as well.
-         q = iq-k;                          //  For n=5, it needs around 1G, or it hits cache (slow!), for n=6,7 it
-         if(get(k,q)!=0)                    //     needs around 3G. 
-         {                                  //  fast_ukq does slightly more operations, uses less memory as it only
-            if(q==0)                        //     calculates for nonzero reduced matrix elements. It needs around
-            {                               //     300Mb for n=5 and about 1.8G for n=6,7
-               //NSTR(k,0); 
-               //strcpy(filename,basename); strcat(filename,nstr); strcat(filename,".mm");
-               //Upq = mm_gin(filename);
-               //if(Upq.isempty())
-               //{
-                //if(n<6)
-                     Upq = racah_ukq(k,0);
-                //else
-                //   Upq = fast_ukq(n,k,0);
-                //  rmzeros(Upq); mm_gout(Upq,filename);
-               //}
-             /*if(nn>(2*e_l+1)) H_cf -= Upq * (pars.B(k,q)/icfact[k]); else*/ H_cf.real() += Upq * (get(k,q)*icfact[k]);
-            }
-            else
-            {
-               //NSTR(k,abs(q)); 
-               //strcpy(filename,basename); strcat(filename,nstr); strcat(filename,".mm");
-               //Upq = mm_gin(filename);
-               //if(Upq.isempty())
-               //{
-                /*if(n<6)*/Upq = racah_ukq(k,abs(q));
-                //else Upq = fast_ukq(n,k,abs(q));
-               //   rmzeros(Upq); mm_gout(Upq,filename);
-               //}
-               //MSTR(k,abs(q)); 
-               //strcpy(filename,basename); strcat(filename,nstr); strcat(filename,".mm");
-               //Umq = mm_gin(filename);
-               //if(Umq.isempty())
-               //{
-                /*if(n<6)*/Umq = racah_ukq(k,-abs(q));
-                //else Umq = fast_ukq(n,k,-abs(q));
-               //   rmzeros(Umq); mm_gout(Umq,filename);
-               //}
-               if(q<0)
-                /*if(nn>(2*e_l+1)) H_cfi-= (Upq - Umq*pow(-1.,q)) * (pars.B(k,q)/icfact[k]); 
-                  else   H_cfi+= (Upq - Umq*pow(-1.,q)) * (pars.B(k,q)/icfact[k]); changed MR 15.12.09 */
-                         //H_cfi+= (Umq - Upq*pow(-1.,q)) * (pars.B(k,q)*icfact[k]);
-                  H_cf.imag() += (Umq - Upq*pow(-1.,q)) * get(k,q) / icfact[k];
-               else
-                /*if(nn>(2*e_l+1)) H_cf -= (Upq + Umq*pow(-1.,q)) * (pars.B(k,q)/icfact[k]); 
-                  else*/ //H_cf += (Umq + Upq*pow(-1.,q)) * (pars.B(k,q)*icfact[k]); 
-                  H_cf.real() += (Umq + Upq*pow(-1.,q)) * get(k,q) / icfact[k];
-            }
-         }
-      }
+// for(k=2; k<=6; k+=2)
+//    for(iq=0; iq<(2*k+1); iq++)           //  racah_ukq is slightly faster as it involves less operations. However,
+//    {                                     //     it needs more memory as it stores zero-value entries as well.
+//       q = iq-k;                          //  For n=5, it needs around 1G, or it hits cache (slow!), for n=6,7 it
+//       if(get(k,q)!=0)                    //     needs around 3G. 
+//       {                                  //  fast_ukq does slightly more operations, uses less memory as it only
+//          if(q==0)                        //     calculates for nonzero reduced matrix elements. It needs around
+//          {                               //     300Mb for n=5 and about 1.8G for n=6,7
+//             //NSTR(k,0); 
+//             //strcpy(filename,basename); strcat(filename,nstr); strcat(filename,".mm");
+//             //Upq = mm_gin(filename);
+//             //if(Upq.isempty())
+//             //{
+//              //if(n<6)
+//                   Upq = racah_ukq(k,0);
+//              //else
+//              //   Upq = fast_ukq(n,k,0);
+//              //  rmzeros(Upq); mm_gout(Upq,filename);
+//             //}
+//           /*if(nn>(2*e_l+1)) H_cf -= Upq * (pars.B(k,q)/icfact[k]); else*/ H_cf.real() += Upq * (get(k,q)*icfact[k]);
+//          }
+//          else
+//          {
+//             //NSTR(k,abs(q)); 
+//             //strcpy(filename,basename); strcat(filename,nstr); strcat(filename,".mm");
+//             //Upq = mm_gin(filename);
+//             //if(Upq.isempty())
+//             //{
+//              /*if(n<6)*/Upq = racah_ukq(k,abs(q));
+//              //else Upq = fast_ukq(n,k,abs(q));
+//             //   rmzeros(Upq); mm_gout(Upq,filename);
+//             //}
+//             //MSTR(k,abs(q)); 
+//             //strcpy(filename,basename); strcat(filename,nstr); strcat(filename,".mm");
+//             //Umq = mm_gin(filename);
+//             //if(Umq.isempty())
+//             //{
+//              /*if(n<6)*/Umq = racah_ukq(k,-abs(q));
+//              //else Umq = fast_ukq(n,k,-abs(q));
+//             //   rmzeros(Umq); mm_gout(Umq,filename);
+//             //}
+//             if(q<0)
+//              /*if(nn>(2*e_l+1)) H_cfi-= (Upq - Umq*pow(-1.,q)) * (pars.B(k,q)/icfact[k]); 
+//                else   H_cfi+= (Upq - Umq*pow(-1.,q)) * (pars.B(k,q)/icfact[k]); changed MR 15.12.09 */
+//                       //H_cfi+= (Umq - Upq*pow(-1.,q)) * (pars.B(k,q)*icfact[k]);
+//                H_cf.imag() += (Umq - Upq*pow(-1.,q)) * get(k,q) / icfact[k];
+//             else
+//              /*if(nn>(2*e_l+1)) H_cf -= (Upq + Umq*pow(-1.,q)) * (pars.B(k,q)/icfact[k]); 
+//                else*/ //H_cf += (Umq + Upq*pow(-1.,q)) * (pars.B(k,q)*icfact[k]); 
+//                H_cf.real() += (Umq + Upq*pow(-1.,q)) * get(k,q) / icfact[k];
+//          }
+//       }
+//    }
+    // First the diagonal elements (q=0 terms)
+    for (auto iq: idq0) {
+        int k = iq[0], m = iq[1];
+        if (std::fabs(m_Bi[m]) > 1e-12) {
+            H_cf.real() += racah_ukq(k, 0) * (m_Bi[m] * m_econv * icfact[k]);
+        }
+    }
 
-   //H_cf += convH2H(H_so,icv2,cvSO2CF);// rmzeros(H_cf); rmzeros(H_cfi);
+    // Now the off-diagonal terms - using a helper vector defined globally above to index
+    for (auto iq: idq) {
+        int k = iq[0], q = iq[1], m = iq[2], p = iq[3];
+        if (std::fabs(m_Bi[m]) > 1e-12 || std::fabs(m_Bi[p]) > 1e-12) {
+            Upq = racah_ukq(k, abs(q));
+            Umq = racah_ukq(k, -abs(q));
+            if (std::fabs(m_Bi[m]) > 1e-12) {
+                H_cf.imag() += (Umq - Upq*pow(-1., q)) * (m_Bi[m] * m_econv * icfact[k]);
+            }
+            if (std::fabs(m_Bi[p]) > 1e-12) {
+                H_cf.real() += (Umq + Upq*pow(-1., q)) * (m_Bi[p] * m_econv * icfact[k]);
+            }
+        }
+    }
+
+   H_cf += convH2H(H_so,icv2,cvSO2CF);// rmzeros(H_cf); rmzeros(H_cfi);
 
  //ic_printheader(rmat,pars); mm_gout(H_cf,rmat);
  //ic_printheader(imat,pars); mm_gout(H_cfi,imat);

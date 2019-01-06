@@ -728,36 +728,36 @@ RowMatrixXd racah_emat(int n, double F0, double F2)
 //    For d-electrons to convert from Condon/Shortley F_k to Slater F^k: F^2=F_2*49 and F^4=F_4*441
 //    For p-electrons to convert from Condon/Shortley F_k to Slater F^k: F^2=F_2*25
 // --------------------------------------------------------------------------------------------------------------- //
-std::vector<double> racah_FtoE(std::vector<double> F)      // Converts from F_k to E
+std::array<double, 4> racah_FtoE(std::array<double, 4> F)      // Converts from F_k to E
 {
-   std::vector<double> E(4,0);
+   std::array<double, 4> E{};
    E[0] = ( F[0] - 10*F[1] -  33*F[2] -  286*F[3] );
    E[1] = (        70*F[1] + 231*F[2] + 2002*F[3] )/9.;
    E[2] = (           F[1] -   3*F[2] +    7*F[3] )/9.;
    E[3] = (         5*F[1] +   6*F[2] -   91*F[3] )/3.;
    return E;
 }
-std::vector<double> racah_EtoF(std::vector<double> E)      // Converts from E to F_k
+std::array<double, 4> racah_EtoF(std::array<double, 4> E)      // Converts from E to F_k
 {
-   std::vector<double> F(4,0);
+   std::array<double, 4> F{};
    F[0] = ( E[0] + 9*E[1]/7. );
    F[1] = (          E[1] + 143*E[2] + 11*E[3] )/42.;
    F[2] = (          E[1] - 130*E[2] +  4*E[3] )/77.;
    F[3] = (          E[1] +  35*E[2] -  7*E[3] )/462.;
    return E;
 }
-std::vector<double> racah_FtoF_k(std::vector<double> F)    // Converts from F^k to F_k
+std::array<double, 4> racah_FtoF_k(std::array<double, 4> F)    // Converts from F^k to F_k
 {
-   std::vector<double> F_k(4,0);
+   std::array<double, 4> F_k{};
    F_k[0] = F[0];
    F_k[1] = F[1]/225.;
    F_k[2] = F[2]/1089.;
    F_k[3] = F[3]/(184041./25);
    return F_k;
 }
-std::vector<double> racah_F_ktoF(std::vector<double> F_k)  // Converts from F_k to F^k
+std::array<double, 4> racah_F_ktoF(std::array<double, 4> F_k)  // Converts from F_k to F^k
 {
-   std::vector<double> F(4,0);
+   std::array<double, 4> F{};
    F[0] = F_k[0]; 
    F[1] = F_k[1]*225.; 
    F[2] = F_k[2]*1089.; 

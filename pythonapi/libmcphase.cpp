@@ -198,6 +198,7 @@ PYBIND11_MODULE(libMcPhase, m) {
         .def("racah_ukq", &ic1ion::racah_ukq, py::arg("k"), py::arg("q"))
         .def("racah_emat", &ic1ion::emat)
         .def("racah_ci", &ic1ion::ci)
+        .def("racahW", &ic1ion::racahW)
         .def("hamiltonian", &ic1ion::hamiltonian, "the crystal field Hamiltonian")
         .def("eigensystem", &ic1ion::eigensystem, "the eigenvectors and eigenvalues of the crystal field Hamiltonian");
 

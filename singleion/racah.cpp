@@ -319,7 +319,7 @@ double racah::racahW(int a, int b, int c, int d, int e, int f)
 
     double sumz = 0.;
     for (int z = minz; z <= maxz; z++) {
-        sumz += pow(-1., z) * f_quotient((a + b + c + d)/2 + 1 - z, z) * f_product_pz(Fm, -z) * f_product_pz(Fp, z);
+        sumz += pow(-1., z) * f_quotient((a + b + c + d)/2 + 1 - z, z) / f_product_pz(Fm, -z) / f_product_pz(Fp, z);
     }
 
     return sumz * sqrt(tri(a, b, e) * tri(c, d, e) * tri(a, c, f) * tri(b, d, f));

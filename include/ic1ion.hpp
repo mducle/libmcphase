@@ -29,9 +29,12 @@ class ic1ion : public cfpars {
         VectorXd m_eigenvalues;                               // Cached eigenvalues
         orbital m_l = F;                                      // Orbital quantum number of open shell electrons
         fconf m_conf;                                         // List of states of this configuration
-        std::vector<double> m_F;                              // Internal coulomb parameters in meV for calculations
-        double m_xi;                                          // Internal spin-orbit parameters for calculations
-        std::vector<double> m_alpha;                          // Internal CI parameters in meV for calculations
+        std::array<double, 4> m_F_i;                          // Internal coulomb parameters in cm for calculations
+        double m_xi_i;                                        // Internal spin-orbit parameters for calculations
+        std::array<double, 4> m_alpha_i;                      // Internal CI parameters in cm for calculations
+        std::array<double, 4> m_F;                            // External coulomb parameters
+        double m_xi;                                          // External spin-orbit parameters
+        std::array<double, 4> m_alpha;                        // External CI parameters
         
     public:
         // Declarations for functions in so_cf.cpp
@@ -57,6 +60,7 @@ class ic1ion : public cfpars {
         RowMatrixXd ic_Hcso();
         RowMatrixXd emat();
         RowMatrixXd ci();
+        double racahW(int l1, int l2, int l3, int l4, int l5, int l6) { return m_racah.racahW(l1, l2, l3, l4, l5, l6); };
 
         // Setters
         virtual void set_unit(const Units newunit);
@@ -65,7 +69,7 @@ class ic1ion : public cfpars {
         virtual void set(const Blm blm, double val);
         virtual void set(int l, int m, double val);
         // Constructors
-        ic1ion() : cfpars() {};
+        ic1ion() : cfpars() { m_econv = 0.1239841973; };
         ic1ion(const int J2) = delete;                        // ic1ion should be constructed from ion name only.
         ic1ion(const double J) = delete;
         ic1ion(const std::string &ion);
@@ -91,10 +95,10 @@ RowMatrixXd racah_e3(int n);                                              // Cal
 RowMatrixXd racah_emat(int n, double E0, double E1, double E2, double E3);//Calculates the Coulomb interaction matrix
 RowMatrixXd racah_emat(int n, double F0, double F2, double F4);           // Calculates the Coulomb matrix for d-electrons
 RowMatrixXd racah_emat(int n, double F0, double F2);                      // Calculates the Coulomb matrix for p-electrons
-std::vector<double> racah_FtoE(std::vector<double> F);                    // Converts from F_k to E
-std::vector<double> racah_EtoF(std::vector<double> E);                    // Converts from E to F_k
-std::vector<double> racah_FtoF_k(std::vector<double> F);                  // Converts from F^k to F_k
-std::vector<double> racah_F_ktoF(std::vector<double> F_k);                // Converts from F_k to F^k
+std::array<double, 4> racah_FtoE(std::array<double, 4> F);                // Converts from F_k to E
+std::array<double, 4> racah_EtoF(std::array<double, 4> E);                // Converts from E to F_k
+std::array<double, 4> racah_FtoF_k(std::array<double, 4> F);              // Converts from F^k to F_k
+std::array<double, 4> racah_F_ktoF(std::array<double, 4> F_k);            // Converts from F_k to F^k
 RowMatrixXd racah_ci(int n, double alpha, double beta, double gamma);     // Calcs. conf. interaction matrix for f-elec.
 RowMatrixXd racah_ci(int n, double alpha, double beta);                   // Calcs. conf. interaction matrix for d-elec.
 RowMatrixXd racah_ci(int n, double alpha);                                // Calcs. conf. interaction matrix for p-elec.
