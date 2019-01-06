@@ -47,8 +47,11 @@ class cfpars {
         int m_J2 = 0;                                         // 2*J == twice the total angular momentum
         bool m_convertible = false;                           // True if can convert between types and normalisations
         racah m_racah{};                                      // Class to calc n-j symbols and cache factorials
+        int m_n = 1;                                          // Number of open shell electrons in this configuration
         
     public:
+        // Methods
+        virtual void getfromionname(const std::string &ionname);
         // Getters
         const Units get_unit() const { return m_unit; }
         const Normalisation get_normalisation() const { return m_norm; }
@@ -71,7 +74,7 @@ class cfpars {
         cfpars();
         cfpars(const int J2);
         cfpars(const double J);
-        cfpars(const std::string &ionname, bool ignore_unknown=false);
+        cfpars(const std::string &ionname);
     
 }; // class cfpars
 

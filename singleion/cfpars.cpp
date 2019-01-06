@@ -137,6 +137,24 @@ const Map3 &RKTABLE() {
 static const std::array<double, 3> ENERGYCONV = { {1., 8.065544005, 11.6045221} };
 
 // --------------------------------------------------------------------------------------------------------------- //
+// General methods for cfpars class
+// --------------------------------------------------------------------------------------------------------------- //
+void cfpars::getfromionname(const std::string &ionname) {
+	std::string ion = ionname;
+	std::transform(ion.begin(), ion.end(), ion.begin(), [](unsigned char c) { return std::tolower(c); });
+    auto ion_number = ION_NUMBER_MAP.find(ion);
+    if (ion_number == ION_NUMBER_MAP.end()) {
+        throw std::runtime_error("Unknown ion");
+    }
+    m_ionname = ion;
+    m_n = ion_number->second;
+	m_J2 = J2[m_n];
+    const Map3 &rktable = RKTABLE();
+	auto rk_table = rktable.find(ion);
+	m_rk = rk_table->second;
+}
+
+// --------------------------------------------------------------------------------------------------------------- //
 // Setter/getter methods for cfpars class
 // --------------------------------------------------------------------------------------------------------------- //
 void cfpars::set(const Blm blm, double val) {
@@ -185,16 +203,23 @@ void cfpars::set_type(const cfpars::Type newtype) {
     }
     switch(newtype) {
         case cfpars::Type::Alm:
-            for (int id=0; id<27; id++) m_convfact[id] = lambda[id] / m_stevfact[id2l[id]] / m_rk[id2l[id]];
+            for (int id=0; id<27; id++)
+                if(m_stevfact[id2l[id]] != 0)
+                    m_convfact[id] = lambda[id] / m_stevfact[id2l[id]] / m_rk[id2l[id]];
             break;
         case cfpars::Type::ARlm:
-            for (int id=0; id<27; id++) m_convfact[id] = lambda[id] / m_stevfact[id2l[id]];
+            for (int id=0; id<27; id++) 
+                if(m_stevfact[id2l[id]] != 0)
+                    m_convfact[id] = lambda[id] / m_stevfact[id2l[id]];
             break;
         case cfpars::Type::Blm:
-            for (int id=0; id<27; id++) m_convfact[id] = lambda[id];
+            for (int id=0; id<27; id++) 
+                    m_convfact[id] = lambda[id];
             break;
         case cfpars::Type::Llm:
-            for (int id=0; id<27; id++) m_convfact[id] = 1. / m_stevfact[id2l[id]];
+            for (int id=0; id<27; id++)
+                if(m_stevfact[id2l[id]] != 0)
+                    m_convfact[id] = 1. / m_stevfact[id2l[id]];
             break;
     }
     for (int id=0; id<27; id++)
@@ -207,18 +232,10 @@ void cfpars::set_type(const cfpars::Type newtype) {
 }
 
 void cfpars::set_name(const std::string &ionname) {
-	std::string ion = ionname;
-	std::transform(ion.begin(), ion.end(), ion.begin(), [](unsigned char c) { return std::tolower(c); });
-    auto ion_number = ION_NUMBER_MAP.find(ion);
-    if (ion_number == ION_NUMBER_MAP.end()) {
-        throw std::runtime_error("Unknown ion");
-    }
-    m_ionname = ion;
-    double n = ion_number->second;
-    double alpha = ALPHA_J[n];
-    double beta = BETA_J[n];
-    double gamma = GAMMA_J[n];
-	m_J2 = J2[n];
+    getfromionname(ionname);
+    double alpha = ALPHA_J[m_n];
+    double beta = BETA_J[m_n];
+    double gamma = GAMMA_J[m_n];
     // Scales parameters by ratio of Stevens factor of old and new ion (if old ion defined).
     if (m_convertible) {
         std::array<double, 3> scale = { {alpha/m_stevfact[0], beta/m_stevfact[1], gamma/m_stevfact[2]} };
@@ -230,9 +247,6 @@ void cfpars::set_name(const std::string &ionname) {
             m_Bi[id] = m_Bo[id] / m_econv;
     }
 	m_stevfact = {alpha, beta, gamma};
-    const Map3 &rktable = RKTABLE();
-	auto rk_table = rktable.find(ion);
-	m_rk = rk_table->second;
 	m_convertible = true;
     // Now reset the conversion table (from internal to external parameters)
     this->set_type(m_type);
@@ -279,29 +293,13 @@ cfpars::cfpars(const double J) {
     m_convfact = lambda;
 }
 
-cfpars::cfpars(const std::string &ionname, bool ignore_unknown) {
-	std::string ion = ionname;
-	std::transform(ion.begin(), ion.end(), ion.begin(), [](unsigned char c) { return std::tolower(c); });
-    auto ion_number = ION_NUMBER_MAP.find(ion);
-    if (ion_number == ION_NUMBER_MAP.end()) {
-        if (ignore_unknown) {
-            m_convfact = lambda;
-            return;
-        } else {
-            throw std::runtime_error("Unknown ion");
-        }
-    }
-    m_ionname = ion;
-    double n = ion_number->second;
-    double alpha = ALPHA_J[n];
-    double beta = BETA_J[n];
-    double gamma = GAMMA_J[n];
-	m_J2 = J2[n];
+cfpars::cfpars(const std::string &ionname) {
+    getfromionname(ionname);
+    double alpha = ALPHA_J[m_n];
+    double beta = BETA_J[m_n];
+    double gamma = GAMMA_J[m_n];
     m_convfact = lambda;
 	m_stevfact = {alpha, beta, gamma};
-    const Map3 &rktable = RKTABLE();
-	auto rk_table = rktable.find(ion);
-	m_rk = rk_table->second;
 	m_convertible = true;
 }
 

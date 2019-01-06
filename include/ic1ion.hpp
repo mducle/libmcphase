@@ -27,35 +27,36 @@ class ic1ion : public cfpars {
         RowMatrixXcd m_hamiltonian;                           // Cached Hamiltonian
         RowMatrixXcd m_eigenvectors;                          // Cached eigenvectors
         VectorXd m_eigenvalues;                               // Cached eigenvalues
-		int m_n = 1;                                          // Number of open shell electrons in this configuration
-		orbital m_l = F;                                      // Orbital quantum number of open shell electrons
-		fconf m_conf;                                         // List of states of this configuration
+        orbital m_l = F;                                      // Orbital quantum number of open shell electrons
+        fconf m_conf;                                         // List of states of this configuration
         std::vector<double> m_F;                              // Internal coulomb parameters in meV for calculations
         double m_xi;                                          // Internal spin-orbit parameters for calculations
         std::vector<double> m_alpha;                          // Internal CI parameters in meV for calculations
-		
+        
     public:
-		// Declarations for functions in so_cf.cpp
-		RowMatrixXd racah_so();                                // Calculates the spin-orbit matrix
-		RowMatrixXd racah_Umat(int k);                         // Calculates the reduced matrix U^k
-		RowMatrixXd racah_uJ(int k);                           // Calculates the U^k redmat in |LSJ>
-		RowMatrixXd racah_ukq(int k, int q);                   // Calculates the tensor operator U^k_q 
-		RowMatrixXd fast_ukq(int k, int q);                    // Calculates the tensor operator U^k_q 
-		RowMatrixXd racah_mumat(int q);                        // Calculates the magnetic moment operator
-		void racah_mumat(int q, RowMatrixXd&L, RowMatrixXd&S); // Calculates the magnetic moment operators
-		void chanlam_mumat(int q, RowMatrixXd&mu);             // Calculates the magnetic moment operator
-		// Declarations for functions in ic_lovesey.cpp
-		bool lovesey_aKK(RowMatrixXd &aKK, int K, int Kp);     // Calculates the matrix a(K,K')
-		bool lovesey_cKK(RowMatrixXd &aKK, int K, int Kp);     // Calculates the matrix c(K,K')
-		void lovesey_Qq(std::vector<RowMatrixXd >&Q, int q,    // Calculates the transition matrix Qq
-		       std::vector<double>&);
-		RowMatrixXd balcar_MSq(int q, int K, int Q);           // Calculates the coeff. of the spin density
-		RowMatrixXd balcar_MLq(int q, int K, int Q);           // Calculates the coeff. of the orbital dens.
-		RowMatrixXcd balcar_Mq(int xyz,int K,int Q);           // Driver for calculation of density coeff.
+        // Declarations for functions in so_cf.cpp
+        RowMatrixXd racah_so();                                // Calculates the spin-orbit matrix
+        RowMatrixXd racah_Umat(int k);                         // Calculates the reduced matrix U^k
+        RowMatrixXd racah_uJ(int k);                           // Calculates the U^k redmat in |LSJ>
+        RowMatrixXd racah_ukq(int k, int q);                   // Calculates the tensor operator U^k_q 
+        RowMatrixXd fast_ukq(int k, int q);                    // Calculates the tensor operator U^k_q 
+        RowMatrixXd racah_mumat(int q);                        // Calculates the magnetic moment operator
+        void racah_mumat(int q, RowMatrixXd&L, RowMatrixXd&S); // Calculates the magnetic moment operators
+        void chanlam_mumat(int q, RowMatrixXd&mu);             // Calculates the magnetic moment operator
+        // Declarations for functions in ic_lovesey.cpp
+        bool lovesey_aKK(RowMatrixXd &aKK, int K, int Kp);     // Calculates the matrix a(K,K')
+        bool lovesey_cKK(RowMatrixXd &aKK, int K, int Kp);     // Calculates the matrix c(K,K')
+        void lovesey_Qq(std::vector<RowMatrixXd >&Q, int q,    // Calculates the transition matrix Qq
+               std::vector<double>&);
+        RowMatrixXd balcar_MSq(int q, int K, int Q);           // Calculates the coeff. of the spin density
+        RowMatrixXd balcar_MLq(int q, int K, int Q);           // Calculates the coeff. of the orbital dens.
+        RowMatrixXcd balcar_Mq(int xyz,int K,int Q);           // Driver for calculation of density coeff.
         // Declarations for functions in ic1ion.cpp
-        void getfromionname(const std::string &ionname);
+        virtual void getfromionname(const std::string &ionname);
         void calc_stevfact();
         RowMatrixXd ic_Hcso();
+        RowMatrixXd emat();
+        RowMatrixXd ci();
 
         // Setters
         virtual void set_unit(const Units newunit);
@@ -67,7 +68,7 @@ class ic1ion : public cfpars {
         ic1ion() : cfpars() {};
         ic1ion(const int J2) = delete;                        // ic1ion should be constructed from ion name only.
         ic1ion(const double J) = delete;
-        ic1ion(const std::string &ion) : cfpars(ion, true) { getfromionname(ion); };
+        ic1ion(const std::string &ion);
         // Methods
         RowMatrixXcd hamiltonian();
         std::tuple<RowMatrixXcd, VectorXd> eigensystem();

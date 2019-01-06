@@ -628,7 +628,10 @@ RowMatrixXd racah_emat(int n, double E0, double E1, double E2, double E3)
    int nn = n;
    RowMatrixXd emat;
    if (n>7) nn=14-n; if(nn<1) { std::cerr << "racah_emat: number of f-electrons n > 14 or < 1\n"; return emat; }
-   if (nn==1) { emat << E0+E1+E2+E3; return emat; }
+   if (nn==1) { 
+      emat = RowMatrixXd::Zero(1, 1); emat(0,0) = E0+E1+E2+E3; 
+      return emat; 
+   }
    RowMatrixXd e2 = racah_e2(nn);
    RowMatrixXd e3 = racah_e3(nn);
    emat = RowMatrixXd::Zero(e2.rows(), e2.rows());
@@ -770,7 +773,11 @@ RowMatrixXd racah_ci(int n, double alpha, double beta, double gamma)     // For 
    int nn = n;
    RowMatrixXd ci;
    if (n>7) nn=14-n; if(nn<1) { std::cerr << "racah_ci: number of f-electrons n > 14 or < 1\n"; return ci; }
-   if (nn==1) { ci << alpha*3.*(3.+1.) + beta/2. + gamma*6./10.; return ci; } // f1 has only 1 state: 2F [100][10]
+   if (nn==1) { 
+      ci = RowMatrixXd::Zero(1, 1);
+      ci(0,0) = alpha*3.*(3.+1.) + beta/2. + gamma*6./10.;               // f1 has only 1 state: 2F [100][10]
+      return ci;
+   }
    fconf conf(nn);
    ci = RowMatrixXd::Zero(conf.states.size(),conf.states.size());
    int i,L;
@@ -789,7 +796,11 @@ RowMatrixXd racah_ci(int n, double alpha, double beta)                   // For 
    int nn = n;
    RowMatrixXd ci;
    if (n>5) nn=10-n; if(nn<1) { std::cerr << "racah_ci number of d-electrons n > 10 or < 1\n"; return ci; }
-   if (nn==1) { ci <<  alpha*2.*(2.+1.) + beta*2./3.; return ci; }       // d1 has only 1 state: 2D [10]
+   if (nn==1) { 
+      ci = RowMatrixXd::Zero(1, 1);
+      ci(0,0) = (alpha*2.*(2.+1.) + beta*2./3.);                         // d1 has only 1 state: 2D [10]
+      return ci; 
+   }
    fconf conf(nn,D);
    ci = RowMatrixXd::Zero(conf.states.size(),conf.states.size());
    int i,L;

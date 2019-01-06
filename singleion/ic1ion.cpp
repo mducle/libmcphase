@@ -52,6 +52,13 @@ void ic1ion::set_name(const std::string &ionname) {
     m_ev_calc = false;
 }
 
+ic1ion::ic1ion(const std::string &ion) {
+    try {
+        cfpars::getfromionname(ion);
+    } catch(const std::runtime_error &e) {}
+    getfromionname(ion);
+}
+
 // --------------------------------------------------------------------------------------------------------------- //
 // General methods for the ic1ion class
 // --------------------------------------------------------------------------------------------------------------- //
@@ -222,6 +229,7 @@ void ic1ion::getfromionname(const std::string &ionname)
     m_F = F;
     m_xi = xi;
     m_alpha = a;
+    m_ionname = ion;
     calc_stevfact();
 }
 
@@ -245,6 +253,7 @@ void ic1ion::calc_stevfact()
     else {
         if(m_n==1) { 
             m_stevfact = {-2/35., 2/315., 0.};
+            return;
         }
     
         m_stevfact = {-8.*sqrt(7./15.), 16.*sqrt(14./11.), -640.*sqrt(7./429.)};
@@ -276,7 +285,7 @@ void ic1ion::calc_stevfact()
             sumcfp = 0.;
             for(ic=0; ic<(int)cfps.size(); ic++) 
                 sumcfp += m_racah.racahW(m_l*2,Li*2,m_l*2,Li*2,abs(confp.states[cfps[ic].ind].L)*2,(k+1)*4) * cfps[ic].cfp*cfps[ic].cfp 
-    	            * pow(-1.,(double)abs(confp.states[cfps[ic].ind].L)+2.*(k+1.)) * noncfpprod;
+                    pow(-1.,(double)abs(confp.states[cfps[ic].ind].L)+2.*(k+1.)) * noncfpprod;
             m_stevfact[k] *= sqrt(m_racah.f_quotient(J2-2*(k+1), J2+2*(k+1)+1)) * m_n * sumcfp * pow(-1.,2.*(k+1.)+Li+(S2+J2)/2.) 
                           * (J2+1) * m_racah.sixj(Li*2,J2,S2,J2,Li*2,4*(k+1));
         }
@@ -377,6 +386,52 @@ RowMatrixXd ic1ion::ic_Hcso()
    if(nn>(2*m_l+1)) H_so = convH2H(emat,icv,cvSI2SO) - H_so; else H_so += convH2H(emat,icv,cvSI2SO);
 
    return H_so;
+}
+
+RowMatrixXd ic1ion::emat() {
+   RowMatrixXd emat;
+   std::vector<double> E;
+   switch(m_l)
+   {
+      case F: 
+         E = racah_FtoF_k(m_F); E = racah_FtoE(E);
+         emat = racah_emat(m_n,E[0],E[1],E[2],E[3]);
+         break;
+      case D:
+         emat = racah_emat(m_n,m_F[0],m_F[1],m_F[2]);
+         break;
+      case P: 
+         emat = racah_emat(m_n,m_F[0],m_F[1]);
+         break;
+      case S:
+         emat = RowMatrixXd::Zero(1,1);
+         break;
+      default:
+         std::cerr << "ic_hmltn(): l!=0,1,2 or 3, only s-, p-, d- and f- electrons are implemented.\n";
+   }
+   return emat;
+}
+
+RowMatrixXd ic1ion::ci() {
+   RowMatrixXd emat;
+   switch(m_l)
+   {
+      case F: 
+         emat = racah_ci(m_n,m_alpha[0],m_alpha[1],m_alpha[2]);
+         break;
+      case D:
+         emat = racah_ci(m_n,m_alpha[0],m_alpha[1]);
+         break;
+      case P: 
+         emat = racah_ci(m_n,m_alpha[0]);
+         break;
+      case S:
+         emat = RowMatrixXd::Zero(1,1);
+         break;
+      default:
+         std::cerr << "ic_hmltn(): l!=0,1,2 or 3, only s-, p-, d- and f- electrons are implemented.\n";
+   }
+   return emat;
 }
 
 // --------------------------------------------------------------------------------------------------------------- //
@@ -523,7 +578,7 @@ RowMatrixXcd ic1ion::hamiltonian()
          }
       }
 
-   H_cf += convH2H(H_so,icv2,cvSO2CF);// rmzeros(H_cf); rmzeros(H_cfi);
+   //H_cf += convH2H(H_so,icv2,cvSO2CF);// rmzeros(H_cf); rmzeros(H_cfi);
 
  //ic_printheader(rmat,pars); mm_gout(H_cf,rmat);
  //ic_printheader(imat,pars); mm_gout(H_cfi,imat);

@@ -193,6 +193,11 @@ PYBIND11_MODULE(libMcPhase, m) {
     pyic1ion.def(py::init<>())
         .def(py::init<const std::string &>(), py::arg("ionname"))
         .def(py::init(&ic1ion_init), cfpars_init_str)
+        .def("racah_so", &ic1ion::racah_so)
+        .def("racah_Umat", &ic1ion::racah_Umat, py::arg("k"))
+        .def("racah_ukq", &ic1ion::racah_ukq, py::arg("k"), py::arg("q"))
+        .def("racah_emat", &ic1ion::emat)
+        .def("racah_ci", &ic1ion::ci)
         .def("hamiltonian", &ic1ion::hamiltonian, "the crystal field Hamiltonian")
         .def("eigensystem", &ic1ion::eigensystem, "the eigenvectors and eigenvalues of the crystal field Hamiltonian");
 
