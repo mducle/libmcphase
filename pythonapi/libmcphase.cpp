@@ -1,5 +1,5 @@
 /* libmcphase.cpp
- * 
+ *
  * Python bindings for libMcPhase
  *
  * (C) 2018 Duc Le - duc.le@stfc.ac.uk
@@ -11,6 +11,7 @@
 #include "ic1ion.hpp"
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 using namespace libMcPhase;
@@ -20,17 +21,19 @@ namespace { // Anonymous namespace for local functions
 
 static const std::unordered_map<std::string, cfpars::Blm> Blm_names = {
     {"B22S", cfpars::Blm::B22S}, {"B21S", cfpars::Blm::B21S}, {"B20", cfpars::Blm::B20}, {"B21", cfpars::Blm::B21}, {"B22", cfpars::Blm::B22},
-    {"B44S", cfpars::Blm::B44S}, {"B43S", cfpars::Blm::B43S}, {"B42S", cfpars::Blm::B42S}, {"B41S", cfpars::Blm::B41S}, 
+    {"B44S", cfpars::Blm::B44S}, {"B43S", cfpars::Blm::B43S}, {"B42S", cfpars::Blm::B42S}, {"B41S", cfpars::Blm::B41S},
     {"B40", cfpars::Blm::B40}, {"B41", cfpars::Blm::B41}, {"B42", cfpars::Blm::B42}, {"B43", cfpars::Blm::B43}, {"B44", cfpars::Blm::B44},
-    {"B66S", cfpars::Blm::B66S}, {"B65S", cfpars::Blm::B65S}, {"B64S", cfpars::Blm::B64S}, {"B63S", cfpars::Blm::B63S}, 
-    {"B62S", cfpars::Blm::B62S}, {"B61S", cfpars::Blm::B61S}, {"B60", cfpars::Blm::B60}, {"B61", cfpars::Blm::B61}, {"B62", cfpars::Blm::B62}, 
+    {"B66S", cfpars::Blm::B66S}, {"B65S", cfpars::Blm::B65S}, {"B64S", cfpars::Blm::B64S}, {"B63S", cfpars::Blm::B63S},
+    {"B62S", cfpars::Blm::B62S}, {"B61S", cfpars::Blm::B61S}, {"B60", cfpars::Blm::B60}, {"B61", cfpars::Blm::B61}, {"B62", cfpars::Blm::B62},
     {"B63", cfpars::Blm::B63}, {"B64", cfpars::Blm::B64}, {"B65", cfpars::Blm::B65}, {"B66", cfpars::Blm::B66} };
 
 static const std::unordered_map<std::string, cfpars::Type> type_names = {
     {"Alm", cfpars::Type::Alm}, {"Blm", cfpars::Type::Blm}, {"Llm", cfpars::Type::Llm}, {"ARlm", cfpars::Type::ARlm} };
+static const std::string type_err = "Invalid type name, must be one of 'Alm', 'ARlm', 'Blm', 'Llm', 'Vlm' or 'Wlm'";
 
-static const std::unordered_map<std::string, cfpars::Units> unit_names = { 
+static const std::unordered_map<std::string, cfpars::Units> unit_names = {
     {"meV", cfpars::Units::meV}, {"cm", cfpars::Units::cm}, {"K", cfpars::Units::K} };
+static const std::string unit_err = "Invalid unit, must be one of 'meV', 'cm', or 'K'";
 
 static const char* cfpars_init_str = "Construct a cfpars object\n"
                                      "    args (one of):\n"
@@ -42,21 +45,18 @@ static const char* cfpars_init_str = "Construct a cfpars object\n"
                                      "               see online documentation or McPhase webpage for definitions\n"
                                      "        Blm - value of parameters, e.g. cfp = cfpars('Pr3+', B20=0.1, B22=-0.01, B40=0.001)\n";
 
-void cfpars_set_type(cfpars *cls, std::string typestr) {
-    std::unordered_map<std::string, cfpars::Type>::const_iterator type_it = type_names.find(typestr);
-    if (type_it == type_names.end()) {
-        throw std::runtime_error("Invalid type name, must be one of 'Alm', 'ARlm', 'Blm', 'Llm', 'Vlm' or 'Wlm'");
-    } else {
-        cls->set_type(type_it->second);
-    }
-}
+static const std::unordered_map<std::string, ic1ion::CoulombType> coulomb_names = {
+    {"Slater", ic1ion::CoulombType::Slater}, {"CondonShortley", ic1ion::CoulombType::CondonShortley}, {"Racah", ic1ion::CoulombType::Racah} };
 
-void cfpars_set_unit(cfpars *cls, std::string unitstr) {
-    std::unordered_map<std::string, cfpars::Units>::const_iterator unit_it = unit_names.find(unitstr);
-    if (unit_it == unit_names.end()) {
-        throw std::runtime_error("Invalid unit, must be one of 'meV', 'cm', or 'K'");
+static const std::unordered_map<std::string, ic1ion::SpinOrbType> spinorb_names = {
+    {"Xi", ic1ion::SpinOrbType::Xi}, {"Lambda", ic1ion::SpinOrbType::Lambda} };
+
+template <typename T> T set_enum(std::string key, std::unordered_map<std::string, T> enum_map, std::string errmsg) {
+    auto it = enum_map.find(key);
+    if (it == enum_map.end()) {
+        throw std::runtime_error(errmsg);
     } else {
-        cls->set_unit(unit_it->second);
+        return it->second;
     }
 }
 
@@ -80,15 +80,15 @@ void cf_parse(cfpars *cls, py::args args, py::kwargs kwargs) {
     }
     else if (kwargs.contains("J")) {
         cls->set_J(kwargs["J"].cast<double>());
-    } 
+    }
     else if (kwargs.contains("ionname")) {
         cls->set_name(kwargs["ionname"].cast<std::string>());
-    } 
+    }
     if (kwargs.contains("type")) {
-        cfpars_set_type(cls, kwargs["type"].cast<std::string>());
+        cls->set_type(set_enum(kwargs["type"].cast<std::string>(), type_names, type_err));
     }
     if (kwargs.contains("unit")) {
-        cfpars_set_unit(cls, kwargs["unit"].cast<std::string>());
+        cls->set_unit(set_enum(kwargs["unit"].cast<std::string>(), unit_names, unit_err));
     }
     if (kwargs) {
         for (auto const &bname : Blm_names) {
@@ -143,8 +143,10 @@ PYBIND11_MODULE(libMcPhase, m) {
         .def(py::init<const std::string &>(), py::arg("ionname"))
         .def(py::init<const double &>(), py::arg("J"))
         .def(py::init(&cfpars_init), cfpars_init_str)
-        .def_property("unit", &cfpars::get_unit, &cfpars_set_unit, "energy unit of the parameters")
-        .def_property("type", &cfpars::get_type, &cfpars_set_type, "type of CF parameters. When changed, parameters values will be automatically converted.")
+        .def_property("unit", &cfpars::get_unit, [](cfpars &self, std::string unit) { self.set_unit(set_enum(unit, unit_names, unit_err)); },
+            "energy unit of the parameters")
+        .def_property("type", &cfpars::get_type, [](cfpars &self, std::string type) { self.set_type(set_enum(type, type_names, type_err)); },
+            "type of CF parameters. When changed, parameters values will be automatically converted.")
         .def_property("ion", &cfpars::get_name, &cfpars::set_name, "ion type. If reset, parameters will be updated by scaling by Stevens factors.")
         .def_property("J", &cfpars::get_J, &cfpars::set_J, "the total angular momentum quantum number of this multiplet")
         .def_property_readonly("normalisation", &cfpars::get_normalisation, "normalisation of CF parameters")
@@ -180,7 +182,7 @@ PYBIND11_MODULE(libMcPhase, m) {
         .def_property("B66", [](cfpars const &self) { return self.get(cfpars::Blm::B66); }, [](cfpars &self, double v) { self.set(cfpars::Blm::B66, v); });
 
     py::class_<cf1ion, cfpars> pycf1ion(m, "cf1ion");
-    
+
     pycf1ion.def(py::init<>())
         .def(py::init<const std::string &>(), py::arg("ionname"))
         .def(py::init<const double &>(), py::arg("J"))
@@ -189,19 +191,20 @@ PYBIND11_MODULE(libMcPhase, m) {
         .def("eigensystem", &cf1ion::eigensystem, "the eigenvectors and eigenvalues of the crystal field Hamiltonian");
 
     py::class_<ic1ion, cfpars> pyic1ion(m, "ic1ion");
-    
+
     pyic1ion.def(py::init<>())
         .def(py::init<const std::string &>(), py::arg("ionname"))
         .def(py::init(&ic1ion_init), cfpars_init_str)
-        .def("racah_so", &ic1ion::racah_so)
-        .def("racah_Umat", &ic1ion::racah_Umat, py::arg("k"))
-        .def("racah_ukq", &ic1ion::racah_ukq, py::arg("k"), py::arg("q"))
-        .def("racah_emat", &ic1ion::emat)
-        .def("racah_ci", &ic1ion::ci)
-        .def("racahW", &ic1ion::racahW)
+        .def("set_coulomb", [](ic1ion &self, std::vector<double> val, std::string type) { self.set_coulomb(val,
+             set_enum(type, coulomb_names, "Invalid normalisation, must be one of: Slater, CondonShortley, Racah")); })
+        .def("set_spinorbit", [](ic1ion &self, double val, std::string type) { self.set_spinorbit(val,
+             set_enum(type, spinorb_names, "Invalid normalisation, must be one of: Xi, Lambda")); })
+        .def("set_ci", &ic1ion::set_ci)
+        .def("get_coulomb", &ic1ion::get_coulomb)
+        .def("get_spinorbit", &ic1ion::get_spinorbit)
+        .def("get_ci", &ic1ion::get_ci)
         .def("hamiltonian", &ic1ion::hamiltonian, "the crystal field Hamiltonian")
         .def("eigensystem", &ic1ion::eigensystem, "the eigenvectors and eigenvalues of the crystal field Hamiltonian");
-
 }
 
 

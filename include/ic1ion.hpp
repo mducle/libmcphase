@@ -16,10 +16,15 @@
 #include "eigen.hpp"
 #include "ic_states.hpp"
 #include <algorithm>
+#include <vector>
 
 namespace libMcPhase {
 
 class ic1ion : public cfpars {
+
+    public:
+        enum class CoulombType { Slater = 0, CondonShortley = 1, Racah = 2 };
+        enum class SpinOrbType { Xi = 0, Lambda = 1 };
 
     protected:
         bool m_ham_calc = false;                              // Flag to indicate if Hamiltonian calculated
@@ -31,12 +36,11 @@ class ic1ion : public cfpars {
         fconf m_conf;                                         // List of states of this configuration
         std::array<double, 4> m_F_i;                          // Internal coulomb parameters in cm for calculations
         double m_xi_i;                                        // Internal spin-orbit parameters for calculations
-        std::array<double, 4> m_alpha_i;                      // Internal CI parameters in cm for calculations
+        std::array<double, 3> m_alpha_i;                      // Internal CI parameters in cm for calculations
         std::array<double, 4> m_F;                            // External coulomb parameters
         double m_xi;                                          // External spin-orbit parameters
-        std::array<double, 4> m_alpha;                        // External CI parameters
+        std::array<double, 3> m_alpha;                        // External CI parameters
         
-    public:
         // Declarations for functions in so_cf.cpp
         RowMatrixXd racah_so();                                // Calculates the spin-orbit matrix
         RowMatrixXd racah_Umat(int k);                         // Calculates the reduced matrix U^k
@@ -58,16 +62,21 @@ class ic1ion : public cfpars {
         virtual void getfromionname(const std::string &ionname);
         void calc_stevfact();
         RowMatrixXd ic_Hcso();
-        RowMatrixXd emat();
-        RowMatrixXd ci();
-        double racahW(int l1, int l2, int l3, int l4, int l5, int l6) { return m_racah.racahW(l1, l2, l3, l4, l5, l6); };
 
+    public:
         // Setters
         virtual void set_unit(const Units newunit);
         virtual void set_type(const Type newtype);
         virtual void set_name(const std::string &ionname);
         virtual void set(const Blm blm, double val);
         virtual void set(int l, int m, double val);
+        virtual void set_coulomb(std::vector<double> val, CoulombType type = CoulombType::Slater);
+        virtual void set_ci(std::vector<double> val);
+        virtual void set_spinorbit(double val, SpinOrbType type = SpinOrbType::Xi);
+        // Getters
+        std::array<double, 4> get_coulomb() { return m_F; };
+        double get_spinorbit() { return m_xi; };
+        std::array<double, 3> get_ci() { return m_alpha; };
         // Constructors
         ic1ion() : cfpars() { m_econv = 0.1239841973; };
         ic1ion(const int J2) = delete;                        // ic1ion should be constructed from ion name only.

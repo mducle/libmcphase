@@ -9,6 +9,7 @@
 #include "ic1ion.hpp"
 #include <complex>
 #include <cfloat>
+#include <functional>
 
 namespace libMcPhase {
 
@@ -25,6 +26,15 @@ static const std::array<std::array<int, 4>, 12> idq = { {{2,2,0,4}, {2,1,1,3}, {
                                                         {6,6,14,26}, {6,5,15,25}, {6,4,16,24}, {6,3,17,23}, {6,2,18,22}, {6,1,19,21}} };
 static const std::array<std::array<int, 2>, 3> idq0 = { {{2,2}, {4,9}, {6,20}} };
 static const std::array<int, 27> id2l = { {0,0,0,0,0, 1,1,1,1,1,1,1,1,1, 2,2,2,2,2,2,2,2,2,2,2,2,2} };
+
+// Conversion factors for different normalisations of the Slater integrals
+static const std::array<std::array<double, 4>, 4> CSToSlater = {{               // Condon-Shortly to Slater
+    {1., 0., 0., 0.}, {1., 25., 0., 0.}, {1., 49., 441., 0.}, {1., 225., 1089., 184041./25} }};
+static const std::array<std::array<std::array<double, 4>, 4>, 4> RToS = {{      // Racah to Slater
+    {{ {0., 0., 0., 0.}, {0., 0., 0., 0.}, {0., 0., 0., 0.}, {0., 0., 0., 0.} }},
+    {{ {0., 0., 0., 0.}, {0., 0., 0., 0.}, {0., 0., 0., 0.}, {0., 0., 0., 0.} }},
+    {{ {1., 441., 63., 0.}, {0., 49., 7., 0.}, {0., 0., 12.6, 0.}, {0., 0., 0., 0.} }},
+    {{ {1., 9./7., 0., 0.}, {0., 1., 143./42., 11./42.}, {0., 1., -130./77., 4./77.}, {0., 1., 35./462., -7./462.} }} }};
 
 // --------------------------------------------------------------------------------------------------------------- //
 // Setter/getter methods for cfpars class
@@ -54,7 +64,8 @@ void ic1ion::set_unit(cfpars::Units const newunit) {
     m_xi = m_xi_i * m_econv;
     for (int ii=0; ii<4; ii++) {
         m_F[ii] = m_F_i[ii] * m_econv;
-        m_alpha[ii] = m_alpha_i[ii] * m_econv;
+        if (ii < 3) 
+            m_alpha[ii] = m_alpha_i[ii] * m_econv;
     }
 }
 
@@ -69,8 +80,13 @@ void ic1ion::set_type(const cfpars::Type newtype) {
 }
 
 void ic1ion::set_name(const std::string &ionname) {
-    cfpars::set_name(ionname);
+    try {
+        cfpars::getfromionname(ionname);
+    } catch(const std::runtime_error &e) {
+        m_rk = {1., 1., 1.};
+    }
     getfromionname(ionname);
+    m_convertible = true;
     for (int id=0; id<27; id++) {
         m_convfact[id] *= m_stevfact[id2l[id]];
         m_Bi[id] *= m_stevfact[id2l[id]];
@@ -79,10 +95,64 @@ void ic1ion::set_name(const std::string &ionname) {
     m_ev_calc = false;
 }
 
+void ic1ion::set_coulomb(const std::vector<double> val, ic1ion::CoulombType type) {
+    size_t sz = val.size();
+    if (sz != (size_t)m_l && sz != (size_t)(m_l + 1)) {
+        throw std::runtime_error("Invalid number of coulomb parameters");
+    } else if(type == ic1ion::CoulombType::Racah && m_l != D && m_l != F) {
+        throw std::runtime_error("Racah normalisation only defined for d- and f-electrons");
+    }
+    std::copy(val.begin(), val.end(), m_F.begin() + (1 + ((size_t)m_l - sz)));
+    switch (type) {
+        case (ic1ion::CoulombType::Slater):           // F^k
+            break;
+        case (ic1ion::CoulombType::CondonShortley):   // F_k
+            std::transform(m_F.begin(), m_F.end(), CSToSlater[(int)m_l].begin(),
+                           m_F.begin(), std::multiplies<double>());
+            break;
+        case (ic1ion::CoulombType::Racah):            // e_k (f-electron) or BC (d-electron)
+            std::array<double, 4> tf = m_F;
+            for (int ii=0; ii<=(int)m_l; ii++) {
+                m_F[ii] = RToS[(int)m_l][ii][0] * tf[0] + RToS[(int)m_l][ii][1] * tf[1] +
+                          RToS[(int)m_l][ii][2] * tf[2] + RToS[(int)m_l][ii][3] * tf[3];
+            }
+            break;
+    }
+    std::transform(m_F.begin(), m_F.end(), m_F_i.begin(), [=](double v) { return v / m_econv; });
+}
+
+void ic1ion::set_ci(std::vector<double> val) {
+    size_t sz = val.size();
+    if (sz != (size_t)m_l) {
+        throw std::runtime_error("Invalid number of configuration interaction parameters");
+    }
+    std::copy(val.begin(), val.end(), m_alpha.begin());
+    std::transform(val.begin(), val.end(), m_alpha_i.begin(), [=](double v) { return v / m_econv; });
+}
+
+void ic1ion::set_spinorbit(double val, ic1ion::SpinOrbType type) {
+    switch (type) {
+        case ic1ion::SpinOrbType::Xi:
+            m_xi = val;
+            m_xi_i = val / m_econv;
+            break;
+        case ic1ion::SpinOrbType::Lambda:
+            int S2 = (m_n<=(2*m_l+1)) ? m_n : ((4*m_l+2)-m_n);
+            m_xi = val * (double)S2;
+            m_xi_i = m_xi / m_econv;
+            break;
+    }
+}
+
+// --------------------------------------------------------------------------------------------------------------- //
+// Constructors for the ic1ion class
+// --------------------------------------------------------------------------------------------------------------- //
 ic1ion::ic1ion(const std::string &ion) {
     try {
         cfpars::getfromionname(ion);
-    } catch(const std::runtime_error &e) {}
+    } catch(const std::runtime_error &e) {
+        m_rk = {1., 1., 1.};
+    }
     getfromionname(ion);
     m_econv = 0.1239841973;
 }
@@ -257,9 +327,11 @@ void ic1ion::getfromionname(const std::string &ionname)
     m_xi = m_xi_i * m_econv;
     for (int ii=0; ii<4; ii++) {
         m_F_i[ii] = F[ii];
-        m_alpha_i[ii] = a[ii];
         m_F[ii] = F[ii] * m_econv;
-        m_alpha[ii] = a[ii] * m_econv;
+        if (ii < 3) {
+            m_alpha_i[ii] = a[ii];
+            m_alpha[ii] = a[ii] * m_econv;
+        }
     }
     m_ionname = ion;
     calc_stevfact();
@@ -420,195 +492,73 @@ RowMatrixXd ic1ion::ic_Hcso()
    return H_so;
 }
 
-RowMatrixXd ic1ion::emat() {
-   RowMatrixXd emat;
-   std::array<double, 4> E;
-   switch(m_l)
-   {
-      case F: 
-         E = racah_FtoF_k(m_F); E = racah_FtoE(E);
-         emat = racah_emat(m_n,E[0],E[1],E[2],E[3]);
-         break;
-      case D:
-         emat = racah_emat(m_n,m_F[0],m_F[1],m_F[2]);
-         break;
-      case P: 
-         emat = racah_emat(m_n,m_F[0],m_F[1]);
-         break;
-      case S:
-         emat = RowMatrixXd::Zero(1,1);
-         break;
-      default:
-         std::cerr << "ic_hmltn(): l!=0,1,2 or 3, only s-, p-, d- and f- electrons are implemented.\n";
-   }
-   return emat;
-}
-
-RowMatrixXd ic1ion::ci() {
-   RowMatrixXd emat;
-   switch(m_l)
-   {
-      case F: 
-         emat = racah_ci(m_n,m_alpha[0],m_alpha[1],m_alpha[2]);
-         break;
-      case D:
-         emat = racah_ci(m_n,m_alpha[0],m_alpha[1]);
-         break;
-      case P: 
-         emat = racah_ci(m_n,m_alpha[0]);
-         break;
-      case S:
-         emat = RowMatrixXd::Zero(1,1);
-         break;
-      default:
-         std::cerr << "ic_hmltn(): l!=0,1,2 or 3, only s-, p-, d- and f- electrons are implemented.\n";
-   }
-   return emat;
-}
-
 // --------------------------------------------------------------------------------------------------------------- //
 // Calculate the intermediate coupling Hamiltonian matrix
 // --------------------------------------------------------------------------------------------------------------- //
 RowMatrixXcd ic1ion::hamiltonian()
 {
- //char rmat[255],imat[255]; strcpy(rmat,"results/mcphas.icmatr"); strcpy(imat,"results/mcphas.icmati");
- //sMat<double> H_cf;
- //if(ic_parseheader(rmat,pars) && ic_parseheader(imat,pars)) { H_cf = mm_gin(rmat); H_cfi = mm_gin(imat); return H_cf; }
- 
- //if(pars.B.check()==false) { std::cerr << "ic_hmltn(): Internal Wybourne and external CF parameters do not agree. Check sipf.\n"; exit(0); }
+    RowMatrixXd Upq, Umq, emat, H_so = racah_so();
+    std::array<double, 4> E;
+    double p = pow(-1.,(double)abs(m_l))*(2.*m_l+1.);
+    double icfact[] = {0, 0, p*m_racah.threej(2*m_l,  4, 2*m_l, 0, 0, 0),
+                          0, p*m_racah.threej(2*m_l,  8, 2*m_l, 0, 0, 0),
+                          0, p*m_racah.threej(2*m_l, 12, 2*m_l, 0, 0, 0) };
 
-   RowMatrixXd Upq, Umq, emat, H_so = racah_so();
-   std::array<double, 4> E;
-   double p = pow(-1.,(double)abs(m_l))*(2.*m_l+1.);
-   double icfact[] = {0, 0, p*m_racah.threej(2*m_l,  4, 2*m_l, 0, 0, 0),
-                         0, p*m_racah.threej(2*m_l,  8, 2*m_l, 0, 0, 0),
-                         0, p*m_racah.threej(2*m_l, 12, 2*m_l, 0, 0, 0) };
- //int n = pars.n; orbital e_l = pars.l;
- //int nn = n; //if(n>(2*e_l+1)) n = 4*e_l+2-n; 
+    switch(m_l)
+    {
+        case F: 
+            E = racah_FtoF_k(m_F); E = racah_FtoE(E);
+            emat = racah_emat(m_n,E[0],E[1],E[2],E[3]) + racah_ci(m_n,m_alpha[0],m_alpha[1],m_alpha[2]);
+            break;
+        case D:
+            emat = racah_emat(m_n,m_F[0],m_F[1],m_F[2]) + racah_ci(m_n,m_alpha[0],m_alpha[1]);
+            break;
+        case P: 
+            emat = racah_emat(m_n,m_F[0],m_F[1]) + racah_ci(m_n,m_alpha[0]);
+            break;
+        case S:
+            emat = RowMatrixXd::Zero(1,1);
+            break;
+        default:
+            std::cerr << "ic_hmltn(): l!=0,1,2 or 3, only s-, p-, d- and f- electrons are implemented.\n";
+    }
 
-   switch(m_l)
-   {
-      case F: 
-         E = racah_FtoF_k(m_F); E = racah_FtoE(E);
-         emat = racah_emat(m_n,E[0],E[1],E[2],E[3]) + racah_ci(m_n,m_alpha[0],m_alpha[1],m_alpha[2]);
-         break;
-      case D:
-         emat = racah_emat(m_n,m_F[0],m_F[1],m_F[2]) + racah_ci(m_n,m_alpha[0],m_alpha[1]);
-         break;
-      case P: 
-         emat = racah_emat(m_n,m_F[0],m_F[1]) + racah_ci(m_n,m_alpha[0]);
-         break;
-      case S:
-         emat = RowMatrixXd::Zero(1,1);
-         break;
-      default:
-         std::cerr << "ic_hmltn(): l!=0,1,2 or 3, only s-, p-, d- and f- electrons are implemented.\n";
-   }
- 
-   int k,iq,q;
-   fconf conf(m_n,m_l);
-   int num_states = (int)conf.states.size();
-   int i,j,icv,icv1,icv2,sum2Jmin_JmaxP1;
-   int J2min,J2max;
-   std::vector< std::vector<int> > cvSI2SO,cvSI2CF,cvSO2CF;
-   std::vector<int> cvEl;
+    int k,iq,q;
+    fconf conf(m_n,m_l);
+    int num_states = (int)conf.states.size();
+    int i,j,icv,icv1,icv2,sum2Jmin_JmaxP1;
+    int J2min,J2max;
+    std::vector< std::vector<int> > cvSI2SO,cvSI2CF,cvSO2CF;
+    std::vector<int> cvEl;
 
-   //char nstr[6]; char basename[255]; char filename[255]; strcpy(basename,"results/mms/");
-   //if(pars.save_matrices) {
-   //#ifndef _WINDOWS
-   //struct stat status; stat("results/mms",&status); if(!S_ISDIR(status.st_mode))
-   //   if(mkdir("results/mms",0777)!=0) std::cerr << "ic_hmltn(): Can't create mms dir, " << strerror(errno) << "\n";
-   //#else
-   //DWORD drAttr = GetFileAttributes("results\\mms"); if(drAttr==0xffffffff || !(drAttr&FILE_ATTRIBUTE_DIRECTORY)) 
-   //   if (!CreateDirectory("results\\mms", NULL)) std::cerr << "ic_hmltn(): Cannot create mms directory\n";
-   //#endif
-   //nstr[0] = (e_l==F?102:100); if(n<10) { nstr[1] = n+48; nstr[2] = 0; } else { nstr[1] = 49; nstr[2] = n+38; nstr[3] = 0; }
-   //strcat(basename,nstr); strcat(basename,"_"); nstr[0] = 85;   // 85 is ASCII for "U", 100=="d" and 102=="f"
-   //} else { strcpy(basename,"nodir/"); }
+    cvSI2SO.reserve(num_states); cvSI2CF.reserve(num_states); cvSO2CF.reserve(num_states*5); icv=0; icv1=0; icv2=0;
+    // Goes through all the states and gets the conversion matrix to use with convH2H, which is just a running index of blocks
+    //    of the same L,S values (different J's) for |vUSL> to |vUSLJ> (cvSI2SO), and same L,S,J for |vUSL> to |vUSLJmJ> (cvSI2CF)
+    for(i=0; i<num_states; i++)
+    {
+        J2min = abs(abs(conf.states[i].L)*2 - conf.states[i].S2);
+        J2max =     abs(conf.states[i].L)*2 + conf.states[i].S2;
+        sum2Jmin_JmaxP1 = 0; for(j=J2min; j<=J2max; j+=2) sum2Jmin_JmaxP1 += j+1;
+        cvEl.push_back(icv1); icv1 += (J2max-J2min)/2+1; cvEl.push_back(icv1-1); cvSI2SO.push_back(cvEl); cvEl.clear();
+        cvEl.push_back(icv2); icv2 += sum2Jmin_JmaxP1;   cvEl.push_back(icv2-1); cvSI2CF.push_back(cvEl); cvEl.clear();
+        for(j=J2min; j<=J2max; j+=2)
+        {
+            cvEl.push_back(icv); icv += j+1; cvEl.push_back(icv-1); cvSO2CF.push_back(cvEl); cvEl.clear();
+        }
+    }
 
-   cvSI2SO.reserve(num_states); cvSI2CF.reserve(num_states); cvSO2CF.reserve(num_states*5); icv=0; icv1=0; icv2=0;
-   // Goes through all the states and gets the conversion matrix to use with convH2H, which is just a running index of blocks
-   //    of the same L,S values (different J's) for |vUSL> to |vUSLJ> (cvSI2SO), and same L,S,J for |vUSL> to |vUSLJmJ> (cvSI2CF)
-   for(i=0; i<num_states; i++)
-   {
-      J2min = abs(abs(conf.states[i].L)*2 - conf.states[i].S2);
-      J2max =     abs(conf.states[i].L)*2 + conf.states[i].S2;
-      sum2Jmin_JmaxP1 = 0; for(j=J2min; j<=J2max; j+=2) sum2Jmin_JmaxP1 += j+1;
-      cvEl.push_back(icv1); icv1 += (J2max-J2min)/2+1; cvEl.push_back(icv1-1); cvSI2SO.push_back(cvEl); cvEl.clear();
-      cvEl.push_back(icv2); icv2 += sum2Jmin_JmaxP1;   cvEl.push_back(icv2-1); cvSI2CF.push_back(cvEl); cvEl.clear();
-      for(j=J2min; j<=J2max; j+=2)
-      {
-         cvEl.push_back(icv); icv += j+1; cvEl.push_back(icv-1); cvSO2CF.push_back(cvEl); cvEl.clear();
-      }
-   }
+    RowMatrixXd temat = convH2H(emat,icv1,cvSI2SO);
+    if(m_n>(2*m_l+1)) H_so = temat - H_so; else H_so += temat;// temat.clear();
 
-   RowMatrixXd temat = convH2H(emat,icv1,cvSI2SO);
-   if(m_n>(2*m_l+1)) H_so = temat - H_so; else H_so += temat;// temat.clear();
+    RowMatrixXcd H_cf = RowMatrixXcd::Zero(icv,icv);
 
-   RowMatrixXcd H_cf = RowMatrixXcd::Zero(icv,icv);
+    // Calculates the crystal field Hamiltonian
+    //
+    //         ---   k    [  k        q  k    ]     ---  k  k     ---   k [  k       q  k  ]
+    // V   = i >    B     | O   - (-1)  O     |  +  >   B  O   +  >    B  | O  + (-1)  O   |
+    //  cf     ---   -|q| [  |q|         -|q| ]     ---  0  0     ---   q [  q          -q ]
+    //        k,q<0                                  k           k,q>0  
 
-// Calculates the crystal field Hamiltonian
-//
-//         ---   k    [  k        q  k    ]     ---  k  k     ---   k [  k       q  k  ]
-// V   = i >    B     | O   - (-1)  O     |  +  >   B  O   +  >    B  | O  + (-1)  O   |
-//  cf     ---   -|q| [  |q|         -|q| ]     ---  0  0     ---   q [  q          -q ]
-//        k,q<0                                  k           k,q>0  
-//
-#define NSTR(K,Q) nstr[1] = K+48; nstr[2] = Q+48; nstr[3] = 0
-#define MSTR(K,Q) nstr[1] = K+48; nstr[2] = 109;  nstr[3] = Q+48; nstr[4] = 0
-// for(k=2; k<=6; k+=2)
-//    for(iq=0; iq<(2*k+1); iq++)           //  racah_ukq is slightly faster as it involves less operations. However,
-//    {                                     //     it needs more memory as it stores zero-value entries as well.
-//       q = iq-k;                          //  For n=5, it needs around 1G, or it hits cache (slow!), for n=6,7 it
-//       if(get(k,q)!=0)                    //     needs around 3G. 
-//       {                                  //  fast_ukq does slightly more operations, uses less memory as it only
-//          if(q==0)                        //     calculates for nonzero reduced matrix elements. It needs around
-//          {                               //     300Mb for n=5 and about 1.8G for n=6,7
-//             //NSTR(k,0); 
-//             //strcpy(filename,basename); strcat(filename,nstr); strcat(filename,".mm");
-//             //Upq = mm_gin(filename);
-//             //if(Upq.isempty())
-//             //{
-//              //if(n<6)
-//                   Upq = racah_ukq(k,0);
-//              //else
-//              //   Upq = fast_ukq(n,k,0);
-//              //  rmzeros(Upq); mm_gout(Upq,filename);
-//             //}
-//           /*if(nn>(2*e_l+1)) H_cf -= Upq * (pars.B(k,q)/icfact[k]); else*/ H_cf.real() += Upq * (get(k,q)*icfact[k]);
-//          }
-//          else
-//          {
-//             //NSTR(k,abs(q)); 
-//             //strcpy(filename,basename); strcat(filename,nstr); strcat(filename,".mm");
-//             //Upq = mm_gin(filename);
-//             //if(Upq.isempty())
-//             //{
-//              /*if(n<6)*/Upq = racah_ukq(k,abs(q));
-//              //else Upq = fast_ukq(n,k,abs(q));
-//             //   rmzeros(Upq); mm_gout(Upq,filename);
-//             //}
-//             //MSTR(k,abs(q)); 
-//             //strcpy(filename,basename); strcat(filename,nstr); strcat(filename,".mm");
-//             //Umq = mm_gin(filename);
-//             //if(Umq.isempty())
-//             //{
-//              /*if(n<6)*/Umq = racah_ukq(k,-abs(q));
-//              //else Umq = fast_ukq(n,k,-abs(q));
-//             //   rmzeros(Umq); mm_gout(Umq,filename);
-//             //}
-//             if(q<0)
-//              /*if(nn>(2*e_l+1)) H_cfi-= (Upq - Umq*pow(-1.,q)) * (pars.B(k,q)/icfact[k]); 
-//                else   H_cfi+= (Upq - Umq*pow(-1.,q)) * (pars.B(k,q)/icfact[k]); changed MR 15.12.09 */
-//                       //H_cfi+= (Umq - Upq*pow(-1.,q)) * (pars.B(k,q)*icfact[k]);
-//                H_cf.imag() += (Umq - Upq*pow(-1.,q)) * get(k,q) / icfact[k];
-//             else
-//              /*if(nn>(2*e_l+1)) H_cf -= (Upq + Umq*pow(-1.,q)) * (pars.B(k,q)/icfact[k]); 
-//                else*/ //H_cf += (Umq + Upq*pow(-1.,q)) * (pars.B(k,q)*icfact[k]); 
-//                H_cf.real() += (Umq + Upq*pow(-1.,q)) * get(k,q) / icfact[k];
-//          }
-//       }
-//    }
     // First the diagonal elements (q=0 terms)
     for (auto iq: idq0) {
         int k = iq[0], m = iq[1];
@@ -632,12 +582,10 @@ RowMatrixXcd ic1ion::hamiltonian()
         }
     }
 
-   H_cf += convH2H(H_so,icv2,cvSO2CF);// rmzeros(H_cf); rmzeros(H_cfi);
+    H_cf += convH2H(H_so,icv2,cvSO2CF);// rmzeros(H_cf); rmzeros(H_cfi);
 
- //ic_printheader(rmat,pars); mm_gout(H_cf,rmat);
- //ic_printheader(imat,pars); mm_gout(H_cfi,imat);
-
-   return H_cf;
+    m_ham_calc = false;
+    return H_cf;
 }
 
 } // namespace libMcPhase
