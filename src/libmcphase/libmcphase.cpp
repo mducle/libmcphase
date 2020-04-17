@@ -119,7 +119,7 @@ ic1ion *ic1ion_init(py::args args, py::kwargs kwargs) {
 
 } // Anonymous namespace
 
-PYBIND11_MODULE(libMcPhase, m) {
+PYBIND11_MODULE(libmcphase, m) {
     m.doc() = "Python bindings for libMcPhase";
 
     py::class_<cfpars> pycfpars(m, "cfpars");

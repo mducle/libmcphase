@@ -3,3 +3,7 @@
 *.o
 *.exe
 __pycache__
+
+build
+dist
+libMcPhase.egg-info

@@ -19,7 +19,7 @@ set_property(TARGET singleion PROPERTY POSITION_INDEPENDENT_CODE ON)
 # Put all the source modules into a single interface library for linking with Pybind11
 set(LIBMCPHASE_CXX_LIBRARIES 
     singleion
-CACHE INTERNAL)
+CACHE INTERNAL "")
 
 #add_subdirectory(pythonapi)
 #enable_testing()
