@@ -12,6 +12,7 @@
 #include<algorithm>
 #include<array>
 #include<cmath>
+#include<vector>
 
 namespace libMcPhase {
 
