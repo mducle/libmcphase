@@ -132,7 +132,7 @@ void ic1ion::set_ci(std::vector<double> val) {
 
 void ic1ion::set_spinorbit(double val, ic1ion::SpinOrbType type) {
     switch (type) {
-        case ic1ion::SpinOrbType::Xi:
+        case ic1ion::SpinOrbType::Zeta:
             m_xi = val;
             m_xi_i = val / m_econv;
             break;

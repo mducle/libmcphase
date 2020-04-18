@@ -24,7 +24,7 @@ class ic1ion : public cfpars {
 
     public:
         enum class CoulombType { Slater = 0, CondonShortley = 1, Racah = 2 };
-        enum class SpinOrbType { Xi = 0, Lambda = 1 };
+        enum class SpinOrbType { Zeta = 0, Lambda = 1 };
 
     protected:
         bool m_ham_calc = false;                              // Flag to indicate if Hamiltonian calculated
@@ -72,11 +72,11 @@ class ic1ion : public cfpars {
         virtual void set(int l, int m, double val);
         virtual void set_coulomb(std::vector<double> val, CoulombType type = CoulombType::Slater);
         virtual void set_ci(std::vector<double> val);
-        virtual void set_spinorbit(double val, SpinOrbType type = SpinOrbType::Xi);
+        virtual void set_spinorbit(double val, SpinOrbType type = SpinOrbType::Zeta);
         // Getters
-        std::array<double, 4> get_coulomb() { return m_F; };
-        double get_spinorbit() { return m_xi; };
-        std::array<double, 3> get_ci() { return m_alpha; };
+        std::array<double, 4> get_coulomb() const { return m_F; };
+        double get_spinorbit() const { return m_xi; };
+        std::array<double, 3> get_ci() const { return m_alpha; };
         // Constructors
         ic1ion() : cfpars() { m_econv = 0.1239841973; };
         ic1ion(const int J2) = delete;                        // ic1ion should be constructed from ion name only.

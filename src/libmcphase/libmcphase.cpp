@@ -49,7 +49,7 @@ static const std::unordered_map<std::string, ic1ion::CoulombType> coulomb_names 
     {"Slater", ic1ion::CoulombType::Slater}, {"CondonShortley", ic1ion::CoulombType::CondonShortley}, {"Racah", ic1ion::CoulombType::Racah} };
 
 static const std::unordered_map<std::string, ic1ion::SpinOrbType> spinorb_names = {
-    {"Xi", ic1ion::SpinOrbType::Xi}, {"Lambda", ic1ion::SpinOrbType::Lambda} };
+    {"Zeta", ic1ion::SpinOrbType::Zeta}, {"Lambda", ic1ion::SpinOrbType::Lambda} };
 
 template <typename T> T set_enum(std::string key, std::unordered_map<std::string, T> enum_map, std::string errmsg) {
     auto it = enum_map.find(key);
@@ -114,6 +114,12 @@ cf1ion *cf1ion_init(py::args args, py::kwargs kwargs) {
 ic1ion *ic1ion_init(py::args args, py::kwargs kwargs) {
     ic1ion *cls = new ic1ion;
     cf_parse(static_cast<cfpars*>(cls), args, kwargs);
+    if (kwargs.contains("zeta")) {
+        cls->set_spinorbit(kwargs["zeta"].cast<double>(), ic1ion::SpinOrbType::Zeta);
+    }
+    if (kwargs.contains("slater")) {
+        cls->set_coulomb(kwargs["slater"].cast<std::vector<double>>(), ic1ion::CoulombType::Slater);
+    }
     return cls;
 }
 
@@ -198,13 +204,15 @@ PYBIND11_MODULE(libmcphase, m) {
         .def("set_coulomb", [](ic1ion &self, std::vector<double> val, std::string type) { self.set_coulomb(val,
              set_enum(type, coulomb_names, "Invalid normalisation, must be one of: Slater, CondonShortley, Racah")); })
         .def("set_spinorbit", [](ic1ion &self, double val, std::string type) { self.set_spinorbit(val,
-             set_enum(type, spinorb_names, "Invalid normalisation, must be one of: Xi, Lambda")); })
+             set_enum(type, spinorb_names, "Invalid normalisation, must be one of: Zeta, Lambda")); })
         .def("set_ci", &ic1ion::set_ci)
         .def("get_coulomb", &ic1ion::get_coulomb)
         .def("get_spinorbit", &ic1ion::get_spinorbit)
         .def("get_ci", &ic1ion::get_ci)
         .def("hamiltonian", &ic1ion::hamiltonian, "the crystal field Hamiltonian")
-        .def("eigensystem", &ic1ion::eigensystem, "the eigenvectors and eigenvalues of the crystal field Hamiltonian");
+        .def("eigensystem", &ic1ion::eigensystem, "the eigenvectors and eigenvalues of the crystal field Hamiltonian")
+        .def_property("zeta", [](ic1ion const &self) { return self.get_spinorbit(); }, [](ic1ion &self, double v) { self.set_spinorbit(v, ic1ion::SpinOrbType::Zeta); })
+        .def_property("slater", [](ic1ion const &self) { return self.get_coulomb(); }, [](ic1ion &self, std::vector<double> v) { self.set_coulomb(v, ic1ion::CoulombType::Slater); });
 }
 
 
