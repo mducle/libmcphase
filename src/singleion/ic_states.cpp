@@ -375,9 +375,9 @@ void fconf::set(int n, orbital l)
 
       if (n>7) n=14-n;	// Checks to see if we are in the second half of the series
 
+      states.clear();
       switch(n)
       {
-         states.clear();
          case 1:
             states.push_back(fstates_t(1,F,1,qG2(1,0),"2F"));        // f1    2F	1 100 10
             break;
@@ -811,8 +811,8 @@ void fconf::set(int n, bool mJflag, orbital l)
 	    for(mj=-j; mj<=j; mj+=2)
             {
                id.assign(confLS.states[i].id); id.append("_");
-               if(j%2==0) sprintf(Jlabel,"%i",j/2); else sprintf(Jlabel,"%i/2",j); id.append(Jlabel);
-               if(mj%2==0) sprintf(Jlabel,",mJ=%i",mj/2); else sprintf(Jlabel,",mJ=%i/2",mj); id.append(Jlabel);
+               if(j%2==0) sprintf(Jlabel,"%hi",j/2); else sprintf(Jlabel,"%hi/2",j); id.append(Jlabel);
+               if(mj%2==0) sprintf(Jlabel,",mJ=%hi",mj/2); else sprintf(Jlabel,",mJ=%hi/2",mj); id.append(Jlabel);
                if(l==D) states.push_back(fstates_t(confLS.states[i].S2,confLS.states[i].L,confLS.states[i].v,id,j,mj));
                else
                states.push_back(fstates_t(confLS.states[i].S2,
@@ -826,7 +826,7 @@ void fconf::set(int n, bool mJflag, orbital l)
 	 else
 	 {
             id.assign(confLS.states[i].id); id.append("_");
-            if(j%2==0) sprintf(Jlabel,"%i",j/2); else sprintf(Jlabel,"%i/2",j); id.append(Jlabel);
+            if(j%2==0) sprintf(Jlabel,"%hi",j/2); else sprintf(Jlabel,"%hi/2",j); id.append(Jlabel);
             if(l==D) states.push_back(fstates_t(confLS.states[i].S2,confLS.states[i].L,confLS.states[i].v,id,j));
             else
             states.push_back(fstates_t(confLS.states[i].S2,
