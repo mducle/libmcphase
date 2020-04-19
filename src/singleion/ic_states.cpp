@@ -20,6 +20,9 @@
  *
  */
 
+// Ignore warnings about "secure" functions (on Windows)
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "ic_states.hpp"
 #include <cctype>
 #include <cstdio>
@@ -34,8 +37,8 @@ namespace libMcPhase {
 std::string strtoupper(std::string instring)
 {
    std::string outstring;
-   int i,strlength = instring.length();
-   for(i=0; i<strlength; i++)
+   size_t strlength = instring.length();
+   for(size_t i=0; i<strlength; i++)
       outstring[i] = std::toupper(instring[i]);
    return outstring;
 }

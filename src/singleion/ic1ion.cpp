@@ -82,7 +82,7 @@ void ic1ion::set_type(const cfpars::Type newtype) {
 void ic1ion::set_name(const std::string &ionname) {
     try {
         cfpars::getfromionname(ionname);
-    } catch(const std::runtime_error &e) {
+    } catch(...) {
         m_rk = {1., 1., 1.};
     }
     getfromionname(ionname);
@@ -150,7 +150,7 @@ void ic1ion::set_spinorbit(double val, ic1ion::SpinOrbType type) {
 ic1ion::ic1ion(const std::string &ion) {
     try {
         cfpars::getfromionname(ion);
-    } catch(const std::runtime_error &e) {
+    } catch(...) {
         m_rk = {1., 1., 1.};
     }
     getfromionname(ion);
@@ -175,7 +175,7 @@ std::tuple<RowMatrixXcd, VectorXd> ic1ion::eigensystem() {
 // --------------------------------------------------------------------------------------------------------------- //
 void ic1ion::getfromionname(const std::string &ionname)
 {
-    int n,i; 
+    int n; 
     orbital l = (orbital)3;    // Defaults for f-electrons
     std::array<double, 4> F{}, a{};
     double xi = 0.;
@@ -523,7 +523,6 @@ RowMatrixXcd ic1ion::hamiltonian()
             std::cerr << "ic_hmltn(): l!=0,1,2 or 3, only s-, p-, d- and f- electrons are implemented.\n";
     }
 
-    int k,iq,q;
     fconf conf(m_n,m_l);
     int num_states = (int)conf.states.size();
     int i,j,icv,icv1,icv2,sum2Jmin_JmaxP1;

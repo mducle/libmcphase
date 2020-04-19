@@ -177,7 +177,6 @@ void cfpars::set(int l, int m, double val) {
 }
 
 const double cfpars::get(int l, int m) const {
-    int id;
     switch(l) {
         case 2: return m_Bo[2 + m];
         case 4: return m_Bo[9 + m];
