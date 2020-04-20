@@ -244,7 +244,7 @@ fconf::fconf(orbital l)
       states.push_back(fstates_t(1,F,1,U,"2F")); 
    }
    else
-      std::cerr << "fconf::fconf() - error, only the case of l=1, l=2 and l=3, p-, d- and f-electrons implemented.\n";
+      throw std::runtime_error("fconf::fconf() - error, only the case of l=1, l=2 and l=3, p-, d- and f-electrons implemented.");
 }
 
 void fconf::set(int n, orbital l)
@@ -254,7 +254,7 @@ void fconf::set(int n, orbital l)
    case S:
    if (n!=1)		// Checks to see if number of s-electrons valid
    {
-      std::cerr << "fconf::fconf() - Invalid value of n = number of s-electrons (must be 1)\n";
+      throw std::runtime_error("fconf::fconf() - Invalid value of n = number of s-electrons (must be 1)");
    }
    else { states.clear(); states.push_back(fstates_t(1,S,"2S")); }
    break; // case S:
@@ -262,7 +262,7 @@ void fconf::set(int n, orbital l)
    case P:
    if (n<1 || n>5)	// Checks to see if number of p-electrons valid
    {
-      std::cerr << "fconf::fconf() - Invalid value of n = number of p-electrons (must be 1<= n <=5)\n";
+      throw std::runtime_error("fconf::fconf() - Invalid value of n = number of p-electrons (must be 1<= n <=5)");
    }
    else {
       states.clear();
@@ -293,7 +293,7 @@ void fconf::set(int n, orbital l)
 
    if (n<1 || n>9)	// Checks to see if number of d-electrons valid
    {
-      std::cerr << "fconf::fconf() - Invalid value of n = number of d-electrons (must be 1<= n <=9)\n";
+      throw std::runtime_error("fconf::fconf() - Invalid value of n = number of d-electrons (must be 1<= n <=9)");
    }
    else {
       states.clear();
@@ -369,7 +369,7 @@ void fconf::set(int n, orbital l)
 
    if (n<1 || n>13)	// Checks to see if number of f-electrons valid
    {
-      std::cerr << "fconf::fconf(int n) - Invalid value of n = number of f-electrons (must be 1<= n <=13)\n";
+      throw std::runtime_error("fconf::fconf(int n) - Invalid value of n = number of f-electrons (must be 1<= n <=13)");
    }
    else {
 
@@ -785,14 +785,15 @@ void fconf::set(int n, orbital l)
    }    // else (n>0 && n<15)
    break; // case D:
    default:
-      std::cerr << "fconf::fconf() - error, only the case of l=0,1,2, and 3, s-, p-, d- and f-electrons implemented.\n";
+      throw std::runtime_error("fconf::fconf() - error, only the case of l=0,1,2, and 3, s-, p-, d- and f-electrons implemented.");
    }    // switch(l)
 }
 
 void fconf::set(int n, bool mJflag, orbital l)
 {
    if(l!=S && l!=P && l!=D && l!=F) { 
-      std::cerr << "fconf::fconf() - error, only the case of l=0,1,2, and 3, s-, p-, d- and f-electrons implemented.\n"; return; }
+      throw std::runtime_error("fconf::fconf() - error, only the case of l=0,1,2, and 3, s-, p-, d- and f-electrons implemented.");
+   }
      
    states.clear();
    fconf confLS(n,l);

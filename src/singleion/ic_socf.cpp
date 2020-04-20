@@ -106,7 +106,8 @@ RowMatrixXd ic1ion::racah_Umat(int k)
       return U; 
    }
 // if(n==(4*m_l+1)) { sMat<double> U(1,1); U(0,0) = -1.; return U; }  // Error! Removed 21.11.10 After checking with Carnall paper.
-   if(m_l!=P&&m_l!=D&&m_l!=F) { std::cerr << "racah_Umat(): Only p-, d- and f- configurations are implemented.\n"; exit(EXIT_FAILURE); }
+   if(m_l!=P&&m_l!=D&&m_l!=F) { 
+      throw std::runtime_error("racah_Umat(): Only p-, d- and f- configurations are implemented."); }
    fconf conf(m_n, m_l);
    fconf confp(m_n-1, m_l);
    int num_states = (int)conf.states.size();

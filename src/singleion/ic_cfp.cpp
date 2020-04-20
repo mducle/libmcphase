@@ -811,7 +811,7 @@ double racah_cfp(int n, qG2 U, int v, int S2, orbital L, qG2 Up, int vp, int S2p
    double cfp = 0;
    int nn = n,it; qG2 Ut; orbital Lt;
    if(n>7) { n=14-n; n++; it=v;v=vp;vp=it; it=S2;S2=S2p;S2p=it; Lt=L;L=Lp;Lp=Lt; Ut=U;U=Up;Up=Ut; }
-   if(n<0) { std::cerr << "racah_cfp: n<0 or n>14 not allowed for f-electrons.\n"; return cfp; }
+   if(n<0) { throw std::runtime_error("racah_cfp: n<0 or n>14 not allowed for f-electrons."); }
    qR7 W = racah_vtow(S2,v);
    qR7 Wp = racah_vtow(S2p,vp);
    double ulf = racah_ulf(U,L,Up,Lp); if(ulf==0) return cfp;
@@ -893,7 +893,7 @@ double racah_cfp(int n, int v, int S2, orbital L, int vp, int S2p, orbital Lp)
    orbital Lt;
 
    if(n>5) { n=10-n; n++; it=v;v=vp;vp=it; it=S2;S2=S2p;S2p=it; Lt=L;L=Lp;Lp=Lt; }
-   if(n<0) { std::cerr << "racah_cfpd: n<0 or n>10 not allowed for d-electrons.\n"; return cfp; }
+   if(n<0) { throw std::runtime_error("racah_cfpd: n<0 or n>10 not allowed for d-electrons."); }
 
    switch (n) // Looks up table of cfp from Neilson and Koster, 1963
    {
@@ -1037,7 +1037,7 @@ double racah_cfp(int n, int S2, orbital L, int S2p, orbital Lp)
    orbital Lt;
 
    if(n>3) { n=6-n; n++; it=S2;S2=S2p;S2p=it; Lt=L;L=Lp;Lp=Lt; }
-   if(n<0) { std::cerr << "racah_cfpd: n<0 or n>10 not allowed for d-electrons.\n"; return cfp; }
+   if(n<0) { throw std::runtime_error("racah_cfpd: n<0 or n>10 not allowed for d-electrons."); }
 
    switch(n) {
       case 2:

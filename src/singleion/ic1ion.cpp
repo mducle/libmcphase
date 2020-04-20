@@ -10,6 +10,7 @@
 #include <complex>
 #include <cfloat>
 #include <functional>
+#include <sstream>
 
 namespace libMcPhase {
 
@@ -307,8 +308,11 @@ void ic1ion::getfromionname(const std::string &ionname)
     else if(IONCMP("ag3+")==0) { B = 528.;  C = 4.03*B; xi =1940.; /*xi=1930*/ n = 8; l=D; flgBC=1; }
     // 5d ions parameters from G Burns, J. Chem. Phys. v41, 1521 (1964) B,C only.
     else if(IONCMP("re2+")==0) { F[1]=30870;F[2]=22050; xi =0.;    /*xi=   ;*/ n = 5; l=D; }
-    
-    else { std::cerr << "getfromionname(): Name of ion " << ionname << " not recognised.\n"; return; }
+    else { 
+        std::stringstream errstr;
+        errstr << "getfromionname(): Name of ion " << ionname << " not recognised.\n";
+        throw std::runtime_error(errstr.str());
+    }
 
     if(flg3d) // 3d ion - "xi" is actually lambda parameter -> |lambda| = xi/2S
     {
@@ -468,7 +472,7 @@ RowMatrixXd ic1ion::ic_Hcso()
          emat = racah_emat(m_n,m_F[0],m_F[1]) + racah_ci(m_n,m_alpha[0]); 
          break;
       default:
-         std::cerr << "ic_hmltn(): l!=2 or l!=3, only d- and f- electrons have been implemented so far.\n";
+         throw std::runtime_error("ic_Hcso(): l!=1, 2 or 3, only p-, d- and f- electrons are implemented.");
    }
  
    fconf conf(m_n, m_l);
@@ -520,7 +524,7 @@ RowMatrixXcd ic1ion::hamiltonian()
             emat = RowMatrixXd::Zero(1,1);
             break;
         default:
-            std::cerr << "ic_hmltn(): l!=0,1,2 or 3, only s-, p-, d- and f- electrons are implemented.\n";
+            throw std::runtime_error("ic_hmltn(): l!=0, 1, 2 or 3, only s-, p-, d- and f- electrons are implemented.");
     }
 
     fconf conf(m_n,m_l);

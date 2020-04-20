@@ -627,7 +627,7 @@ RowMatrixXd racah_emat(int n, double E0, double E1, double E2, double E3)
 {
    int nn = n;
    RowMatrixXd emat;
-   if (n>7) nn=14-n; if(nn<1) { std::cerr << "racah_emat: number of f-electrons n > 14 or < 1\n"; return emat; }
+   if (n>7) nn=14-n; if(nn<1) { throw std::runtime_error("racah_emat: number of f-electrons n > 14 or < 1"); }
    if (nn==1) { 
       emat = RowMatrixXd::Zero(1, 1); emat(0,0) = E0+E1+E2+E3; 
       return emat; 
@@ -655,7 +655,7 @@ RowMatrixXd racah_emat(int n, double F0, double F2, double F4)
 {
    int nn = n;
    RowMatrixXd e;
-   if (n>5) nn=10-n; if(nn<1) { std::cerr << "racah_emat: number of d-electrons n > 10 or < 1\n"; return e; }
+   if (n>5) nn=10-n; if(nn<1) { throw std::runtime_error("racah_emat: number of d-electrons n > 10 or < 1"); }
 
    switch(nn) {
       case 1: e = RowMatrixXd::Zero(1, 1); break; // F0+F2+F4; break;
@@ -707,7 +707,7 @@ RowMatrixXd racah_emat(int n, double F0, double F2)
 {
    int nn = n;
    RowMatrixXd e;
-   if (n>3) nn=6-n;  if(nn<1) { std::cerr << "racah_emat: number of p-electrons n > 6 or < 1\n"; return e; }
+   if (n>3) nn=6-n;  if(nn<1) { throw std::runtime_error("racah_emat: number of p-electrons n > 6 or < 1"); }
 
    int Hsz[]={1,3,3}, L[]={1,1,0,2,0,1,2},                 // p1:2P - p2: 3P,1S,1D - p3: 4S,2P,2D
                      S2[]={1,2,0,0,3,1,1}, st=0;
@@ -772,7 +772,7 @@ RowMatrixXd racah_ci(int n, double alpha, double beta, double gamma)     // For 
 {
    int nn = n;
    RowMatrixXd ci;
-   if (n>7) nn=14-n; if(nn<1) { std::cerr << "racah_ci: number of f-electrons n > 14 or < 1\n"; return ci; }
+   if (n>7) nn=14-n; if(nn<1) { throw std::runtime_error("racah_ci: number of f-electrons n > 14 or < 1"); }
    if (nn==1) { 
       ci = RowMatrixXd::Zero(1, 1);
       ci(0,0) = alpha*3.*(3.+1.) + beta/2. + gamma*6./10.;               // f1 has only 1 state: 2F [100][10]
@@ -795,7 +795,7 @@ RowMatrixXd racah_ci(int n, double alpha, double beta)                   // For 
 {
    int nn = n;
    RowMatrixXd ci;
-   if (n>5) nn=10-n; if(nn<1) { std::cerr << "racah_ci number of d-electrons n > 10 or < 1\n"; return ci; }
+   if (n>5) nn=10-n; if(nn<1) { throw std::runtime_error("racah_ci number of d-electrons n > 10 or < 1"); }
    if (nn==1) { 
       ci = RowMatrixXd::Zero(1, 1);
       ci(0,0) = (alpha*2.*(2.+1.) + beta*2./3.);                         // d1 has only 1 state: 2D [10]
@@ -818,7 +818,7 @@ RowMatrixXd racah_ci(int n, double alpha)                                // For 
 {
    int nn = n;
    RowMatrixXd ci;
-   if (n>3) nn=6-n; if(nn<1) { std::cerr << "racah_ci number of p-electrons n > 6 or < 1\n"; return ci; }
+   if (n>3) nn=6-n; if(nn<1) { throw std::runtime_error("racah_ci number of p-electrons n > 6 or < 1"); }
    nn--;
    int Hsz[]={1,3,3}, L[]={1,1,0,2,0,1,2}, st=0;                         // p1:2P - p2: 3P,1S,1D - p3: 4S,2P,2D
    for (int i=1; i<nn; i++) st+=Hsz[i-1];
