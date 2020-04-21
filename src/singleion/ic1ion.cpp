@@ -11,14 +11,16 @@
 #include <cfloat>
 #include <functional>
 #include <sstream>
+#include <algorithm>
+#include <numeric>
 
 namespace libMcPhase {
 
 #define Fk2F(F) F[1] *= 225.; F[2] *= 1089.; F[3] *= (184041./25); 
-#define F424    0.13805                    // Ratios of F_4/F_2 slater integrals for 4f hydrogenic wavefunctions
-#define F624    0.015018                   // Ratios of F_6/F_2 slater integrals for 4f hydrogenic wavefunctions
-#define F425    0.14218                    // Ratios of F_4/F_2 slater integrals for 5f hydrogenic wavefunctions
-#define F625    0.016104                   // Ratios of F_6/F_2 slater integrals for 5f hydrogenic wavefunctions
+static const double F424 = 0.13805;        // Ratios of F_4/F_2 slater integrals for 4f hydrogenic wavefunctions
+static const double F624 = 0.015018;       // Ratios of F_6/F_2 slater integrals for 4f hydrogenic wavefunctions
+static const double F425 = 0.14218;        // Ratios of F_4/F_2 slater integrals for 5f hydrogenic wavefunctions
+static const double F625 = 0.016104;       // Ratios of F_6/F_2 slater integrals for 5f hydrogenic wavefunctions
 
 // Conversion factors for different energy units[from][to], order: [meV, cm, K].
 static const std::array<double, 3> ICENERGYCONV = { {0.1239841973, 1., 1.4387773587} };
@@ -94,6 +96,7 @@ void ic1ion::set_name(const std::string &ionname) {
     }
     m_ham_calc = false;
     m_ev_calc = false;
+    m_tensorops.clear();
 }
 
 void ic1ion::set_coulomb(const std::vector<double> val, ic1ion::CoulombType type) {
@@ -155,6 +158,7 @@ ic1ion::ic1ion(const std::string &ion) {
         m_rk = {1., 1., 1.};
     }
     getfromionname(ion);
+    // Default inherited unit from cfpars is meV but we use cm-1 internally in this module
     m_econv = 0.1239841973;
 }
 
@@ -327,6 +331,7 @@ void ic1ion::getfromionname(const std::string &ionname)
 
     m_n = n; 
     m_l = l;
+    // Internal parameters in cm
     m_xi_i = xi;
     m_xi = m_xi_i * m_econv;
     for (int ii=0; ii<4; ii++) {
@@ -499,8 +504,11 @@ RowMatrixXd ic1ion::ic_Hcso()
 // --------------------------------------------------------------------------------------------------------------- //
 // Calculate the intermediate coupling Hamiltonian matrix
 // --------------------------------------------------------------------------------------------------------------- //
-RowMatrixXcd ic1ion::hamiltonian()
+void ic1ion::calculate_hamiltonian()
 {
+    if(m_ham_calc)
+        return;
+
     RowMatrixXd Upq, Umq, emat, H_so = racah_so();
     std::array<double, 4> E;
     double p = pow(-1.,(double)abs(m_l))*(2.*m_l+1.);
@@ -553,7 +561,7 @@ RowMatrixXcd ic1ion::hamiltonian()
     RowMatrixXd temat = convH2H(emat,icv1,cvSI2SO);
     if(m_n>(2*m_l+1)) H_so = temat - H_so; else H_so += temat;// temat.clear();
 
-    RowMatrixXcd H_cf = RowMatrixXcd::Zero(icv,icv);
+    m_hamiltonian = RowMatrixXcd::Zero(icv,icv);
 
     // Calculates the crystal field Hamiltonian
     //
@@ -566,7 +574,7 @@ RowMatrixXcd ic1ion::hamiltonian()
     for (auto iq: idq0) {
         int k = iq[0], m = iq[1];
         if (std::fabs(m_Bi[m]) > 1e-12) {
-            H_cf.real() += racah_ukq(k, 0) * (m_Bi[m] * m_econv * icfact[k]);
+            m_hamiltonian.real() += racah_ukq(k, 0) * (m_Bi[m] * m_econv * icfact[k]);
         }
     }
 
@@ -577,23 +585,80 @@ RowMatrixXcd ic1ion::hamiltonian()
             Upq = racah_ukq(k, abs(q));
             Umq = racah_ukq(k, -abs(q));
             if (std::fabs(m_Bi[m]) > 1e-12) {
-                H_cf.imag() += (Umq - Upq*pow(-1., q)) * (m_Bi[m] * m_econv * icfact[k]);
+                m_hamiltonian.imag() += (Umq - Upq*pow(-1., q)) * (m_Bi[m] * m_econv * icfact[k]);
             }
             if (std::fabs(m_Bi[p]) > 1e-12) {
-                H_cf.real() += (Umq + Upq*pow(-1., q)) * (m_Bi[p] * m_econv * icfact[k]);
+                m_hamiltonian.real() += (Umq + Upq*pow(-1., q)) * (m_Bi[p] * m_econv * icfact[k]);
             }
         }
     }
 
-    H_cf += convH2H(H_so,icv2,cvSO2CF);// rmzeros(H_cf); rmzeros(H_cfi);
+    m_hamiltonian += convH2H(H_so,icv2,cvSO2CF);
+    m_ham_calc = true;
+}
 
-    m_ham_calc = false;
-    return H_cf;
+RowMatrixXcd ic1ion::hamiltonian() {
+    if (!m_ham_calc)
+        calculate_hamiltonian();
+    return m_hamiltonian;
 }
 
 // --------------------------------------------------------------------------------------------------------------- //
-// Calculates the magnetisation
+// Calculates bulk properties (magnetisation, susceptibility)
 // --------------------------------------------------------------------------------------------------------------- //
+std::vector<double> ic1ion::calculate_boltzmann(VectorXd en, double T)
+{
+    std::vector<double> boltzmann, en_meV;
+    // Need kBT in external energy units. K_B is in meV/K
+    double kBT = K_B * T * m_econv;
+    double Emin = std::numeric_limits<double>::max();
+    for (size_t i=0; i < en.size(); i++) {
+        Emin = (en(i) < Emin) ? en(i) : Emin;
+    }
+    for (size_t i=0; i < en.size(); i++) {
+        boltzmann.push_back(exp(-(en(i) - Emin) / kBT));
+    }
+    return boltzmann;
+}
+
+std::vector<double> ic1ion::magnetisation(std::vector<double> Hvec, std::vector<double> Hdir, double T, MagUnits unit_type)
+{
+    // Normalise the field direction vector
+    double Hnorm = sqrt(Hdir[0] * Hdir[0] + Hdir[1] * Hdir[1] + Hdir[2] * Hdir[2]);
+    if (fabs(Hnorm) < 1.e-6) {
+        throw std::runtime_error("ic1ion::magnetisation(): Direction vector cannot be zero");
+    }
+    std::vector<double> nHdir;
+    std::transform(Hdir.begin(), Hdir.end(), std::back_inserter(nHdir), [Hnorm](double Hd){ return Hd / Hnorm; });
+    // Calculates Magnetisation M(H) at specified T
+    if (!m_ham_calc)
+        calculate_hamiltonian();
+    std::vector<double> M;
+    M.reserve(Hvec.size());
+    // Loops through all the input field magnitudes and calculates the magnetisation
+    for (auto H: Hvec) {
+        RowMatrixXcd ham = m_hamiltonian - zeeman_hamiltonian(H, Hdir);
+        SelfAdjointEigenSolver<RowMatrixXcd> es(ham);
+        // calculate_moments returns a vector of 3 moments *squared* vectors, in the x, y, z directions
+        std::vector< std::vector<double> > moments_vec = calculate_moments(es.eigenvectors());
+        std::vector<double> boltzmann = calculate_boltzmann(es.eigenvalues(), T);
+        std::vector<double> Mdir;
+        for (auto moments: moments_vec) {
+            double Mexp = 0., Z = 0.;
+            //std::inner_product(moments.begin(), moments.end(), boltzmann.begin(), Mexp);
+            //std::accumulate(boltzmann.begin(), boltzmann.end(), Z);
+            for (int ii=0; ii<ham.cols(); ii++) {
+                Mexp += moments[ii] * boltzmann[ii];
+                Z += boltzmann[ii];
+            }
+            Mdir.push_back(Mexp / Z);
+        }
+        M.push_back(sqrt(Mdir[0] * Mdir[0] + Mdir[1] * Mdir[1] + Mdir[2] * Mdir[2]));
+    }
+    return M;
+}
+
+/*
 void ic_cmag(const char *filename, icpars &pars, double elim)
 {
    if(!(pars.calcphys & PHYSPROP_MAGBIT)) return;
@@ -680,5 +745,6 @@ void ic_cmag(const char *filename, icpars &pars, double elim)
       }
    }
 }
+*/
 
 } // namespace libMcPhase

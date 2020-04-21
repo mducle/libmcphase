@@ -23,7 +23,7 @@ class racah {
         // The first row is i!, the second row is i!/1!, third is i!/2!, jth row is i!/j!
         std::array<std::array<double, 171>, 171> m_facts{};
         int m_highest = 0;                                                           // Highest factorial already calculated
-        int m_max = 170;                                                             // Maximum value of factorial calculable
+        const int m_max = 170;                                                       // Maximum value of factorial calculable
         void m_calc_f(int v);
 
     public:

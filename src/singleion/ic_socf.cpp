@@ -347,25 +347,47 @@ sMat<double> fast_ukq(int n, int k, int q, orbital m_l)
 
    return Ukq;
 }
+*/
+
+// Sets the element of an input matrix to be that of a submatrix multiplied by a coefficient if given
+void pset(RowMatrixXd &input, int i_start, int i_end, int j_start, int j_end, const RowMatrixXd &submat, const double coeff=1.)
+{
+    int ii = 0;
+    if(coeff == 1.) {
+        for(int i=i_start; i<i_end; i++) {
+            int jj = 0;
+            for(int j=j_start; j<j_end; j++) {
+                input(i, j) = submat(ii, jj++);
+            }
+            ii++;
+        }
+    } else {
+        for(int i=i_start; i<i_end; i++) {
+            int jj = 0;
+            for(int j=j_start; j<j_end; j++) {
+                input(i, j) = submat(ii, jj++) * coeff;
+            }
+            ii++;
+        }
+    }
+}
 
 // --------------------------------------------------------------------------------------------------------------- //
 // Calculates the magnetic moment operator matrix mu_{x,y,z} = L + gS, in the |vSLJM> basis
 // --------------------------------------------------------------------------------------------------------------- //
-sMat<double> racah_mumat(int n, int q, orbital m_l)
+RowMatrixXd ic1ion::racah_mumat(int q)
 {
    const double g_s = 2.0023193043622;   // electronic g-factor, from NIST - http://physics.nist.gov/cuu/Constants/
 
-   if(m_l!=S && m_l!=P && m_l!=D && m_l!=F) { std::cerr << "racah_mumat(): Only s-, p-, d- and f- configurations are implemented.\n"; }
-   fconf conf(n,m_l);
+   if(m_l!=S && m_l!=P && m_l!=D && m_l!=F) { 
+      throw std::runtime_error("racah_mumat(): Only s-, p-, d- and f- configurations are implemented."); 
+   }
+   fconf conf(m_n, m_l);
    int num_states = (int)conf.states.size();
    int i,j,ns,minJ2,maxJ2,valJ,valJ_i,valJ_j;
    int j2min,j2max,j2pmin,j2pmax,count,countp;
    int L2,L2p,S2,S2p,J2,J2p,Jz2,Jz2p,imJ_i,imJ_j;
    std::vector<int> indexJstart,indexJstop;
-   sMat<double> mJmat_i(1,1);
-   sMat<double> rmJ;
-   std::vector< std::vector< sMat<double> > > mJmat;
-   std::vector< sMat<double> > mJmat_row;
    double Lrm,Srm,rm;
 
    // Determines the L S J values for each matrix elements and the index of each J-J' block
@@ -380,15 +402,11 @@ sMat<double> racah_mumat(int n, int q, orbital m_l)
       indexJstop.push_back(ns);
    }
 
-   sMat<double> muiq(ns,ns);
+   RowMatrixXd muiq = RowMatrixXd::Zero(ns, ns);
 
    // Initialises a cell array of matrices of q- and Jz- dependent matrices so that we don't have to calculate
    //    each (2J+1)x(2J'+1) matrix more than once, for each J and J' values.
-   valJ = (maxJ2-minJ2)/2;
-   for(i=0; i<=valJ; i++)
-      mJmat_row.push_back(mJmat_i);
-   for(i=0; i<=valJ; i++)
-      mJmat.push_back(mJmat_row);
+   //std::unordered_map<std::pair<int, int>, RowMatrixXd, pair_hash> mJmat;
 
    // Calculates the matrix for the operator L+gS for a particular q (q=0 is z, q=+/-1 is linear combination of x or y)
    for(i=0; i<num_states; i++)
@@ -402,14 +420,40 @@ sMat<double> racah_mumat(int n, int q, orbital m_l)
       
       // Caculate the J-dependent reduced matrix elements 
       j2min = abs(L2-S2); j2max = L2+S2; j2pmin = abs(L2p-S2); j2pmax = L2p+S2;
-      rmJ.clear(); count = 0;
+
+        double matel;
+        count = indexJstart[i] - 1;
+        for(J2=j2min; J2<=j2max; J2+=2)
+        {
+            countp = indexJstart[j] - 1;
+            for(J2p=j2pmin; J2p<=j2pmax; J2p+=2)
+            {
+                Lrm = ( pow(-1.,(S2p+L2p+J2)/2.)  * sqrt((L2p+1.)*(J2+1.)*(J2p+1.)*(L2p/2.)*(L2p/2.+1.)) * m_racah.sixj(J2p,2,J2,L2,S2,L2p) );
+                Srm = ( pow(-1.,(S2p+L2p+J2p)/2.) * sqrt((S2p+1.)*(J2+1.)*(J2p+1.)*(S2p/2.)*(S2p/2.+1.)) * m_racah.sixj(J2p,2,J2,S2,L2,S2p) );
+                rm  = Lrm + g_s*Srm;
+                for(imJ_i=0; imJ_i<=J2; imJ_i++)
+                {
+                    Jz2 = imJ_i*2-J2;
+                    for(imJ_j=0; imJ_j<=J2p; imJ_j++)
+                    {
+                        Jz2p = imJ_j*2-J2p;
+                        muiq(count + imJ_i, countp + imJ_j) = pow(-1.,(J2-Jz2)/2.) * m_racah.threej(J2,2,J2p,-Jz2,2*q,Jz2p) * rm;
+                    }
+                }
+                countp += J2p + 1;
+            }
+            count += J2 + 1;
+        }
+
+/*    RowMatrixXd rmJ = RowMatrixXd::Zero(indexJstop[i] - indexJstart[i], indexJstop[j] - indexJstart[j]);
+      count = 0;
       for(J2=j2min; J2<=j2max; J2+=2)
       {
          countp = 0; valJ_i = (J2-minJ2)/2;
          for(J2p=j2pmin; J2p<=j2pmax; J2p+=2)
          {
-            Lrm = pow(-1.,(S2p+L2p+J2)/2.)  * sqrt((L2p+1.)*(J2+1.)*(J2p+1.)*(L2p/2.)*(L2p/2.+1.)) * sixj(L2,J2,S2p,J2p,L2p,2);
-            Srm = pow(-1.,(S2p+L2p+J2p)/2.) * sqrt((S2p+1.)*(J2+1.)*(J2p+1.)*(S2p/2.)*(S2p/2.+1.)) * sixj(S2,J2,L2p,J2p,S2p,2);
+            Lrm = pow(-1.,(S2p+L2p+J2)/2.)  * sqrt((L2p+1.)*(J2+1.)*(J2p+1.)*(L2p/2.)*(L2p/2.+1.)) * m_racah.sixj(L2,J2,S2p,J2p,L2p,2);
+            Srm = pow(-1.,(S2p+L2p+J2p)/2.) * sqrt((S2p+1.)*(J2+1.)*(J2p+1.)*(S2p/2.)*(S2p/2.+1.)) * m_racah.sixj(S2,J2,L2p,J2p,S2p,2);
 //          Lrm /= pow(-1.,L2p/2.)*(L2p+1.); Srm /= pow(-1.,S2p/2.)*(S2p+1.);
 //          Lrm /= pow(-1.,L2p/2.); Srm /= pow(-1.,S2p/2.);
 //          Lrm /= (L2p+1.); Srm /= (S2p+1.);
@@ -417,46 +461,51 @@ sMat<double> racah_mumat(int n, int q, orbital m_l)
 
             // Calculates the q- and Jz- dependent matrix elements as given by the Wigner-Eckart theorem
             valJ_j = (J2p-minJ2)/2;
-            if(mJmat[valJ_i][valJ_j].isempty())
-            {  
-               mJmat[valJ_i][valJ_j].zero(J2+1,J2p+1);
+            //auto idmJ = std::make_pair(valJ_i, valJ_j);
+            //auto itmJ = mJmat.find(idmJ);
+            //if(itmJ == mJmat.end())
+            //{  
+            //   mJmat[idmJ] = RowMatrixXd::Zero(J2, J2p);
+            //   itmJ = mJmat.find(idmJ);
+               RowMatrixXd mJmat = RowMatrixXd::Zero(J2, J2p);
                for(imJ_i=0; imJ_i<=J2; imJ_i++)
                {
                   Jz2 = imJ_i*2-J2;
                   for(imJ_j=0; imJ_j<=J2p; imJ_j++)
                   {
                      Jz2p = imJ_j*2-J2p;
-                     mJmat[valJ_i][valJ_j](imJ_i,imJ_j) = pow(-1.,(J2-Jz2)/2.) * threej(J2,2,J2p,-Jz2,2*q,Jz2p);
+            //         (itmJ->second)(imJ_i,imJ_j) = pow(-1.,(J2-Jz2)/2.) * m_racah.threej(J2,2,J2p,-Jz2,2*q,Jz2p);
+                     mJmat(imJ_i,imJ_j) = pow(-1.,(J2-Jz2)/2.) * m_racah.threej(J2,2,J2p,-Jz2,2*q,Jz2p);
                   }
                }
-            }
-            rmJ.pset(count+1,count+J2+1,countp+1,countp+J2p+1,mJmat[valJ_i][valJ_j]*rm);
+            //}
+            //pset(rmJ, count+1, count+J2+1, countp+1, countp+J2p+1, (itmJ->second) * rm);
+            pset(rmJ, count+1, count+J2+1, countp+1, countp+J2p+1, mJmat * rm);
+            //rmJ.block(count + 1, countp + 1, J2, J2p) = mJmat[valJ_i][valJ_j] * rm;
             countp += J2p+1;
          }
          count += J2+1;
       }
-      muiq.pset(indexJstart[i],indexJstop[i],indexJstart[j],indexJstop[j],rmJ);
+      pset(muiq, indexJstart[i], indexJstop[i], indexJstart[j], indexJstop[j], rmJ);
+*/    //muiq.block(indexJstart[i], indexJstart[j], indexJstop[i] - indexJstart[i], indexJstop[j] - indexJstart[j]) = rmJ;
     }
-
    return muiq;
 }
 
 // --------------------------------------------------------------------------------------------------------------- //
 // Calculates the magnetic moment operator as separate matrices, L_{x,y,z} and S_{x,y,z}, in the |vSLJM> basis
 // --------------------------------------------------------------------------------------------------------------- //
-void racah_mumat(int n, int q, sMat<double> &L1q, sMat<double> &S1q, orbital m_l)
+void ic1ion::racah_mumat(int q, RowMatrixXd &L1q, RowMatrixXd &S1q)
 {
    if(m_l!=S && m_l!=P && m_l!=D && m_l!=F) { std::cerr << "racah_mumat(): Only s-, p-, d- and f- configurations are implemented.\n"; }
-   fconf conf(n,m_l);
+   fconf conf(m_n, m_l);
    int num_states = (int)conf.states.size();
    int i,j,ns,minJ2,maxJ2,valJ,valJ_i,valJ_j;
    int j2min,j2max,j2pmin,j2pmax,count,countp;
    int L2,L2p,S2,S2p,J2,J2p,Jz2,Jz2p,imJ_i,imJ_j;
    std::vector<int> indexJstart,indexJstop;
-   sMat<double> mJmat_i(1,1);
-   sMat<double> rmL, rmS;
-   std::vector< std::vector< sMat<double> > > mJmat;
-   std::vector< sMat<double> > mJmat_row;
+   std::vector< std::vector< RowMatrixXd > > mJmat;
+   std::vector< RowMatrixXd > mJmat_row;
    double Lrm,Srm;
 
    // Determines the L S J values for each matrix elements and the index of each J-J' block
@@ -471,15 +520,25 @@ void racah_mumat(int n, int q, sMat<double> &L1q, sMat<double> &S1q, orbital m_l
       indexJstop.push_back(ns);
    }
 
-   L1q.zero(ns,ns); S1q.zero(ns,ns);
+    if (L1q.rows() == ns && L1q.cols() == ns) {
+        L1q.fill(0.);
+    } else {
+        L1q = RowMatrixXd::Zero(ns, ns);
+    }
+    if (S1q.rows() == ns && S1q.cols() == ns) {
+        S1q.fill(0.);
+    } else {
+        S1q = RowMatrixXd::Zero(ns, ns);
+    }
 
    // Initialises a cell array of matrices of q- and Jz- dependent matrices so that we don't have to calculate
    //    each (2J+1)x(2J'+1) matrix more than once, for each J and J' values.
-   valJ = (maxJ2-minJ2)/2;
-   for(i=0; i<=valJ; i++)
-      mJmat_row.push_back(mJmat_i);
-   for(i=0; i<=valJ; i++)
-      mJmat.push_back(mJmat_row);
+   //RowMatrixXd mJmat_i = RowMatrixXd(0, 0);
+   //valJ = (maxJ2-minJ2)/2;
+   //for(i=0; i<=valJ; i++)
+   //   mJmat_row.push_back(mJmat_i);
+   //for(i=0; i<=valJ; i++)
+   //   mJmat.push_back(mJmat_row);
 
    // Calculates the matrix for the operator L+gS for a particular q (q=0 is z, q=+/-1 is linear combination of x or y)
    for(i=0; i<num_states; i++)
@@ -493,44 +552,81 @@ void racah_mumat(int n, int q, sMat<double> &L1q, sMat<double> &S1q, orbital m_l
       
       // Caculate the J-dependent reduced matrix elements 
       j2min = abs(L2-S2); j2max = L2+S2; j2pmin = abs(L2p-S2); j2pmax = L2p+S2;
-      rmL.clear(); rmS.clear(); count = 0;
+
+        double matel;
+        count = indexJstart[i] - 1;
+        for(J2=j2min; J2<=j2max; J2+=2)
+        {
+            countp = indexJstart[j] - 1;
+            for(J2p=j2pmin; J2p<=j2pmax; J2p+=2)
+            {
+                Lrm = ( pow(-1.,(S2p+L2p+J2)/2.)  * sqrt((L2p+1.)*(J2+1.)*(J2p+1.)*(L2p/2.)*(L2p/2.+1.)) * m_racah.sixj(J2p,2,J2,L2,S2,L2p) );
+                Srm = ( pow(-1.,(S2p+L2p+J2p)/2.) * sqrt((S2p+1.)*(J2+1.)*(J2p+1.)*(S2p/2.)*(S2p/2.+1.)) * m_racah.sixj(J2p,2,J2,S2,L2,S2p) );
+                for(imJ_i=0; imJ_i<=J2; imJ_i++)
+                {
+                    Jz2 = imJ_i*2-J2;
+                    for(imJ_j=0; imJ_j<=J2p; imJ_j++)
+                    {
+                        Jz2p = imJ_j*2-J2p;
+                        matel = pow(-1.,(J2-Jz2)/2.) * m_racah.threej(J2,2,J2p,-Jz2,2*q,Jz2p);
+                        L1q(count + imJ_i, countp + imJ_j) = matel * Lrm;
+                        S1q(count + imJ_i, countp + imJ_j) = matel * Srm;
+                    }
+                }
+                countp += J2p + 1;
+            }
+            count += J2 + 1;
+        }
+
+/*    count = 0;
+      RowMatrixXd rmL = RowMatrixXd::Zero(indexJstop[i] - indexJstart[i], indexJstop[j] - indexJstart[j]);
+      RowMatrixXd rmS = RowMatrixXd::Zero(indexJstop[i] - indexJstart[i], indexJstop[j] - indexJstart[j]);
       for(J2=j2min; J2<=j2max; J2+=2)
       {
          countp = 0; valJ_i = (J2-minJ2)/2;
          for(J2p=j2pmin; J2p<=j2pmax; J2p+=2)
          {
-            Lrm = ( pow(-1.,(S2p+L2p+J2)/2.)  * sqrt((L2p+1.)*(J2+1.)*(J2p+1.)*(L2p/2.)*(L2p/2.+1.)) * sixj(J2p,2,J2,L2,S2,L2p) );
-            Srm = ( pow(-1.,(S2p+L2p+J2p)/2.) * sqrt((S2p+1.)*(J2+1.)*(J2p+1.)*(S2p/2.)*(S2p/2.+1.)) * sixj(J2p,2,J2,S2,L2,S2p) );
+            Lrm = ( pow(-1.,(S2p+L2p+J2)/2.)  * sqrt((L2p+1.)*(J2+1.)*(J2p+1.)*(L2p/2.)*(L2p/2.+1.)) * m_racah.sixj(J2p,2,J2,L2,S2,L2p) );
+            Srm = ( pow(-1.,(S2p+L2p+J2p)/2.) * sqrt((S2p+1.)*(J2+1.)*(J2p+1.)*(S2p/2.)*(S2p/2.+1.)) * m_racah.sixj(J2p,2,J2,S2,L2,S2p) );
 //          Lrm /= pow(-1.,L2p/2.)*(L2p+1.); Srm /= pow(-1.,S2p/2.)*(S2p+1.);
 //          Lrm /= pow(-1.,L2p/2.); Srm /= pow(-1.,S2p/2.);
 //          Lrm /= (L2p+1.); Srm /= (S2p+1.);
 
             // Calculates the q- and Jz- dependent matrix elements as given by the Wigner-Eckart theorem
             valJ_j = (J2p-minJ2)/2;
-            if(mJmat[valJ_i][valJ_j].isempty())
-            {  
-               mJmat[valJ_i][valJ_j].zero(J2+1,J2p+1);
+            //if(mJmat[valJ_i][valJ_j].size() == 0)
+            //{  
+            //   mJmat[valJ_i][valJ_j] = RowMatrixXd::Zero(J2+1, J2p+1);
+               RowMatrixXd mJmat = RowMatrixXd::Zero(J2+1, J2p+1);
                for(imJ_i=0; imJ_i<=J2; imJ_i++)
                {
                   Jz2 = imJ_i*2-J2;
                   for(imJ_j=0; imJ_j<=J2p; imJ_j++)
                   {
                      Jz2p = imJ_j*2-J2p;
-                     mJmat[valJ_i][valJ_j](imJ_i,imJ_j) = pow(-1.,(J2-Jz2)/2.) * threej(J2,2,J2p,-Jz2,2*q,Jz2p);
+            //         mJmat[valJ_i][valJ_j](imJ_i,imJ_j) = pow(-1.,(J2-Jz2)/2.) * m_racah.threej(J2,2,J2p,-Jz2,2*q,Jz2p);
+                     mJmat(imJ_i,imJ_j) = pow(-1.,(J2-Jz2)/2.) * m_racah.threej(J2,2,J2p,-Jz2,2*q,Jz2p);
                   }
                }
-            }
-            rmL.pset(count+1,count+J2+1,countp+1,countp+J2p+1,mJmat[valJ_i][valJ_j]*Lrm);
-            rmS.pset(count+1,count+J2+1,countp+1,countp+J2p+1,mJmat[valJ_i][valJ_j]*Srm);
+            //}
+            //pset(rmL, count+1, count+J2+1, countp+1, countp+J2p+1, mJmat[valJ_i][valJ_j] * Lrm);
+            //pset(rmS, count+1, count+J2+1, countp+1, countp+J2p+1, mJmat[valJ_i][valJ_j] * Srm);
+            pset(rmL, count+1, count+J2+1, countp+1, countp+J2p+1, mJmat * Lrm);
+            pset(rmS, count+1, count+J2+1, countp+1, countp+J2p+1, mJmat * Srm);
+            //rmL.block(count + 1, countp + 1, J2, J2p) = mJmat[valJ_i][valJ_j] * Lrm;
+            //rmS.block(count + 1, countp + 1, J2, J2p) = mJmat[valJ_i][valJ_j] * Srm;
             countp += J2p+1;
          }
          count += J2+1;
       }
-      L1q.pset(indexJstart[i],indexJstop[i],indexJstart[j],indexJstop[j],rmL);
-      S1q.pset(indexJstart[i],indexJstop[i],indexJstart[j],indexJstop[j],rmS);
+      pset(L1q, indexJstart[i], indexJstop[i], indexJstart[j], indexJstop[j], rmL);
+      pset(S1q, indexJstart[i], indexJstop[i], indexJstart[j], indexJstop[j], rmS);
+      //L1q.block(indexJstart[i], indexJstart[j], indexJstop[i] - indexJstart[i], indexJstop[j] - indexJstart[j]) = rmL;
+*/    //S1q.block(indexJstart[i], indexJstart[j], indexJstop[i] - indexJstart[i], indexJstop[j] - indexJstart[j]) = rmS;
     }
 }
 
+/*
 // --------------------------------------------------------------------------------------------------------------- //
 // Calculates the magnetic moment operator as separate matrices, L_{x,y,z} and S_{x,y,z}, in the |vSLJM> basis
 // --------------------------------------------------------------------------------------------------------------- //

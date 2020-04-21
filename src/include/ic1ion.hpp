@@ -17,8 +17,21 @@
 #include "ic_states.hpp"
 #include <algorithm>
 #include <vector>
+#include <unordered_map>
 
 namespace libMcPhase {
+
+// Declare K_B and MU_B in cm here (meV version declared in cfpars.cpp)
+static const double K_B = 0.6950348004;    // cm/K - Boltzmann constant
+static const double MU_B = 0.46686447783;  // cm/T - Bohr magneton
+
+struct pair_hash
+{
+    template <class T1, class T2> std::size_t operator() (const std::pair<T1, T2> &pair) const
+    {
+        return std::hash<T1>()(pair.first) ^ std::hash<T2>()(pair.second);
+    }
+};
 
 class ic1ion : public cfpars {
 
@@ -27,19 +40,20 @@ class ic1ion : public cfpars {
         enum class SpinOrbType { Zeta = 0, Lambda = 1 };
 
     protected:
-        bool m_ham_calc = false;                              // Flag to indicate if Hamiltonian calculated
-        bool m_ev_calc = false;                               // Flag to indicate if eigenvectors/values calculated
-        RowMatrixXcd m_hamiltonian;                           // Cached Hamiltonian
-        RowMatrixXcd m_eigenvectors;                          // Cached eigenvectors
-        VectorXd m_eigenvalues;                               // Cached eigenvalues
-        orbital m_l = F;                                      // Orbital quantum number of open shell electrons
-        fconf m_conf;                                         // List of states of this configuration
-        std::array<double, 4> m_F_i;                          // Internal coulomb parameters in cm for calculations
-        double m_xi_i;                                        // Internal spin-orbit parameters for calculations
-        std::array<double, 3> m_alpha_i;                      // Internal CI parameters in cm for calculations
-        std::array<double, 4> m_F;                            // External coulomb parameters
-        double m_xi;                                          // External spin-orbit parameters
-        std::array<double, 3> m_alpha;                        // External CI parameters
+        bool m_ham_calc = false;                               // Flag to indicate if Hamiltonian calculated
+        bool m_ev_calc = false;                                // Flag to indicate if eigenvectors/values calculated
+        RowMatrixXcd m_hamiltonian;                            // Cached Hamiltonian
+        RowMatrixXcd m_eigenvectors;                           // Cached eigenvectors
+        VectorXd m_eigenvalues;                                // Cached eigenvalues
+        orbital m_l = F;                                       // Orbital quantum number of open shell electrons
+        fconf m_conf;                                          // List of states of this configuration
+        std::array<double, 4> m_F_i;                           // Internal coulomb parameters in cm for calculations
+        double m_xi_i;                                         // Internal spin-orbit parameters for calculations
+        std::array<double, 3> m_alpha_i;                       // Internal CI parameters in cm for calculations
+        std::array<double, 4> m_F;                             // External coulomb parameters
+        double m_xi;                                           // External spin-orbit parameters
+        std::array<double, 3> m_alpha;                         // External CI parameters
+        std::vector<RowMatrixXd> m_tensorops;                  // Vector of (stored) tensor operators
         
         // Declarations for functions in so_cf.cpp
         RowMatrixXd racah_so();                                // Calculates the spin-orbit matrix
@@ -60,8 +74,12 @@ class ic1ion : public cfpars {
         RowMatrixXcd balcar_Mq(int xyz,int K,int Q);           // Driver for calculation of density coeff.
         // Declarations for functions in ic1ion.cpp
         virtual void getfromionname(const std::string &ionname);
-        void calc_stevfact();
-        RowMatrixXd ic_Hcso();
+        void calc_stevfact();                                  // Calculates Stevens Operator Equiv factors
+        RowMatrixXd ic_Hcso();                                 // Calculates Spin-Orbit Hamiltonian
+        void calculate_hamiltonian();                          // Calculates Hamiltonian in m_hamiltonian
+        // Declarations for functions in ic_tensoropts.cpp
+        void calc_tensorops(int num);                          // Populates m_tensorops vector
+        std::vector< RowMatrixXcd > calculate_moments_matrix(RowMatrixXcd ev);
 
     public:
         // Setters
@@ -79,12 +97,18 @@ class ic1ion : public cfpars {
         std::array<double, 3> get_ci() const { return m_alpha; };
         // Constructors
         ic1ion() : cfpars() { m_econv = 0.1239841973; };
-        ic1ion(const int J2) = delete;                        // ic1ion should be constructed from ion name only.
+        ic1ion(const int J2) = delete;                         // ic1ion should be constructed from ion name only.
         ic1ion(const double J) = delete;
         ic1ion(const std::string &ion);
         // Methods
         RowMatrixXcd hamiltonian();
         std::tuple<RowMatrixXcd, VectorXd> eigensystem();
+        std::vector<double> magnetisation(std::vector<double> H, std::vector<double> Hdir, double T, MagUnits type);
+        RowMatrixXcd zeeman_hamiltonian(double H,              // Calculates the Zeeman Hamiltonian for applied
+            std::vector<double> Hdir);                         //   field H in direction Hdir
+        std::vector< std::vector<double> > calculate_moments(RowMatrixXcd ev);
+        std::vector<double> calculate_boltzmann(               // Calculates the Boltzmann factor exp(-E/kT)
+            VectorXd en, double T);
 
 }; // class ic1ion
 

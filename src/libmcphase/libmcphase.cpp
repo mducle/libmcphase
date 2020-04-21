@@ -35,6 +35,9 @@ static const std::unordered_map<std::string, cfpars::Units> unit_names = {
     {"meV", cfpars::Units::meV}, {"cm", cfpars::Units::cm}, {"K", cfpars::Units::K} };
 static const std::string unit_err = "Invalid unit, must be one of 'meV', 'cm', or 'K'";
 
+static const std::unordered_map<std::string, cfpars::MagUnits> mag_unit_names = {
+    {"bohr", cfpars::MagUnits::bohr}, {"cgs", cfpars::MagUnits::cgs}, {"SI", cfpars::MagUnits::SI} };
+
 static const char* cfpars_init_str = "Construct a cfpars object\n"
                                      "    args (one of):\n"
                                      "        J - total angular momentum of multiplet\n"
@@ -212,7 +215,12 @@ PYBIND11_MODULE(libmcphase, m) {
         .def("hamiltonian", &ic1ion::hamiltonian, "the crystal field Hamiltonian")
         .def("eigensystem", &ic1ion::eigensystem, "the eigenvectors and eigenvalues of the crystal field Hamiltonian")
         .def_property("zeta", [](ic1ion const &self) { return self.get_spinorbit(); }, [](ic1ion &self, double v) { self.set_spinorbit(v, ic1ion::SpinOrbType::Zeta); })
-        .def_property("slater", [](ic1ion const &self) { return self.get_coulomb(); }, [](ic1ion &self, std::vector<double> v) { self.set_coulomb(v, ic1ion::CoulombType::Slater); });
+        .def_property("slater", [](ic1ion const &self) { return self.get_coulomb(); }, [](ic1ion &self, std::vector<double> v) { self.set_coulomb(v, ic1ion::CoulombType::Slater); })
+        .def("zeeman_hamiltonian", &ic1ion::zeeman_hamiltonian, "the Zeeman Hamiltonian")
+        .def("calculate_boltzmann", &ic1ion::calculate_boltzmann, "")
+        .def("calculate_moments", &ic1ion::calculate_moments, "")
+        .def("magnetisation", [](ic1ion &self, std::vector<double> H, std::vector<double> Hdir, double T, std::string unit) { return self.magnetisation(H, Hdir, T,
+             set_enum(unit, mag_unit_names, "Invalid magnetic unit, must be one of: 'bohr', 'cgs', or 'SI'")); });
 }
 
 

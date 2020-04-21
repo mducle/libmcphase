@@ -9,6 +9,7 @@ set(SINGLEION_SOURCES
     singleion/ic_cfp.cpp
     singleion/ic_coulomb.cpp
     singleion/ic_socf.cpp
+    singleion/ic_tensorops.cpp
     singleion/ic1ion.cpp
 )
 

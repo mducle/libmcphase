@@ -10,6 +10,9 @@
 
 namespace libMcPhase {
 
+static const double K_B = 0.08617343183;       // meV/K - Boltzmann constant
+static const double MU_B = 0.0578838263;       // meV/T - Bohr magneton
+
 // --------------------------------------------------------------------------------------------------------------- //
 // Reference tables (values taken from program cfield, by Peter Fabi, FZ Juelich, file theta.c)
 // --------------------------------------------------------------------------------------------------------------- //
