@@ -642,7 +642,8 @@ std::vector<double> ic1ion::calculate_boltzmann(VectorXd en, double T)
         Emin = (en(i) < Emin) ? en(i) : Emin;
     }
     for (size_t i=0; i < en.size(); i++) {
-        boltzmann.push_back(exp(-(en(i) - Emin) / kBT));
+        const double expi = exp(-(en(i) - Emin) / kBT);
+        boltzmann.push_back((fabs(expi) > DELTA_EPS) ? expi : 0.);
     }
     return boltzmann;
 }
@@ -663,6 +664,9 @@ std::vector<double> ic1ion::magnetisation(std::vector<double> Hvec, std::vector<
     M.reserve(Hvec.size());
     // Loops through all the input field magnitudes and calculates the magnetisation
     for (auto H: Hvec) {
+        if (unit_type == MagUnits::cgs) {
+            H /= 1e4;   // For cgs, input field is in Gauss, need to convert to Tesla for Zeeman calculation
+        }
         RowMatrixXcd ham = m_hamiltonian - zeeman_hamiltonian(H, Hdir);
         SelfAdjointEigenSolver<RowMatrixXcd> es(ham);
         // calculate_moments returns a vector of 3 moments *squared* vectors, in the x, y, z directions
