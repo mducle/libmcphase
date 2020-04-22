@@ -16,8 +16,6 @@ add_subdirectory(${PyBind11_DIR})
 
 add_subdirectory(src)
 
-pybind11_add_module(${LIBMCPHASE_PYTHON_MODULE} MODULE src/libmcphase/libmcphase.cpp)
-
-# Adds C++ libraries to Python module
+pybind11_add_module(${LIBMCPHASE_PYTHON_MODULE} MODULE)
 target_include_directories(${LIBMCPHASE_PYTHON_MODULE} PUBLIC src/include)
-target_link_libraries(${LIBMCPHASE_PYTHON_MODULE} PUBLIC ${LIBMCPHASE_CXX_LIBRARIES})
+add_subdirectory(src/libmcphase)
