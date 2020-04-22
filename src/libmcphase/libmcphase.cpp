@@ -220,6 +220,8 @@ PYBIND11_MODULE(libmcphase, m) {
         .def("calculate_boltzmann", &ic1ion::calculate_boltzmann, "")
         .def("calculate_moments", &ic1ion::calculate_moments, "")
         .def("magnetisation", [](ic1ion &self, std::vector<double> H, std::vector<double> Hdir, double T, std::string unit) { return self.magnetisation(H, Hdir, T,
+             set_enum(unit, mag_unit_names, "Invalid magnetic unit, must be one of: 'bohr', 'cgs', or 'SI'")); })
+        .def("susceptibility", [](ic1ion &self, std::vector<double> T, std::vector<double> Hdir, std::string unit) { return self.susceptibility(T, Hdir,
              set_enum(unit, mag_unit_names, "Invalid magnetic unit, must be one of: 'bohr', 'cgs', or 'SI'")); });
 }
 

@@ -77,6 +77,7 @@ class ic1ion : public cfpars {
         void calc_stevfact();                                  // Calculates Stevens Operator Equiv factors
         RowMatrixXd ic_Hcso();                                 // Calculates Spin-Orbit Hamiltonian
         void calculate_hamiltonian();                          // Calculates Hamiltonian in m_hamiltonian
+        void calculate_eigensystem();                          // Diagonalises the Hamiltonian
         // Declarations for functions in ic_tensoropts.cpp
         void calc_tensorops(int num);                          // Populates m_tensorops vector
         std::vector< RowMatrixXcd > calculate_moments_matrix(RowMatrixXcd ev);
@@ -104,6 +105,7 @@ class ic1ion : public cfpars {
         RowMatrixXcd hamiltonian();
         std::tuple<RowMatrixXcd, VectorXd> eigensystem();
         std::vector<double> magnetisation(std::vector<double> H, std::vector<double> Hdir, double T, MagUnits type);
+        std::vector<double> susceptibility(std::vector<double> T, std::vector<double> Hdir, MagUnits type);
         RowMatrixXcd zeeman_hamiltonian(double H,              // Calculates the Zeeman Hamiltonian for applied
             std::vector<double> Hdir);                         //   field H in direction Hdir
         std::vector< std::vector<double> > calculate_moments(RowMatrixXcd ev);
