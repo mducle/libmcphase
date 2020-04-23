@@ -117,6 +117,7 @@ void ic1ion::set_name(const std::string &ionname) {
     m_ham_calc = false;
     m_ev_calc = false;
     m_tensorops.clear();
+    m_conf = fconf(m_n, 1, m_l);
 }
 
 void ic1ion::set_coulomb(const std::vector<double> val, ic1ion::CoulombType type) {
@@ -166,6 +167,13 @@ void ic1ion::set_spinorbit(double val, ic1ion::SpinOrbType type) {
             m_xi_i = m_xi / m_econv;
             break;
     }
+}
+
+std::vector<fstates_t> ic1ion::get_states() {
+    if (m_conf.states.empty()) {
+        m_conf = fconf(m_n, 1, m_l);
+    }
+    return m_conf.states;
 }
 
 // --------------------------------------------------------------------------------------------------------------- //

@@ -111,6 +111,7 @@ class ic1ion : public cfpars {
         std::vector< std::vector<double> > calculate_moments(RowMatrixXcd ev);
         std::vector<double> calculate_boltzmann(               // Calculates the Boltzmann factor exp(-E/kT)
             VectorXd en, double T);
+        std::vector<fstates_t> get_states();
 
 }; // class ic1ion
 

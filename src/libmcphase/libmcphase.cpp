@@ -13,6 +13,7 @@ namespace py = pybind11;
 void wrap_cfpars(py::module &);
 void wrap_cf1ion(py::module &);
 void wrap_ic1ion(py::module &);
+void wrap_icstates(py::module &);
 
 PYBIND11_MODULE(libmcphase, m) {
     m.doc() = "Python bindings for libMcPhase";
@@ -20,6 +21,7 @@ PYBIND11_MODULE(libmcphase, m) {
     wrap_cfpars(m);
     wrap_cf1ion(m);
     wrap_ic1ion(m);
+    wrap_icstates(m);
 }
 
 
