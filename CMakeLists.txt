@@ -8,6 +8,16 @@ set(CXX_STANDARD_REQUIRED 11)
 
 set(LIBMCPHASE_PYTHON_MODULE libmcphase)
 
+# The latest VS needs an extra library VCRUNTIME140_1.dll which is not in 
+# the anaconda redistributable module (yet) - so disable it.
+# https://developercommunity.visualstudio.com/content/problem/852548/vcruntime140-1dll-is-missing.html
+if(WIN32)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -d2FH4-")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -d2FH4-")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -d2:-FH4-")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -d2:-FH4-")
+endif(WIN32)
+
 include(Eigen)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
