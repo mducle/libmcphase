@@ -384,7 +384,7 @@ RowMatrixXd ic1ion::racah_mumat(int q)
    }
    fconf conf(m_n, m_l);
    int num_states = (int)conf.states.size();
-   int i,j,ns,minJ2,maxJ2,valJ,valJ_i,valJ_j;
+   int i,j,ns,minJ2,maxJ2;//,valJ,valJ_i,valJ_j;
    int j2min,j2max,j2pmin,j2pmax,count,countp;
    int L2,L2p,S2,S2p,J2,J2p,Jz2,Jz2p,imJ_i,imJ_j;
    std::vector<int> indexJstart,indexJstop;
@@ -421,7 +421,7 @@ RowMatrixXd ic1ion::racah_mumat(int q)
       // Caculate the J-dependent reduced matrix elements 
       j2min = abs(L2-S2); j2max = L2+S2; j2pmin = abs(L2p-S2); j2pmax = L2p+S2;
 
-        double matel;
+        //double matel;
         count = indexJstart[i] - 1;
         for(J2=j2min; J2<=j2max; J2+=2)
         {
@@ -500,7 +500,7 @@ void ic1ion::racah_mumat(int q, RowMatrixXd &L1q, RowMatrixXd &S1q)
    if(m_l!=S && m_l!=P && m_l!=D && m_l!=F) { std::cerr << "racah_mumat(): Only s-, p-, d- and f- configurations are implemented.\n"; }
    fconf conf(m_n, m_l);
    int num_states = (int)conf.states.size();
-   int i,j,ns,minJ2,maxJ2,valJ,valJ_i,valJ_j;
+   int i,j,ns,minJ2,maxJ2;//,valJ,valJ_i,valJ_j;
    int j2min,j2max,j2pmin,j2pmax,count,countp;
    int L2,L2p,S2,S2p,J2,J2p,Jz2,Jz2p,imJ_i,imJ_j;
    std::vector<int> indexJstart,indexJstop;

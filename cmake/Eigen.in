@@ -3,7 +3,7 @@ project(libMcPhase_Eigen)
 include( ExternalProject )
 
 ExternalProject_Add(eigen
-    URL http://bitbucket.org/eigen/eigen/get/3.3.4.tar.gz
+    URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
     DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}/extern-eigen/download
     SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/extern-eigen/source
     INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/extern-eigen/install
@@ -11,5 +11,8 @@ ExternalProject_Add(eigen
         -DCMAKE_BUILD_TYPE:STRING=Release
         -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF
         -DCMAKE_INSTALL_PREFIX:STRING=${CMAKE_CURRENT_BINARY_DIR}/extern-eigen/install
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+    TEST_COMMAND ""
 )
-

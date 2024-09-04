@@ -110,7 +110,7 @@ with open("VERSION", "r") as fh:
 	VERSION_NUMBER = fh.readline().strip()
 
 KEYWORDARGS = dict(
-    name='libMcPhase',
+    name='libmcphase',
     version=VERSION_NUMBER,
     author='Duc Le, Martin Rotter',
     author_email='duc.le@stfc.ac.uk',
@@ -119,6 +119,7 @@ KEYWORDARGS = dict(
     long_description_content_type="text/markdown",
     ext_modules=[CMakeExtension('libmcphase.libmcphase')],
     packages=find_packages(),
+    install_requires = ['numpy'],
     extras_require = {'interactive':['matplotlib>=2.2.0',],},
     cmdclass=dict(build_ext=CMakeBuild),
     url="https://github.com/mducle/libmcphase",
