@@ -7,16 +7,12 @@ if(USE_SYSTEM_EIGEN)
   find_package(Eigen3 REQUIRED)
 else()
   message(STATUS "Using Eigen in ExternalProject")
-  ExternalProject_Add(
-    eigen
-    URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
-    DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}/extern-eigen/download
-    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/extern-eigen/source
-    INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/extern-eigen/install
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
-    TEST_COMMAND ""
-  )
+
+  # Download and unpack Eigen at configure time
+  configure_file(${CMAKE_SOURCE_DIR}/cmake/Eigen.in ${CMAKE_BINARY_DIR}/extern-eigen/CMakeLists.txt)
+
+  execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" . WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/extern-eigen )
+  execute_process(COMMAND ${CMAKE_COMMAND} --build . WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/extern-eigen )
+
   set(EIGEN3_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/extern-eigen/source")
 endif()

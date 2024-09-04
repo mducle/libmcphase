@@ -646,10 +646,10 @@ std::vector<double> ic1ion::calculate_boltzmann(VectorXd en, double T)
     // Need kBT in external energy units. K_B is in meV/K
     double kBT = K_B * T * m_econv;
     double Emin = std::numeric_limits<double>::max();
-    for (size_t i=0; i < en.size(); i++) {
+    for (size_t i=0; i < (size_t)en.size(); i++) {
         Emin = (en(i) < Emin) ? en(i) : Emin;
     }
-    for (size_t i=0; i < en.size(); i++) {
+    for (size_t i=0; i < (size_t)en.size(); i++) {
         const double expi = exp(-(en(i) - Emin) / kBT);
         boltzmann.push_back((fabs(expi) > DELTA_EPS) ? expi : 0.);
     }

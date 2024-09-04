@@ -13,6 +13,7 @@
 #include<array>
 #include<cmath>
 #include<vector>
+#include<stdexcept>
 
 namespace libMcPhase {
 
