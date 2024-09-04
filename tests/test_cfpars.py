@@ -1,4 +1,4 @@
-import libMcPhase
+import libmcphase as libMcPhase
 import unittest
 
 class cfparsTests(unittest.TestCase):
