@@ -8,6 +8,7 @@ from subprocess import CalledProcessError, check_output, check_call
 from distutils.version import LooseVersion
 from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext
+import versioneer
 
 # We can use cmake provided from pip which (normally) gets installed at /bin
 # Except that in the manylinux builds it's placed at /opt/python/[version]/bin/
@@ -106,12 +107,12 @@ class CMakeBuild(build_ext):
 with open("README.md", "r") as fh:
     LONG_DESCRIPTION = fh.read()
 
-with open("VERSION", "r") as fh:
-	VERSION_NUMBER = fh.readline().strip()
+cmdclass = versioneer.get_cmdclass()
+cmdclass['build_ext'] = CMakeBuild
 
 KEYWORDARGS = dict(
     name='libmcphase',
-    version=VERSION_NUMBER,
+    version=versioneer.get_version(),
     author='Duc Le, Martin Rotter',
     author_email='duc.le@stfc.ac.uk',
     description='A mean-field Monte Carlo simulation program for magnetic phase diagrams and excitations.',
@@ -121,7 +122,7 @@ KEYWORDARGS = dict(
     packages=find_packages(),
     install_requires = ['numpy'],
     extras_require = {'interactive':['matplotlib>=2.2.0',],},
-    cmdclass=dict(build_ext=CMakeBuild),
+    cmdclass=cmdclass,
     url="https://github.com/mducle/libmcphase",
     zip_safe=False,
     classifiers=[
