@@ -24,4 +24,4 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install twine requests numpy
           python release.py --notest --pypi
-          twine upload wheelhouse/*.whl
+          twine upload twine_wheelhouse/*.whl
