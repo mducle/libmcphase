@@ -23,7 +23,7 @@ jobs:
   build_and_test:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
     name: Build and test, ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     steps:
@@ -34,20 +34,32 @@ jobs:
           cache-downloads: true
       - name: Build wheels
         run: |
-          $MAMBA_EXE create -n cibuildwheel
+          $MAMBA_EXE create -n cibuildwheel python=3.12
           eval "$($MAMBA_EXE shell activate cibuildwheel)"
           python -m pip install cibuildwheel
-          python -m cibuildwheel --output-dir wheelhouse
+          if [[ $OSTYPE == "darwin23" ]] || [[ $OSTYPE == "darwin22" ]]
+          then
+            # For some reason cibuildwheel on builds 3.9-3.12 arm64 on macos-latest
+            CIBW_BUILD="cp39* cp310* cp311* cp312*" CIBW_ARCHS_MACOS="native" python -m cibuildwheel --output-dir wheelhouse
+          else
+            python -m cibuildwheel --output-dir wheelhouse
+          fi
         env:
           CIBW_BUILD: "cp38-* cp39* cp310-* cp311-* cp312-*"
           CIBW_SKIP: "*musllinux* *win32* *i686*"
-          CIBW_ARCHS_MACOS: "x86_64 universal2 arm64"
+          CIBW_ARCHS_MACOS: "universal2"
           CIBW_BUILD_VERBOSITY: 1
       - name: Install wheels and run test
         run: |
           # set -e makes sure the script fails if any command in the loop fails
           set -e
-          for pyver in 3.8 3.9 3.10 3.11 3.12
+          if [[ $OSTYPE == "darwin23" ]] || [[ $OSTYPE == "darwin22" ]]
+          then
+            export PYVERS="3.9 3.10 3.11 3.12"
+          else
+            export PYVERS="3.8 3.9 3.10 3.11 3.12"
+          fi
+          for pyver in $PYVERS
           do
             $MAMBA_EXE create -n py$pyver -c conda-forge python=$pyver numpy
             eval "$($MAMBA_EXE shell activate py$pyver)"
