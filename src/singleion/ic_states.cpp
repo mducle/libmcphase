@@ -812,8 +812,8 @@ void fconf::set(int n, bool mJflag, orbital l)
 	    for(mj=-j; mj<=j; mj+=2)
             {
                id.assign(confLS.states[i].id); id.append("_");
-               if(j%2==0) sprintf(Jlabel,"%hi",j/2); else sprintf(Jlabel,"%hi/2",j); id.append(Jlabel);
-               if(mj%2==0) sprintf(Jlabel,",mJ=%hi",mj/2); else sprintf(Jlabel,",mJ=%hi/2",mj); id.append(Jlabel);
+               if(j%2==0) snprintf(Jlabel,11,"%hi",j/2); else snprintf(Jlabel,11,"%hi/2",j); id.append(Jlabel);
+               if(mj%2==0) snprintf(Jlabel,11,",mJ=%hi",mj/2); else snprintf(Jlabel,11,",mJ=%hi/2",mj); id.append(Jlabel);
                if(l==D) states.push_back(fstates_t(confLS.states[i].S2,confLS.states[i].L,confLS.states[i].v,id,j,mj));
                else
                states.push_back(fstates_t(confLS.states[i].S2,
@@ -827,7 +827,7 @@ void fconf::set(int n, bool mJflag, orbital l)
 	 else
 	 {
             id.assign(confLS.states[i].id); id.append("_");
-            if(j%2==0) sprintf(Jlabel,"%hi",j/2); else sprintf(Jlabel,"%hi/2",j); id.append(Jlabel);
+            if(j%2==0) snprintf(Jlabel,11,"%hi",j/2); else snprintf(Jlabel,11,"%hi/2",j); id.append(Jlabel);
             if(l==D) states.push_back(fstates_t(confLS.states[i].S2,confLS.states[i].L,confLS.states[i].v,id,j));
             else
             states.push_back(fstates_t(confLS.states[i].S2,
