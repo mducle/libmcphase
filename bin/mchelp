@@ -1,1 +1,0 @@
-ls --ignore '*.bat' --ignore '*.pl' $MCPHASE_DIR/bin/* 
