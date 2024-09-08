@@ -25,12 +25,12 @@ class cf1ion: public cfpars {
 
     public:
         // Setters
-        virtual void set_unit(const Units newunit);
-        virtual void set_type(const Type newtype);
-        virtual void set_name(const std::string &ionname);
-        virtual void set_J(const double J);
-        virtual void set(const Blm blm, double val);
-        virtual void set(int l, int m, double val);
+        void set_unit(const Units newunit);
+        void set_type(const Type newtype);
+        void set_name(const std::string &ionname);
+        void set_J(const double J);
+        void set(const Blm blm, double val);
+        void set(int l, int m, double val);
         // Constructors
         cf1ion() : cfpars() {};
         cf1ion(const int J2) : cfpars(J2) {};

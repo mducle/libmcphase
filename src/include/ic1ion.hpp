@@ -84,14 +84,14 @@ class ic1ion : public cfpars {
 
     public:
         // Setters
-        virtual void set_unit(const Units newunit);
-        virtual void set_type(const Type newtype);
-        virtual void set_name(const std::string &ionname);
-        virtual void set(const Blm blm, double val);
-        virtual void set(int l, int m, double val);
-        virtual void set_coulomb(std::vector<double> val, CoulombType type = CoulombType::Slater);
-        virtual void set_ci(std::vector<double> val);
-        virtual void set_spinorbit(double val, SpinOrbType type = SpinOrbType::Zeta);
+        void set_unit(const Units newunit);
+        void set_type(const Type newtype);
+        void set_name(const std::string &ionname);
+        void set(const Blm blm, double val);
+        void set(int l, int m, double val);
+        void set_coulomb(std::vector<double> val, CoulombType type = CoulombType::Slater);
+        void set_ci(std::vector<double> val);
+        void set_spinorbit(double val, SpinOrbType type = SpinOrbType::Zeta);
         // Getters
         std::array<double, 4> get_coulomb() const { return m_F; };
         double get_spinorbit() const { return m_xi; };

@@ -6,7 +6,6 @@
  * This program is licensed under the GNU General Purpose License, version 3. Please see the LICENSE file
  */
 
-#include "cfpars.hpp"
 #include "ic1ion.hpp"
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
@@ -25,11 +24,10 @@ static const std::unordered_map<std::string, ic1ion::CoulombType> coulomb_names 
 static const std::unordered_map<std::string, ic1ion::SpinOrbType> spinorb_names = {
     {"Zeta", ic1ion::SpinOrbType::Zeta}, {"Lambda", ic1ion::SpinOrbType::Lambda} };
 
-void cf_parse(cfpars *cls, py::args args, py::kwargs kwargs);
-
 ic1ion *ic1ion_init(py::args args, py::kwargs kwargs) {
     ic1ion *cls = new ic1ion;
-    cf_parse(static_cast<cfpars*>(cls), args, kwargs);
+    bool is_ic1ion = true;
+    cf_parse(static_cast<cfpars*>(cls), args, kwargs, is_ic1ion);
     if (kwargs.contains("zeta")) {
         cls->set_spinorbit(kwargs["zeta"].cast<double>(), ic1ion::SpinOrbType::Zeta);
     }

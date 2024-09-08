@@ -15,8 +15,6 @@ namespace py = pybind11;
 using namespace libMcPhase;
 using namespace pybind11::literals;
 
-void cf_parse(cfpars *cls, py::args args, py::kwargs kwargs);
-
 cf1ion *cf1ion_init(py::args args, py::kwargs kwargs) {
     cf1ion *cls = new cf1ion;
     cf_parse(static_cast<cfpars*>(cls), args, kwargs);
