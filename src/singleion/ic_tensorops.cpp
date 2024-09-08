@@ -66,7 +66,7 @@ RowMatrixXcd ic1ion::zeeman_hamiltonian(double H, std::vector<double> Hdir) {
     zeeman.real() = (GS * m_tensorops[0] + m_tensorops[1]) * nHdir[0]   // gSx + Lx
                    +(GS * m_tensorops[4] + m_tensorops[5]) * nHdir[2];  // gSz + Lz
     zeeman.imag() = (GS * m_tensorops[2] + m_tensorops[3]) * nHdir[1];  // gSy + Ly
-    double H_in_energy = H * MU_B * m_econv; // MU_B in internal units (cm/T); want H in external energy units
+    double H_in_energy = H * MU_Bc * m_econv; // MU_B in internal units (cm/T); want H in external energy units
     return (zeeman * H_in_energy);
 }
 

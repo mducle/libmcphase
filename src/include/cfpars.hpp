@@ -24,11 +24,6 @@
 
 namespace libMcPhase {
 
-// Boltzmann constant and bohr magneton defined in cfpars.cpp and ic1ion.cpp because they depend on energy
-// and the default energy unit in cfpars is meV whilst in ic1ion it is cm
-static const double NAMUB = 5.5849397;         // N_A*mu_B - J/T/mol - product of Bohr magneton and Avogadro's number
-static const double GS = 2.0023193043622;      // The electron gyromagnetic ratio
-
 class cfpars {
 
     public:

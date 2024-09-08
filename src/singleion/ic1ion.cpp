@@ -25,22 +25,6 @@ static const double F625 = 0.016104;       // Ratios of F_6/F_2 slater integrals
 // Conversion factors for different energy units[from][to], order: [meV, cm, K].
 static const std::array<double, 3> ICENERGYCONV = {0.1239841973, 1., 1.4387773587};
 
-// Conversion factors for different magnetic units for magnetisation. Order: [bohr, cgs, SI].
-// NAMUB is N_A * MU_B in J/T/mol == Am^2/mol is the SI unit. 
-// The cgs unit is N_A * MU_B in erg/G/mol == emu/mol is different only by a factor of 1000 larger
-static const std::array<double, 3> MAGCONV = {1., NAMUB*1000, NAMUB};
-
-// Note these constants are strange because the default energy unit in this module is cm-1
-static const double NAMUBSQ_ERG = 0.26074098;     // N_A * muB[erg/G] * muB[cm/T] * [Tesla_to_Gauss=1e-4]
-static const double NAMUBSQ_JOULE = 3.276568e-06; // N_A * muB[J/T] * muB[cm/T] * mu0
-// Factor of mu0 is needed in SI due to different definition of the magnetisation, B and H fields
-
-// Conversion factors for different magnetic units for magnetic susceptibility. Order: [bohr, cgs, SI].
-// The susceptibility prefactor is (in principle) N_A * MU_B^2 but we need to account for various units...
-// The atomic (bohr) susceptibility is in uB/T/ion; cgs is in erg/G^2/mol==cm^3/mol; SI in J/T^2/mol==m^3/mol
-// Note that chi_SI = (4pi*10^-6)chi_cgs [*not* 4pi*10-7!]
-static const std::array<double, 3> SUSCCONV = {MU_B, NAMUBSQ_ERG, NAMUBSQ_JOULE};
-
 // EPSILON to determine if energy levels are degenerate or not
 static const double DELTA_EPS = 1e-6;
 
@@ -642,9 +626,9 @@ RowMatrixXcd ic1ion::hamiltonian() {
 // --------------------------------------------------------------------------------------------------------------- //
 std::vector<double> ic1ion::calculate_boltzmann(VectorXd en, double T)
 {
-    std::vector<double> boltzmann, en_meV;
-    // Need kBT in external energy units. K_B is in meV/K
-    double kBT = K_B * T * m_econv;
+    std::vector<double> boltzmann;
+    // Need kBT in external energy units. K_B is in cm-1/K
+    double kBT = K_Bc * T * m_econv;
     double Emin = std::numeric_limits<double>::max();
     for (size_t i=0; i < (size_t)en.size(); i++) {
         Emin = (en(i) < Emin) ? en(i) : Emin;

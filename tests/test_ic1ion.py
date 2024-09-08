@@ -58,6 +58,6 @@ class ic1ionTests(unittest.TestCase):
         ref_sus = np.array([0.0377984, 0.0581256, 0.0392299, 0.0284567, 0.0221967, 0.0181698, 0.0153757, 0.0133276, 0.0117635, 0.0105307, 0.00953459])
         cfp = libmcphase.ic1ion('Pr3+', **self.pars_orth)
         sus = cfp.susceptibility(np.arange(1, 302, 30), [1, 0, 0], 'bohr')
-        nptest.assert_allclose(sus, ref_sus * 8, atol=1e-2) # Not sure where the factor of 8 comes from...
+        nptest.assert_allclose(sus, ref_sus, atol=1e-4)
         
 

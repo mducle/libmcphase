@@ -13,6 +13,7 @@
 #define IC1ION_H
 
 #include "cfpars.hpp"
+#include "physprop.hpp"
 #include "eigen.hpp"
 #include "ic_states.hpp"
 #include <algorithm>
@@ -21,9 +22,7 @@
 
 namespace libMcPhase {
 
-// Declare K_B and MU_B in cm here (meV version declared in cfpars.cpp)
-static const double K_B = 0.6950348004;    // cm/K - Boltzmann constant
-static const double MU_B = 0.46686447783;  // cm/T - Bohr magneton
+static const double GS = 2.0023193043622;  // The electron gyromagnetic ratio
 
 struct pair_hash
 {
