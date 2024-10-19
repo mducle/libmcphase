@@ -90,16 +90,22 @@ class cf1ionTests(unittest.TestCase):
         V, E = cfp.eigensystem()
         nptest.assert_allclose(E - E[0], self.en_ref_l, atol=1e-4)
 
-#    def test_physical_properties(self):
-#        # Compared to values from Mantid
-#        cf = libmcphase.cf1ion('Ce3+', B20=0.37737, B22=3.9770, B40=-0.031787, B42=-0.11611, B44=-0.12544)
-#        # Test Heat capacity calculations
-#        TCv, Cv = cf.getHeatCapacity()
-#        self.assertAlmostEqual(TCv[150], 151, 4)
-#        self.assertAlmostEqual(Cv[100], 4.2264, 3)
-#        self.assertAlmostEqual(Cv[150], 5.9218, 3)
-#        self.assertAlmostEqual(Cv[200], 5.4599, 3)
-#
+    def test_physical_properties(self):
+        # Compared to values from Mantid
+        cfpars = {'B20':0.37737, 'B22':3.9770, 'B40':-0.031787, 'B42':-0.11611, 'B44':-0.12544}
+        cf = libmcphase.cf1ion('Ce3+', **cfpars)
+        # Test Heat capacity calculations
+        Cv = cf.heatcapacity(np.linspace(1,300,300))
+        #self.assertAlmostEqual(TCv[150], 151, 4)
+        self.assertAlmostEqual(Cv[100], 4.2264, 3)
+        self.assertAlmostEqual(Cv[150], 5.9218, 3)
+        self.assertAlmostEqual(Cv[200], 5.4599, 3)
+        cf = libmcphase.cf1ion('Ce3+', **{k:v*11.6045 for k,v in cfpars.items()}, unit='K')
+        Cv = cf.heatcapacity(np.linspace(1,300,300))
+        self.assertAlmostEqual(Cv[100], 4.2264, 3)
+        self.assertAlmostEqual(Cv[150], 5.9218, 3)
+        self.assertAlmostEqual(Cv[200], 5.4599, 3)
+
 #        # Test susceptibility calculations
 #        Tchi_powder, chi_powder = cf.getSusceptibility(np.linspace(1, 300, 50), Hdir="powder")
 #        self.assertAlmostEqual(Tchi_powder[10], 62.02, 2)

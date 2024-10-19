@@ -13,8 +13,8 @@ namespace libMcPhase {
 // Basic physical constants (needs cm constants as internal energy units in ic1ion is cm)
 static const double K_B = 0.08617343183;       // meV/K - Boltzmann constant
 static const double MU_B = 0.0578838263;       // meV/T - Bohr magneton
-static const double K_Bc = 0.6950348004;       // cm/K - Boltzmann constant^M
-static const double MU_Bc = 0.46686447783;     // cm/T - Bohr magneton^M
+static const double K_Bc = 0.6950348004;       // cm/K - Boltzmann constant
+static const double MU_Bc = 0.46686447783;     // cm/T - Bohr magneton
 
 // Conversion factors for different magnetic units for magnetisation. Order: [bohr, cgs, SI].
 // NAMUB is N_A * MU_B in J/T/mol == Am^2/mol is the SI unit. 
@@ -33,5 +33,10 @@ static const double NAMUBSQ_JOULE = 3.276568e-06; // N_A * muB[J/T] * muB[cm/T] 
 // Note that chi_SI = (4pi*10^-6)chi_cgs [*not* 4pi*10-7!]
 static const std::array<double, 3> SUSCCONV = {MU_B, NAMUBSQ_ERG, NAMUBSQ_JOULE};
 
+// Conversion factor for heat capacity calculations
+static const double NAMEV = 96.48533212;          // J/mol = N_A * meV
+
+// EPSILON to determine if energy levels are degenerate or not
+static const double DELTA_EPS = 1e-6;
 
 } // namespace libMcPhase

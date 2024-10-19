@@ -11,6 +11,7 @@
 
 #include "eigen.hpp"
 #include "cfpars.hpp"
+#include "physprop.hpp"
 
 namespace libMcPhase {
 
@@ -39,6 +40,8 @@ class cf1ion: public cfpars {
         // Methods
         RowMatrixXcd hamiltonian(bool upper=true);
         std::tuple<RowMatrixXcd, VectorXd> eigensystem();
+        std::vector<double> calculate_boltzmann(VectorXd en, double T);
+        std::vector<double> heatcapacity(std::vector<double> Tvec);
 
 }; // class cf1ion
 

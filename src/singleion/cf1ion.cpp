@@ -176,7 +176,6 @@ std::tuple<RowMatrixXcd, VectorXd> cf1ion::eigensystem() {
     return std::tuple<RowMatrixXcd, VectorXd>(m_eigenvectors, m_eigenvalues);
 }
 
-/*
 // --------------------------------------------------------------------------------------------------------------- //
 // Calculates bulk properties (magnetisation, susceptibility)
 // --------------------------------------------------------------------------------------------------------------- //
@@ -184,18 +183,43 @@ std::vector<double> cf1ion::calculate_boltzmann(VectorXd en, double T)
 {
     std::vector<double> boltzmann, en_meV;
     // Need kBT in external energy units. K_B is in meV/K
-    double kBT = K_B * T * m_econv;
+    double beta = 1 / (K_B * T * m_econv);
     double Emin = std::numeric_limits<double>::max();
     for (size_t i=0; i < (size_t)en.size(); i++) {
         Emin = (en(i) < Emin) ? en(i) : Emin;
     }
     for (size_t i=0; i < (size_t)en.size(); i++) {
-        const double expi = exp(-(en(i) - Emin) / kBT);
+        const double expi = exp(-(en(i) - Emin) * beta);
         boltzmann.push_back((fabs(expi) > DELTA_EPS) ? expi : 0.);
     }
     return boltzmann;
 }
 
+std::vector<double> cf1ion::heatcapacity(std::vector<double> Tvec) {
+    if(!m_ev_calc) {
+        auto evsystem = eigensystem(); }
+    std::vector<double> out;
+    out.reserve(Tvec.size());
+    std::vector<double> en;
+    en.reserve(m_eigenvalues.size());
+    for (size_t i=0; i < (size_t)m_eigenvalues.size(); i++) {
+        en.push_back(m_eigenvalues(i) / m_econv);
+    }
+    for (auto T: Tvec) {
+        double Z = 0., U = 0., U2 = 0.;
+        std::vector<double> expfact = calculate_boltzmann(m_eigenvalues, T);
+        for (size_t i=0; i < (size_t)m_eigenvalues.size(); i++) {
+            Z += expfact[i];
+            U += en[i] * expfact[i];
+            U2 += en[i] * en[i] * expfact[i];
+        }
+        U /= Z;
+        U2 /= Z;
+        out.push_back( ((U2 - U * U) / (K_B * T * T)) * NAMEV );
+    }
+    return out;
+}
+/*
 std::vector<double> cf1ion::magnetisation(std::vector<double> Hvec, std::vector<double> Hdir, double T, MagUnits unit_type)
 {
     // Normalise the field direction vector

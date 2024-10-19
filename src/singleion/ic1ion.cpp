@@ -25,9 +25,6 @@ static const double F625 = 0.016104;       // Ratios of F_6/F_2 slater integrals
 // Conversion factors for different energy units[from][to], order: [meV, cm, K].
 static const std::array<double, 3> ICENERGYCONV = {0.1239841973, 1., 1.4387773587};
 
-// EPSILON to determine if energy levels are degenerate or not
-static const double DELTA_EPS = 1e-6;
-
 // Helper vectors for indexing into CF parameters array
 static const std::array<std::array<int, 4>, 12> idq = { {{2,2,0,4}, {2,1,1,3}, {4,4,5,13}, {4,3,6,12}, {4,2,7,11}, {4,1,8,10},
                                                         {6,6,14,26}, {6,5,15,25}, {6,4,16,24}, {6,3,17,23}, {6,2,18,22}, {6,1,19,21}} };
