@@ -32,7 +32,7 @@ struct pair_hash
     }
 };
 
-class ic1ion : public cfpars {
+class ic1ion : public cfpars, public physprop {
 
     public:
         enum class CoulombType { Slater = 0, CondonShortley = 1, Racah = 2 };
@@ -79,7 +79,6 @@ class ic1ion : public cfpars {
         void calculate_eigensystem();                          // Diagonalises the Hamiltonian
         // Declarations for functions in ic_tensoropts.cpp
         void calc_tensorops(int num);                          // Populates m_tensorops vector
-        std::vector< RowMatrixXcd > calculate_moments_matrix(RowMatrixXcd ev);
 
     public:
         // Setters
@@ -103,13 +102,9 @@ class ic1ion : public cfpars {
         // Methods
         RowMatrixXcd hamiltonian();
         std::tuple<RowMatrixXcd, VectorXd> eigensystem();
-        std::vector<double> magnetisation(std::vector<double> H, std::vector<double> Hdir, double T, MagUnits type);
-        std::vector<double> susceptibility(std::vector<double> T, std::vector<double> Hdir, MagUnits type);
         RowMatrixXcd zeeman_hamiltonian(double H,              // Calculates the Zeeman Hamiltonian for applied
             std::vector<double> Hdir);                         //   field H in direction Hdir
-        std::vector< std::vector<double> > calculate_moments(RowMatrixXcd ev);
-        std::vector<double> calculate_boltzmann(               // Calculates the Boltzmann factor exp(-E/kT)
-            VectorXd en, double T);
+        std::vector< RowMatrixXcd > calculate_moments_matrix(RowMatrixXcd ev);
         std::vector<fstates_t> get_states();
 
 }; // class ic1ion

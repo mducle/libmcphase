@@ -133,9 +133,6 @@ const Map3 &RKTABLE() {
     return rk_table;
 }
 
-// Conversion factors for different energy units[from][to], order: [meV, cm, K].
-static const std::array<double, 3> ENERGYCONV = { {1., 8.065544005, 11.6045221} };
-
 // --------------------------------------------------------------------------------------------------------------- //
 // General methods for cfpars class
 // --------------------------------------------------------------------------------------------------------------- //

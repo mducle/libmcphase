@@ -30,7 +30,7 @@ void wrap_cf1ion(py::module &m) {
         .def(py::init<const std::string &>(), py::arg("ionname"))
         .def(py::init<const double &>(), py::arg("J"))
         .def(py::init(&cf1ion_init), cfpars_init_str)
-        .def("hamiltonian", &cf1ion::hamiltonian, "the crystal field Hamiltonian", "upper"_a=true)
+        .def("hamiltonian", &cf1ion::hamiltonian, "the crystal field Hamiltonian")
         .def("eigensystem", &cf1ion::eigensystem, "the eigenvectors and eigenvalues of the crystal field Hamiltonian")
         .def("heatcapacity", &cf1ion::heatcapacity, "the heat capacity of the crystal field Hamiltonian in J/mol/K");
 }

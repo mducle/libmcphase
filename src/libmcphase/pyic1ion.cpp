@@ -15,8 +15,8 @@
 namespace py = pybind11;
 using namespace libMcPhase;
 
-static const std::unordered_map<std::string, cfpars::MagUnits> mag_unit_names = {
-    {"bohr", cfpars::MagUnits::bohr}, {"cgs", cfpars::MagUnits::cgs}, {"SI", cfpars::MagUnits::SI} };
+static const std::unordered_map<std::string, physprop::MagUnits> mag_unit_names = {
+    {"bohr", physprop::MagUnits::bohr}, {"cgs", physprop::MagUnits::cgs}, {"SI", physprop::MagUnits::SI} };
 
 static const std::unordered_map<std::string, ic1ion::CoulombType> coulomb_names = {
     {"Slater", ic1ion::CoulombType::Slater}, {"CondonShortley", ic1ion::CoulombType::CondonShortley}, {"Racah", ic1ion::CoulombType::Racah} };
@@ -59,6 +59,7 @@ void wrap_ic1ion(py::module &m) {
         .def("zeeman_hamiltonian", &ic1ion::zeeman_hamiltonian, "the Zeeman Hamiltonian")
         .def("calculate_boltzmann", &ic1ion::calculate_boltzmann, "")
         .def("calculate_moments", &ic1ion::calculate_moments, "")
+        .def("heatcapacity", &ic1ion::heatcapacity, "the heat capacity of the crystal field Hamiltonian in J/mol/K")
         .def("magnetisation", [](ic1ion &self, std::vector<double> H, std::vector<double> Hdir, double T, std::string unit) { return self.magnetisation(H, Hdir, T,
              set_enum(unit, mag_unit_names, "Invalid magnetic unit, must be one of: 'bohr', 'cgs', or 'SI'")); })
         .def("susceptibility", [](ic1ion &self, std::vector<double> T, std::vector<double> Hdir, std::string unit) { return self.susceptibility(T, Hdir,

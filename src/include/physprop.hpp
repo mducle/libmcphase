@@ -8,6 +8,9 @@
 
 #pragma once
 
+#include "eigen.hpp"
+#include <vector>
+
 namespace libMcPhase {
 
 // Basic physical constants (needs cm constants as internal energy units in ic1ion is cm)
@@ -38,5 +41,23 @@ static const double NAMEV = 96.48533212;          // J/mol = N_A * meV
 
 // EPSILON to determine if energy levels are degenerate or not
 static const double DELTA_EPS = 1e-6;
+
+// Base class for physical properties calculations. Must derive and implement zeeman_hamiltonian
+class physprop {
+    protected:
+        double m_meVconv = 1.0;   // Conversion factor from user energy units to meV
+
+    public:
+        enum class MagUnits {bohr = 0, cgs = 1, SI = 2};
+        virtual RowMatrixXcd hamiltonian() = 0;
+        virtual RowMatrixXcd zeeman_hamiltonian(double H, std::vector<double> Hdir) = 0;
+        virtual std::tuple<RowMatrixXcd, VectorXd> eigensystem() = 0;
+        virtual std::vector<RowMatrixXcd> calculate_moments_matrix(RowMatrixXcd ev) = 0;
+        std::vector< std::vector<double> > calculate_moments(RowMatrixXcd ev);
+        std::vector<double> calculate_boltzmann(VectorXd en, double T);
+        std::vector<double> heatcapacity(std::vector<double> Tvec);
+        std::vector<double> magnetisation(std::vector<double> H, std::vector<double> Hdir, double T, MagUnits type);
+        std::vector<double> susceptibility(std::vector<double> T, std::vector<double> Hdir, MagUnits type);
+};
 
 } // namespace libMcPhase

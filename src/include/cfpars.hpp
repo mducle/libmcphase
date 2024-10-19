@@ -24,6 +24,9 @@
 
 namespace libMcPhase {
 
+// Conversion factors for different energy units[from][to], order: [meV, cm, K].
+static const std::array<double, 3> ENERGYCONV = { {1., 8.065544005, 11.6045221} };
+
 class cfpars {
 
     public:
@@ -34,7 +37,6 @@ class cfpars {
                     B44S = 5, B43S = 6, B42S = 7, B41S = 8, B40 = 9, B41 = 10, B42 = 11, B43 = 12, B44 = 13,
                     B66S = 14, B65S = 15, B64S = 16, B63S = 17, B62S = 18, B61S = 19, 
                     B60 = 20, B61 = 21, B62 = 22, B63 = 23, B64 = 24, B65 = 25, B66 = 26};
-    enum class MagUnits {bohr = 0, cgs = 1, SI = 2};
 
     protected:
         std::array<double, 27> m_Bi{};                        // Internal array of values (in Wybourne/theta_k in meV)

@@ -31,6 +31,7 @@ void cf1ion::set(int l, int m, double val) {
 
 void cf1ion::set_unit(cfpars::Units const newunit) {
     cfpars::set_unit(newunit);
+    physprop::m_meVconv = m_econv;
     m_ham_calc = false;
     m_ev_calc = false;
 }
@@ -56,8 +57,20 @@ void cf1ion::set_J(const double J) {
 // --------------------------------------------------------------------------------------------------------------- //
 // General methods for the cf1ion class
 // --------------------------------------------------------------------------------------------------------------- //
-RowMatrixXcd cf1ion::hamiltonian(bool upper) {
+void cf1ion::fill_upper() {
+    int dimj = m_J2 + 1;
+    for (int i=0; i<dimj; i++) {
+        for (int j=i+1; j<dimj; j++) {
+            m_hamiltonian(i,j) = std::conj(m_hamiltonian(j,i));
+        }
+    }
+}
+
+RowMatrixXcd cf1ion::_hamiltonian(bool upper) {
     if (m_ham_calc) {
+        if (upper && !m_upper) {
+            fill_upper();
+        }
         return m_hamiltonian;
     }
     if (m_J2 <= 0) {
@@ -155,20 +168,21 @@ RowMatrixXcd cf1ion::hamiltonian(bool upper) {
 
     // Fill in upper triangle
     if (upper) {
-        for (int i=0; i<dimj; i++) {
-            for (int j=i+1; j<dimj; j++) {
-                m_hamiltonian(i,j) = std::conj(m_hamiltonian(j,i));
-            }
-        }
+        fill_upper();
     }
 
     m_ham_calc = true;
+    m_upper = upper;
     return m_hamiltonian; 
+}
+
+RowMatrixXcd cf1ion::hamiltonian() {
+    return _hamiltonian(true);
 }
 
 std::tuple<RowMatrixXcd, VectorXd> cf1ion::eigensystem() {
     if (!m_ev_calc) {
-        SelfAdjointEigenSolver<RowMatrixXcd> es(hamiltonian(false));
+        SelfAdjointEigenSolver<RowMatrixXcd> es(_hamiltonian(false));
         m_eigenvectors = es.eigenvectors();
         m_eigenvalues = es.eigenvalues();
         m_ev_calc = true;
@@ -176,144 +190,19 @@ std::tuple<RowMatrixXcd, VectorXd> cf1ion::eigensystem() {
     return std::tuple<RowMatrixXcd, VectorXd>(m_eigenvectors, m_eigenvalues);
 }
 
-// --------------------------------------------------------------------------------------------------------------- //
-// Calculates bulk properties (magnetisation, susceptibility)
-// --------------------------------------------------------------------------------------------------------------- //
-std::vector<double> cf1ion::calculate_boltzmann(VectorXd en, double T)
-{
-    std::vector<double> boltzmann, en_meV;
-    // Need kBT in external energy units. K_B is in meV/K
-    double beta = 1 / (K_B * T * m_econv);
-    double Emin = std::numeric_limits<double>::max();
-    for (size_t i=0; i < (size_t)en.size(); i++) {
-        Emin = (en(i) < Emin) ? en(i) : Emin;
-    }
-    for (size_t i=0; i < (size_t)en.size(); i++) {
-        const double expi = exp(-(en(i) - Emin) * beta);
-        boltzmann.push_back((fabs(expi) > DELTA_EPS) ? expi : 0.);
-    }
-    return boltzmann;
+RowMatrixXcd cf1ion::zeeman_hamiltonian(double H, std::vector<double> Hdir) {
+    RowMatrixXcd zeeman = RowMatrixXcd::Zero(m_J2+1, m_J2+1);
+    return zeeman;
 }
 
-std::vector<double> cf1ion::heatcapacity(std::vector<double> Tvec) {
-    if(!m_ev_calc) {
-        auto evsystem = eigensystem(); }
-    std::vector<double> out;
-    out.reserve(Tvec.size());
-    std::vector<double> en;
-    en.reserve(m_eigenvalues.size());
-    for (size_t i=0; i < (size_t)m_eigenvalues.size(); i++) {
-        en.push_back(m_eigenvalues(i) / m_econv);
+std::vector<RowMatrixXcd> cf1ion::calculate_moments_matrix(RowMatrixXcd ev) {
+    std::vector<RowMatrixXcd> moments;
+    for (size_t ii=0; ii<3; ii++) {
+        RowMatrixXcd Jmat = RowMatrixXcd::Zero(ev.rows(), ev.cols());
+        moments.push_back((ev.adjoint()) * (Jmat * ev));
     }
-    for (auto T: Tvec) {
-        double Z = 0., U = 0., U2 = 0.;
-        std::vector<double> expfact = calculate_boltzmann(m_eigenvalues, T);
-        for (size_t i=0; i < (size_t)m_eigenvalues.size(); i++) {
-            Z += expfact[i];
-            U += en[i] * expfact[i];
-            U2 += en[i] * en[i] * expfact[i];
-        }
-        U /= Z;
-        U2 /= Z;
-        out.push_back( ((U2 - U * U) / (K_B * T * T)) * NAMEV );
-    }
-    return out;
-}
-/*
-std::vector<double> cf1ion::magnetisation(std::vector<double> Hvec, std::vector<double> Hdir, double T, MagUnits unit_type)
-{
-    // Normalise the field direction vector
-    double Hnorm = sqrt(Hdir[0] * Hdir[0] + Hdir[1] * Hdir[1] + Hdir[2] * Hdir[2]);
-    if (fabs(Hnorm) < 1.e-6) {
-        throw std::runtime_error("cf1ion::magnetisation(): Direction vector cannot be zero");
-    }
-    std::vector<double> nHdir;
-    std::transform(Hdir.begin(), Hdir.end(), std::back_inserter(nHdir), [Hnorm](double Hd){ return Hd / Hnorm; });
-    // Calculates Magnetisation M(H) at specified T
-    if (!m_ham_calc)
-        calculate_hamiltonian();
-    std::vector<double> M;
-    M.reserve(Hvec.size());
-    // Loops through all the input field magnitudes and calculates the magnetisation
-    for (auto H: Hvec) {
-        if (unit_type == MagUnits::cgs) {
-            H /= 1e4;   // For cgs, input field is in Gauss, need to convert to Tesla for Zeeman calculation
-        }
-        RowMatrixXcd ham = m_hamiltonian - zeeman_hamiltonian(H, Hdir);
-        SelfAdjointEigenSolver<RowMatrixXcd> es(ham);
-        // calculate_moments returns a vector of 3 moments *squared* vectors, in the x, y, z directions
-        std::vector< std::vector<double> > moments_vec = calculate_moments(es.eigenvectors());
-        std::vector<double> boltzmann = calculate_boltzmann(es.eigenvalues(), T);
-        std::vector<double> Mdir;
-        for (auto moments: moments_vec) {
-            double Mexp = 0., Z = 0.;
-            //std::inner_product(moments.begin(), moments.end(), boltzmann.begin(), Mexp);
-            //std::accumulate(boltzmann.begin(), boltzmann.end(), Z);
-            for (int ii=0; ii<ham.cols(); ii++) {
-                Mexp += moments[ii] * boltzmann[ii];
-                Z += boltzmann[ii];
-            }
-            Mdir.push_back(Mexp / Z);
-        }
-        M.push_back(sqrt(Mdir[0] * Mdir[0] + Mdir[1] * Mdir[1] + Mdir[2] * Mdir[2]) * MAGCONV[(int)unit_type]);
-    }
-    return M;
+    return moments;
 }
 
-std::vector<double> cf1ion::susceptibility(std::vector<double> Tvec, std::vector<double> Hdir, MagUnits unit_type)
-{
-    // Normalise the field direction vector
-    double Hnorm = sqrt(Hdir[0] * Hdir[0] + Hdir[1] * Hdir[1] + Hdir[2] * Hdir[2]);
-    if (fabs(Hnorm) < 1.e-6) {
-        throw std::runtime_error("cf1ion::magnetisation(): Direction vector cannot be zero");
-    }
-    std::vector<double> nHdir;
-    std::transform(Hdir.begin(), Hdir.end(), std::back_inserter(nHdir), [Hnorm](double Hd){ return Hd / Hnorm; });
-    // Calculates the susceptibility chi(T)
-    if (!m_ev_calc)
-        calculate_eigensystem();
-    std::vector<double> chi;
-    chi.reserve(Tvec.size());
-    // Calculates the moments matrices in the x, y, z directions, and get the resultant
-    std::vector<RowMatrixXcd> moments_mat_vec = calculate_moments_matrix(m_eigenvectors);
-    RowMatrixXcd moments_mat = moments_mat_vec[0] * nHdir[0]
-                               + moments_mat_vec[1] * nHdir[1]
-                               + moments_mat_vec[2] * nHdir[2];
-    // Now calculate the first and second order terms in the Van Vleck equation
-    size_t nlev = m_eigenvectors.cols();
-    std::vector<double> mu(nlev, 0.);
-    std::vector<double> mu2(nlev, 0.);
-    for (size_t ii=0; ii<nlev; ii++) {
-        for (size_t jj=0; jj<nlev; jj++) {
-            const double delta = m_eigenvalues[ii] - m_eigenvalues[jj];
-            const double matel = (moments_mat(ii, jj) * std::conj(moments_mat(ii, jj))).real();
-            if (fabs(delta) < DELTA_EPS) {
-                mu[ii] += matel;           // First order term
-            } else {
-                mu2[ii] += matel / delta;  // Second order term
-            }
-        }
-    }
-
-    // Loops through all the input temperatures and calculates the susceptibility using:
-    //                                 2                     2
-    //           N_A --- [ <V_n|mu|V_n>      --- <V_n|mu|V_m>  ]
-    // chi(T) =  --- >   [ ------------  - 2 >   ------------  ] exp(-E/k_BT)
-    //            Z  --- [    k_B T          ---   En - Em     ]
-    //                n                     m!=n
-
-    for (auto T: Tvec) {
-        std::vector<double> boltzmann = calculate_boltzmann(m_eigenvalues, T);
-        const double beta = 1. / (K_B * T);
-        double U = 0., Z = 0.;
-        for (size_t ii=0; ii<nlev; ii++) {
-            U += ((mu[ii] * beta) - (2 * mu2[ii])) * boltzmann[ii];
-            Z += boltzmann[ii];
-        }
-        chi.push_back(SUSCCONV[(int)unit_type] * U / Z);
-    }
-    return chi;
-}
-*/
 
 } // namespace libMcPhase

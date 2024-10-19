@@ -85,20 +85,6 @@ std::vector<RowMatrixXcd> ic1ion::calculate_moments_matrix(RowMatrixXcd ev) {
     return moments;
 }
 
-std::vector< std::vector<double> > ic1ion::calculate_moments(RowMatrixXcd ev) {
-    std::vector<RowMatrixXcd> mommat = calculate_moments_matrix(ev);
-    std::vector< std::vector<double> > moments_diag;
-    for (auto mom: mommat) {
-        std::vector<double> moment_vec;
-        for (int ii=0; ii<ev.cols(); ii++) {
-            moment_vec.push_back(mom(ii, ii).real());
-        }
-        moments_diag.push_back(moment_vec);
-    }
-    return moments_diag;
-}
-
-
 /*
 // --------------------------------------------------------------------------------------------------------------- //
 // Calculates the mean field matrix sum_i (H_i*J_i)

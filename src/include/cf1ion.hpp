@@ -15,14 +15,17 @@
 
 namespace libMcPhase {
 
-class cf1ion: public cfpars {
+class cf1ion: public cfpars, public physprop {
 
     protected:
         bool m_ham_calc = false;                              // Flag to indicate if Hamiltonian calculated
+        bool m_upper = true;                                  // Flag to indicate if upper triangle of Ham is calc
         bool m_ev_calc = false;                               // Flag to indicate if eigenvectors/values calculated
         RowMatrixXcd m_hamiltonian;                           // Cached Hamiltonian
         RowMatrixXcd m_eigenvectors;                          // Cached eigenvectors
         VectorXd m_eigenvalues;                               // Cached eigenvalues
+        RowMatrixXcd _hamiltonian(bool upper=true);
+        void fill_upper();
 
     public:
         // Setters
@@ -38,10 +41,10 @@ class cf1ion: public cfpars {
         cf1ion(const double J) : cfpars(J) {};
         cf1ion(const std::string &ionname) : cfpars(ionname) {};
         // Methods
-        RowMatrixXcd hamiltonian(bool upper=true);
+        RowMatrixXcd hamiltonian();
         std::tuple<RowMatrixXcd, VectorXd> eigensystem();
-        std::vector<double> calculate_boltzmann(VectorXd en, double T);
-        std::vector<double> heatcapacity(std::vector<double> Tvec);
+        RowMatrixXcd zeeman_hamiltonian(double H, std::vector<double> Hdir);
+        std::vector<RowMatrixXcd> calculate_moments_matrix(RowMatrixXcd ev);
 
 }; // class cf1ion
 

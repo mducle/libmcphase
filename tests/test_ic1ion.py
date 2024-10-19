@@ -46,9 +46,17 @@ class ic1ionTests(unittest.TestCase):
         nptest.assert_allclose(E, self.en_refi, atol=1e-2)
         nptest.assert_allclose(V @ np.diag(E) @ V.conj().T, cfp.hamiltonian(), atol=1e-4)
 
+    def test_heatcapacity(self):
+        # Test compared to Mantid in LS limit
+        cf = libmcphase.ic1ion('Ce3+', B20=0.37737, B22=3.9770, B40=-0.031787, B42=-0.11611, B44=-0.12544, zeta=1e9, unit='meV')
+        Cv = cf.heatcapacity(np.linspace(1,300,300))
+        self.assertAlmostEqual(Cv[100], 4.2264, 3)
+        self.assertAlmostEqual(Cv[150], 5.9218, 3)
+        self.assertAlmostEqual(Cv[200], 5.4599, 3)
+
     def test_magnetisation(self):
         # Test compared to McPhase 5.4
-        ref_mag = np.array([3.35996e-13, 0.299607, 0.585826, 0.848715, 1.0833, 1.28896, 1.46781, 1.62318, 1.75859, 1.87726, 1.98196])
+        ref_mag = np.array([0, 0.299607, 0.585826, 0.848715, 1.0833, 1.28896, 1.46781, 1.62318, 1.75859, 1.87726, 1.98196])
         cfp = libmcphase.ic1ion('Pr3+', **self.all_pars)
         mag = cfp.magnetisation(np.arange(0, 21, 2), [1, 0, 0], 1, 'bohr')
         nptest.assert_allclose(mag, ref_mag, atol=1e-4)

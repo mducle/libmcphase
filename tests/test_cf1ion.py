@@ -53,6 +53,9 @@ class cf1ionTests(unittest.TestCase):
                  'B66S':-6.6456e-04, 'B65S':8.0453e-04, 'B64S':3.4691e-04, 'B63S':5.1962e-04, 'B62S':-1.2112e-04, 'B61S':3.5266e-05}
     all_pars = dict(pars_real, **pars_imag)
 
+    # Parameters for physical properties check
+    pp_cfpars = {'B20':0.37737, 'B22':3.9770, 'B40':-0.031787, 'B42':-0.11611, 'B44':-0.12544}
+
     def test_creation_and_diagonalisation(self):
         with self.assertRaises(RuntimeError):   # J must be integer or half-integer
             cfp = libmcphase.cf1ion(2.3)
@@ -90,30 +93,33 @@ class cf1ionTests(unittest.TestCase):
         V, E = cfp.eigensystem()
         nptest.assert_allclose(E - E[0], self.en_ref_l, atol=1e-4)
 
-    def test_physical_properties(self):
+    def test_heatcapacity(self):
         # Compared to values from Mantid
-        cfpars = {'B20':0.37737, 'B22':3.9770, 'B40':-0.031787, 'B42':-0.11611, 'B44':-0.12544}
-        cf = libmcphase.cf1ion('Ce3+', **cfpars)
+        cf = libmcphase.cf1ion('Ce3+', **self.pp_cfpars)
         # Test Heat capacity calculations
         Cv = cf.heatcapacity(np.linspace(1,300,300))
         #self.assertAlmostEqual(TCv[150], 151, 4)
         self.assertAlmostEqual(Cv[100], 4.2264, 3)
         self.assertAlmostEqual(Cv[150], 5.9218, 3)
         self.assertAlmostEqual(Cv[200], 5.4599, 3)
-        cf = libmcphase.cf1ion('Ce3+', **{k:v*11.6045 for k,v in cfpars.items()}, unit='K')
+        cf = libmcphase.cf1ion('Ce3+', **{k:v*11.6045 for k,v in self.pp_cfpars.items()}, unit='K')
         Cv = cf.heatcapacity(np.linspace(1,300,300))
         self.assertAlmostEqual(Cv[100], 4.2264, 3)
         self.assertAlmostEqual(Cv[150], 5.9218, 3)
         self.assertAlmostEqual(Cv[200], 5.4599, 3)
 
+#    def test_susceptibility(self):
 #        # Test susceptibility calculations
+#        cf = libmcphase.cf1ion('Ce3+', **self.pp_cfpars)
 #        Tchi_powder, chi_powder = cf.getSusceptibility(np.linspace(1, 300, 50), Hdir="powder")
 #        self.assertAlmostEqual(Tchi_powder[10], 62.02, 2)
 #        self.assertAlmostEqual(chi_powder[5], 1.92026e-2, 6)
 #        self.assertAlmostEqual(chi_powder[10], 1.03471e-2, 6)
 #        self.assertAlmostEqual(chi_powder[15], 0.73004e-2, 6)
 #
+#    def test_magnetisation_vs_T(self):
 #        # Test M(T) calculations
+#        cf = libmcphase.cf1ion('Ce3+', **self.pp_cfpars)
 #        Tmt_powder, mt_powder = cf.getMagneticMoment(1.0, Temperature=np.linspace(1, 300, 50), Hdir="powder", Unit="cgs")
 #        self.assertAlmostEqual(chi_powder[5], mt_powder[5], 6)
 #        self.assertAlmostEqual(chi_powder[10], mt_powder[10], 6)
@@ -133,7 +139,9 @@ class cf1ionTests(unittest.TestCase):
 #        self.assertAlmostEqual(h_mag_5[10], 0.09228022, 6)
 #        self.assertAlmostEqual(h_mag_5[15], 0.06525625, 6)
 #
+#    def test_magnetisation(self):
 #        # Test M(H) calculations
+#        cf = libmcphase.cf1ion('Ce3+', **self.pp_cfpars)
 #        Hmag_SI, mag_SI = cf.getMagneticMoment(np.linspace(0, 30, 15), Temperature=10, Hdir=[0, 1, -1], Unit="SI")
 #        self.assertAlmostEqual(mag_SI[1], 1.8139, 3)
 #        self.assertAlmostEqual(mag_SI[5], 6.7859, 3)
