@@ -62,7 +62,7 @@ std::vector<double> physprop::heatcapacity(std::vector<double> Tvec) {
     return out;
 }
 
-std::vector<double> physprop::magnetisation(std::vector<double> Hvec, std::vector<double> Hdir, double T, MagUnits unit_type)
+std::vector< std::vector<double> > physprop::magnetisation(std::vector<double> Hvec, std::vector<double> Hdir, std::vector<double> Tvec, MagUnits unit_type)
 {
     // Normalise the field direction vector
     double Hnorm = sqrt(Hdir[0] * Hdir[0] + Hdir[1] * Hdir[1] + Hdir[2] * Hdir[2]);
@@ -73,7 +73,7 @@ std::vector<double> physprop::magnetisation(std::vector<double> Hvec, std::vecto
     std::transform(Hdir.begin(), Hdir.end(), std::back_inserter(nHdir), [Hnorm](double Hd){ return Hd / Hnorm; });
     // Calculates Magnetisation M(H) at specified T
     RowMatrixXcd ham0 = hamiltonian();
-    std::vector<double> M;
+    std::vector< std::vector<double> > M;
     M.reserve(Hvec.size());
     // Loops through all the input field magnitudes and calculates the magnetisation
     std::vector<RowMatrixXcd> mag_ops = calculate_moments_matrix(RowMatrixXcd::Identity(ham0.rows(), ham0.cols()));
@@ -84,14 +84,19 @@ std::vector<double> physprop::magnetisation(std::vector<double> Hvec, std::vecto
         }
         RowMatrixXcd ham = ham0 - zeeman_hamiltonian(H, Hdir);
         SelfAdjointEigenSolver<RowMatrixXcd> es(ham);
-        std::vector<double> boltzmann = calculate_boltzmann(es.eigenvalues(), T);
-        RowMatrixXcd me = (es.eigenvectors().adjoint()) * (Jmat * es.eigenvectors());
-        double Mexp = 0., Z = 0.;
-        for (int ii=0; ii<ham.cols(); ii++) {
-            Mexp += me(ii,ii).real() * boltzmann[ii];
-            Z += boltzmann[ii];
+        std::vector<double> Mt;
+        Mt.reserve(Tvec.size());
+        for (auto T: Tvec) {
+            std::vector<double> boltzmann = calculate_boltzmann(es.eigenvalues(), T);
+            RowMatrixXcd me = (es.eigenvectors().adjoint()) * (Jmat * es.eigenvectors());
+            double Mexp = 0., Z = 0.;
+            for (int ii=0; ii<ham.cols(); ii++) {
+                Mexp += me(ii,ii).real() * boltzmann[ii];
+                Z += boltzmann[ii];
+            }
+            Mt.push_back((Mexp / Z) * MAGCONV[(int)unit_type]);
         }
-        M.push_back((Mexp / Z) * MAGCONV[(int)unit_type]);
+        M.push_back(Mt);
     }
     return M;
 }

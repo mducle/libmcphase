@@ -29,6 +29,8 @@ class ic1ionTests(unittest.TestCase):
                  'B66S':-6.6456e-04, 'B65S':8.0453e-04, 'B64S':3.4691e-04, 'B63S':5.1962e-04, 'B62S':-1.2112e-04, 'B61S':3.5266e-05}
     all_pars = dict(pars_real, **pars_imag)
 
+    pp_cfpars = {'B20':0.37737, 'B22':3.9770, 'B40':-0.031787, 'B42':-0.11611, 'B44':-0.12544, 'zeta':1.e9}
+
     def test_creation_and_diagonalisation(self):
         with self.assertRaises(RuntimeError):   # Can only be constructed from ion name
             cfp = libmcphase.ic1ion(2.5)
@@ -58,7 +60,7 @@ class ic1ionTests(unittest.TestCase):
         # Test compared to McPhase 5.4 (using m_parallel)
         ref_mag = np.array([0, 0.297508, 0.58146, 0.841784, 1.07343, 1.27577, 1.45094, 1.6023, 1.73344, 1.84766, 1.94775])
         cfp = libmcphase.ic1ion('Pr3+', **self.all_pars)
-        mag = cfp.magnetisation(np.arange(0, 21, 2), [1, 0, 0], 1, 'bohr')
+        mag = np.squeeze(cfp.magnetisation(np.arange(0, 21, 2), [1, 0, 0], [1], 'bohr'))
         nptest.assert_allclose(mag, ref_mag, atol=1e-4)
 
     def test_susceptibility(self):
@@ -69,10 +71,37 @@ class ic1ionTests(unittest.TestCase):
         nptest.assert_allclose(sus, ref_sus, atol=1e-4)
         
     def test_magnetisation_cf(self):
-        # Test M(H) calculations
-        cf = libmcphase.ic1ion('Ce3+', B20=0.37737, B22=3.9770, B40=-0.031787, B42=-0.11611, B44=-0.12544, zeta=1e9, unit='meV')
+        # Test M(H) calculations in the LS-limit (compare with Mantid output)
+        cf = libmcphase.ic1ion('Ce3+', **self.pp_cfpars)
         #Hmag_SI, mag_SI = cf.getMagneticMoment(np.linspace(0, 30, 15), Temperature=10, Hdir=[0, 1, -1], Unit="SI")
-        mag_SI = cf.magnetisation(np.linspace(0, 30, 15), [0, 1, -1], 10, 'SI')
+        mag_SI = np.squeeze(cf.magnetisation(np.linspace(0, 30, 15), [0, 1, -1], [10], 'SI'))
         self.assertAlmostEqual(mag_SI[1], 1.8139, 2)
         self.assertAlmostEqual(mag_SI[5], 6.7859, 2)
         self.assertAlmostEqual(mag_SI[9], 8.2705, 2)
+
+    def test_susc_mt_cf(self):
+        # Test susceptibility / M(T) calculations in the LS-limit
+        cf = libmcphase.ic1ion('Ce3+', **self.pp_cfpars)
+        tt = np.linspace(1, 300, 50)
+        cc = [np.array(cf.susceptibility(tt, hdir, 'cgs')) for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
+        chi_powder = (cc[0] + cc[1] + cc[2]) / 3
+        self.assertAlmostEqual(chi_powder[5], 1.92026e-2, 3)
+        self.assertAlmostEqual(chi_powder[10], 1.03471e-2, 3)
+        self.assertAlmostEqual(chi_powder[15], 0.73004e-2, 3)
+        # Test susceptibility and M(T) calculations similar in the limit of small applied fields
+        mm = [np.array(cf.magnetisation([1.0], hdir, tt, 'cgs')) for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
+        mt_powder = np.squeeze(mm[0] + mm[1] + mm[2]) / 3
+        self.assertAlmostEqual(chi_powder[5], mt_powder[5], 3)
+        self.assertAlmostEqual(chi_powder[10], mt_powder[10], 3)
+        self.assertAlmostEqual(chi_powder[15], mt_powder[15], 3)
+        # Test different Hmag
+        mm = [np.array(cf.magnetisation([10.], hdir, tt, 'bohr')) for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
+        h_mag_10 = np.squeeze(mm[0] + mm[1] + mm[2]) / 3
+        self.assertAlmostEqual(h_mag_10[5], 0.323607, 3)
+        self.assertAlmostEqual(h_mag_10[10], 0.182484, 3)
+        self.assertAlmostEqual(h_mag_10[15], 0.129909, 3)
+        mm = [np.array(cf.magnetisation([5.], hdir, tt, 'bohr')) for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
+        h_mag_5 = np.squeeze(mm[0] + mm[1] + mm[2]) / 3
+        self.assertAlmostEqual(h_mag_5[5], 0.16923426, 3)
+        self.assertAlmostEqual(h_mag_5[10], 0.09228022, 3)
+        self.assertAlmostEqual(h_mag_5[15], 0.06525625, 3)
