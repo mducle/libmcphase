@@ -30,9 +30,16 @@ void wrap_cf1ion(py::module &m) {
         .def(py::init<const std::string &>(), py::arg("ionname"))
         .def(py::init<const double &>(), py::arg("J"))
         .def(py::init(&cf1ion_init), cfpars_init_str)
+        .def_property("GJ", [](cf1ion const &self) { return self.get_GJ(); }, [](cf1ion &self, double v) { self.set_GJ(v); })
         .def("hamiltonian", &cf1ion::hamiltonian, "the crystal field Hamiltonian")
         .def("eigensystem", &cf1ion::eigensystem, "the eigenvectors and eigenvalues of the crystal field Hamiltonian")
-        .def("heatcapacity", &cf1ion::heatcapacity, "the heat capacity of the crystal field Hamiltonian in J/mol/K");
+        .def("zeeman_hamiltonian", &cf1ion::zeeman_hamiltonian, "the Zeeman Hamiltonian")
+        .def("calculate_boltzmann", &cf1ion::calculate_boltzmann, "")
+        .def("heatcapacity", &cf1ion::heatcapacity, "the heat capacity of the crystal field Hamiltonian in J/mol/K")
+        .def("magnetisation", [](cf1ion &self, std::vector<double> H, std::vector<double> Hdir, double T, std::string unit) { return self.magnetisation(H, Hdir, T,
+             set_enum(unit, mag_unit_names, "Invalid magnetic unit, must be one of: 'bohr', 'cgs', or 'SI'")); })
+        .def("susceptibility", [](cf1ion &self, std::vector<double> T, std::vector<double> Hdir, std::string unit) { return self.susceptibility(T, Hdir,
+             set_enum(unit, mag_unit_names, "Invalid magnetic unit, must be one of: 'bohr', 'cgs', or 'SI'")); });
 }
 
 

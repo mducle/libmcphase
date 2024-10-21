@@ -173,7 +173,7 @@ void cfpars::set(int l, int m, double val) {
     m_Bi[id] = val / m_convfact[id] / m_econv;
 }
 
-const double cfpars::get(int l, int m) const {
+double cfpars::get(int l, int m) const {
     switch(l) {
         case 2: return m_Bo[2 + m];
         case 4: return m_Bo[9 + m];
@@ -244,6 +244,7 @@ void cfpars::set_name(const std::string &ionname) {
     }
 	m_stevfact = {alpha, beta, gamma};
 	m_convertible = true;
+    m_GJ = GJ[m_n];
     // Now reset the conversion table (from internal to external parameters)
     this->set_type(m_type);
 }

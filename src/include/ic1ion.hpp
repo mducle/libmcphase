@@ -18,7 +18,6 @@
 #include "ic_states.hpp"
 #include <algorithm>
 #include <vector>
-#include <unordered_map>
 
 namespace libMcPhase {
 

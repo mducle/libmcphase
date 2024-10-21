@@ -50,6 +50,7 @@ class cfpars {
         Type m_type = Type::Blm;                              // Type of crystal field parameters
         std::string m_ionname;                                // Name of ion
         int m_J2 = 0;                                         // 2*J == twice the total angular momentum
+        double m_GJ = -1.;                                    // Lande g-factor
         bool m_convertible = false;                           // True if can convert between types and normalisations
         racah m_racah{};                                      // Class to calc n-j symbols and cache factorials
         int m_n = 1;                                          // Number of open shell electrons in this configuration
@@ -58,21 +59,23 @@ class cfpars {
         // Methods
         virtual void getfromionname(const std::string &ionname);
         // Getters
-        const Units get_unit() const { return m_unit; }
-        const Normalisation get_normalisation() const { return m_norm; }
-        const Type get_type() const { return m_type; }
-        const std::string get_name() const { return m_ionname; }
-        const double get(const Blm blm) const { return m_Bo[(int)blm]; }
-        const double get(int l, int m) const;
-        const double alpha() { return m_stevfact[0]; }
-        const double beta() { return m_stevfact[1]; }
-        const double gamma() { return m_stevfact[2]; }
-        const double get_J() { return (double)(m_J2 / 2.); }
+        Units get_unit() const { return m_unit; }
+        Normalisation get_normalisation() const { return m_norm; }
+        Type get_type() const { return m_type; }
+        std::string get_name() const { return m_ionname; }
+        double get(const Blm blm) const { return m_Bo[(int)blm]; }
+        double get(int l, int m) const;
+        double get_GJ() const { return m_GJ; }
+        double alpha() const { return m_stevfact[0]; }
+        double beta() const { return m_stevfact[1]; }
+        double gamma() const { return m_stevfact[2]; }
+        double get_J() const { return (double)(m_J2 / 2.); }
         // Setters
         virtual void set_unit(const Units newunit);
         virtual void set_type(const Type newtype);
         virtual void set_name(const std::string &ionname);
         virtual void set_J(const double J);
+        virtual void set_GJ(const double GJ) { m_GJ = GJ; }
         virtual void set(const Blm blm, double val);
         virtual void set(int l, int m, double val);
         // Constructors

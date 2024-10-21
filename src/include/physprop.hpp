@@ -10,6 +10,7 @@
 
 #include "eigen.hpp"
 #include <vector>
+#include <unordered_map>
 
 namespace libMcPhase {
 
@@ -26,8 +27,10 @@ static const double NAMUB = 5.5849397;  // N_A*mu_B - J/T/mol - product of Bohr 
 static const std::array<double, 3> MAGCONV = {1., NAMUB*1000, NAMUB};
 
 // Note these constants are strange because the default energy unit in this module is cm-1
-static const double NAMUBSQ_ERG = 0.26074098;     // N_A * muB[erg/G] * muB[cm/T] * [Tesla_to_Gauss=1e-4]
-static const double NAMUBSQ_JOULE = 3.276568e-06; // N_A * muB[J/T] * muB[cm/T] * mu0
+static const double NAMUBSQc_ERG = 0.26074098;     // N_A * muB[erg/G] * muB[cm/T] * [Tesla_to_Gauss=1e-4]
+static const double NAMUBSQc_JOULE = 3.276568e-06; // N_A * muB[J/T] * muB[cm/T] * mu0
+static const double NAMUBSQ_ERG = 0.03232776;      // N_A * muB[erg/G] * muB[meV/T] * [Tesla_to_Gauss=1e-4]
+static const double NAMUBSQ_JOULE = 4.062426e-07;  // N_A * muB[J/T] * muB[meV/T] * mu0
 // Factor of mu0 is needed in SI due to different definition of the magnetisation, B and H fields
 
 // Conversion factors for different magnetic units for magnetic susceptibility. Order: [bohr, cgs, SI].
@@ -53,11 +56,15 @@ class physprop {
         virtual RowMatrixXcd zeeman_hamiltonian(double H, std::vector<double> Hdir) = 0;
         virtual std::tuple<RowMatrixXcd, VectorXd> eigensystem() = 0;
         virtual std::vector<RowMatrixXcd> calculate_moments_matrix(RowMatrixXcd ev) = 0;
-        std::vector< std::vector<double> > calculate_moments(RowMatrixXcd ev);
+      //std::vector< std::vector<double> > calculate_moments(RowMatrixXcd ev);
         std::vector<double> calculate_boltzmann(VectorXd en, double T);
         std::vector<double> heatcapacity(std::vector<double> Tvec);
         std::vector<double> magnetisation(std::vector<double> H, std::vector<double> Hdir, double T, MagUnits type);
         std::vector<double> susceptibility(std::vector<double> T, std::vector<double> Hdir, MagUnits type);
 };
+
+// Mapping for Python binding to map string to enum
+static const std::unordered_map<std::string, physprop::MagUnits> mag_unit_names = {
+    {"bohr", physprop::MagUnits::bohr}, {"cgs", physprop::MagUnits::cgs}, {"SI", physprop::MagUnits::SI} };
 
 } // namespace libMcPhase

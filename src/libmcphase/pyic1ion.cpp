@@ -7,6 +7,7 @@
  */
 
 #include "ic1ion.hpp"
+#include <unordered_map>
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
@@ -14,9 +15,6 @@
 
 namespace py = pybind11;
 using namespace libMcPhase;
-
-static const std::unordered_map<std::string, physprop::MagUnits> mag_unit_names = {
-    {"bohr", physprop::MagUnits::bohr}, {"cgs", physprop::MagUnits::cgs}, {"SI", physprop::MagUnits::SI} };
 
 static const std::unordered_map<std::string, ic1ion::CoulombType> coulomb_names = {
     {"Slater", ic1ion::CoulombType::Slater}, {"CondonShortley", ic1ion::CoulombType::CondonShortley}, {"Racah", ic1ion::CoulombType::Racah} };
@@ -54,11 +52,11 @@ void wrap_ic1ion(py::module &m) {
         .def("get_ci", &ic1ion::get_ci)
         .def("hamiltonian", &ic1ion::hamiltonian, "the crystal field Hamiltonian")
         .def("eigensystem", &ic1ion::eigensystem, "the eigenvectors and eigenvalues of the crystal field Hamiltonian")
+        .def_property("GJ", [](ic1ion const &self) { return self.get_GJ(); }, [](ic1ion &self, double v) { self.set_GJ(v); })
         .def_property("zeta", [](ic1ion const &self) { return self.get_spinorbit(); }, [](ic1ion &self, double v) { self.set_spinorbit(v, ic1ion::SpinOrbType::Zeta); })
         .def_property("slater", [](ic1ion const &self) { return self.get_coulomb(); }, [](ic1ion &self, std::vector<double> v) { self.set_coulomb(v, ic1ion::CoulombType::Slater); })
         .def("zeeman_hamiltonian", &ic1ion::zeeman_hamiltonian, "the Zeeman Hamiltonian")
         .def("calculate_boltzmann", &ic1ion::calculate_boltzmann, "")
-        .def("calculate_moments", &ic1ion::calculate_moments, "")
         .def("heatcapacity", &ic1ion::heatcapacity, "the heat capacity of the crystal field Hamiltonian in J/mol/K")
         .def("magnetisation", [](ic1ion &self, std::vector<double> H, std::vector<double> Hdir, double T, std::string unit) { return self.magnetisation(H, Hdir, T,
              set_enum(unit, mag_unit_names, "Invalid magnetic unit, must be one of: 'bohr', 'cgs', or 'SI'")); })

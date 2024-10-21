@@ -22,7 +22,7 @@ static const std::array<int, 51> q = {0,0,0,0,0,0,-2,-1,0,1,2,-3,-2,-1,0,1,2,3,-
 // Calculates the tensor operators up to 
 // --------------------------------------------------------------------------------------------------------------- //
 void ic1ion::calc_tensorops(int num_op) {
-    if (num_op < m_tensorops.size() && num_op <= 0)
+    if (num_op < m_tensorops.size() || num_op <= 0)
         return;
     // Calculates the L and S operator matrix for the each directions
     // Note operators up to 6 are the magnetic moment operators in x, y, z basis 
@@ -33,6 +33,7 @@ void ic1ion::calc_tensorops(int num_op) {
     racah_mumat(-1, Lm1, Sm1);
     // Note also that m_tensorops is a vector of _real_ matrices.
     // BUT negative order (-q) operators are purely imaginary, as are the Sy and Ly matrices.
+    m_tensorops.clear();
     m_tensorops.push_back((Sm1 - Sp1) / sqrt(2.));  // Sx
     m_tensorops.push_back((Lm1 - Lp1) / sqrt(2.));  // Lx
     m_tensorops.push_back((Sm1 + Sp1) / sqrt(2.));  // Sy
@@ -56,7 +57,7 @@ RowMatrixXcd ic1ion::zeeman_hamiltonian(double H, std::vector<double> Hdir) {
     // Normalise the field direction vector
     double Hnorm = sqrt(Hdir[0] * Hdir[0] + Hdir[1] * Hdir[1] + Hdir[2] * Hdir[2]);
     if (fabs(Hnorm) < 1.e-6) {
-        throw std::runtime_error("ic1ion::magnetisation(): Direction vector cannot be zero");
+        throw std::runtime_error("ic1ion::zeeman_hamiltonian(): Direction vector cannot be zero");
     }
     std::vector<double> nHdir;
     std::transform(Hdir.begin(), Hdir.end(), std::back_inserter(nHdir), [Hnorm](double Hd){ return Hd / Hnorm; });

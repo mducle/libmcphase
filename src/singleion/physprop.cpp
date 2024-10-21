@@ -20,13 +20,13 @@ std::vector<double> physprop::calculate_boltzmann(VectorXd en, double T) // Note
 {
     std::vector<double> boltzmann;
     // Need kBT in external energy units. K_B is in cm-1/K
-    double kBT = K_B * T * m_meVconv;
+    double beta = 1. / (K_B * T * m_meVconv);
     double Emin = std::numeric_limits<double>::max();
     for (size_t i=0; i < (size_t)en.size(); i++) {
         Emin = (en(i) < Emin) ? en(i) : Emin;
     }
     for (size_t i=0; i < (size_t)en.size(); i++) {
-        const double expi = exp(-(en(i) - Emin) / kBT);
+        const double expi = exp(-(en(i) - Emin) * beta);
         boltzmann.push_back((fabs(expi) > DELTA_EPS) ? expi : 0.);
     }
     return boltzmann;
@@ -62,20 +62,6 @@ std::vector<double> physprop::heatcapacity(std::vector<double> Tvec) {
     return out;
 }
 
-
-std::vector< std::vector<double> > physprop::calculate_moments(RowMatrixXcd ev) {
-    std::vector<RowMatrixXcd> mommat = calculate_moments_matrix(ev);
-    std::vector< std::vector<double> > moments_diag;
-    for (auto mom: mommat) {
-        std::vector<double> moment_vec;
-        for (int ii=0; ii<ev.cols(); ii++) {
-            moment_vec.push_back(mom(ii, ii).real());
-        }
-        moments_diag.push_back(moment_vec);
-    }
-    return moments_diag;
-}
-
 std::vector<double> physprop::magnetisation(std::vector<double> Hvec, std::vector<double> Hdir, double T, MagUnits unit_type)
 {
     // Normalise the field direction vector
@@ -90,27 +76,22 @@ std::vector<double> physprop::magnetisation(std::vector<double> Hvec, std::vecto
     std::vector<double> M;
     M.reserve(Hvec.size());
     // Loops through all the input field magnitudes and calculates the magnetisation
+    std::vector<RowMatrixXcd> mag_ops = calculate_moments_matrix(RowMatrixXcd::Identity(ham0.rows(), ham0.cols()));
+    RowMatrixXcd Jmat = nHdir[0] * mag_ops[0] + nHdir[1] * mag_ops[1] + nHdir[2] * mag_ops[2];
     for (auto H: Hvec) {
         if (unit_type == MagUnits::cgs) {
             H /= 1e4;   // For cgs, input field is in Gauss, need to convert to Tesla for Zeeman calculation
         }
         RowMatrixXcd ham = ham0 - zeeman_hamiltonian(H, Hdir);
         SelfAdjointEigenSolver<RowMatrixXcd> es(ham);
-        // calculate_moments returns a vector of 3 moments *squared* vectors, in the x, y, z directions
-        std::vector< std::vector<double> > moments_vec = calculate_moments(es.eigenvectors());
         std::vector<double> boltzmann = calculate_boltzmann(es.eigenvalues(), T);
-        std::vector<double> Mdir;
-        for (auto moments: moments_vec) {
-            double Mexp = 0., Z = 0.;
-            //std::inner_product(moments.begin(), moments.end(), boltzmann.begin(), Mexp);
-            //std::accumulate(boltzmann.begin(), boltzmann.end(), Z);
-            for (int ii=0; ii<ham.cols(); ii++) {
-                Mexp += moments[ii] * boltzmann[ii];
-                Z += boltzmann[ii];
-            }
-            Mdir.push_back(Mexp / Z);
+        RowMatrixXcd me = (es.eigenvectors().adjoint()) * (Jmat * es.eigenvectors());
+        double Mexp = 0., Z = 0.;
+        for (int ii=0; ii<ham.cols(); ii++) {
+            Mexp += me(ii,ii).real() * boltzmann[ii];
+            Z += boltzmann[ii];
         }
-        M.push_back(sqrt(Mdir[0] * Mdir[0] + Mdir[1] * Mdir[1] + Mdir[2] * Mdir[2]) * MAGCONV[(int)unit_type]);
+        M.push_back((Mexp / Z) * MAGCONV[(int)unit_type]);
     }
     return M;
 }
@@ -131,13 +112,15 @@ std::vector<double> physprop::susceptibility(std::vector<double> Tvec, std::vect
     // Calculates the moments matrices in the x, y, z directions, and get the resultant
     std::vector<RowMatrixXcd> moments_mat_vec = calculate_moments_matrix(std::get<0>(es));
     RowMatrixXcd moments_mat = moments_mat_vec[0] * nHdir[0]
-                               + moments_mat_vec[1] * nHdir[1]
-                               + moments_mat_vec[2] * nHdir[2];
+                             + moments_mat_vec[1] * nHdir[1]
+                             + moments_mat_vec[2] * nHdir[2];
     // Now calculate the first and second order terms in the Van Vleck equation
     size_t nlev = std::get<0>(es).cols();
     std::vector<double> mu(nlev, 0.);
     std::vector<double> mu2(nlev, 0.);
-    VectorXd eigenvalues = std::get<1>(es);
+    std::vector<double> eigenvalues(nlev, 0.);
+    for (size_t ii=0; ii<nlev; ii++) {
+        eigenvalues[ii] = std::get<1>(es)[ii] / m_meVconv; }  // Convert energies to meV
     for (size_t ii=0; ii<nlev; ii++) {
         for (size_t jj=0; jj<nlev; jj++) {
             const double delta = eigenvalues[ii] - eigenvalues[jj];
@@ -158,7 +141,7 @@ std::vector<double> physprop::susceptibility(std::vector<double> Tvec, std::vect
     //                n                     m!=n
 
     for (auto T: Tvec) {
-        std::vector<double> boltzmann = calculate_boltzmann(eigenvalues, T);
+        std::vector<double> boltzmann = calculate_boltzmann(std::get<1>(es), T);
         const double beta = 1. / (K_B * T);
         double U = 0., Z = 0.;
         for (size_t ii=0; ii<nlev; ii++) {

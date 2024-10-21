@@ -21,10 +21,13 @@ class cf1ion: public cfpars, public physprop {
         bool m_ham_calc = false;                              // Flag to indicate if Hamiltonian calculated
         bool m_upper = true;                                  // Flag to indicate if upper triangle of Ham is calc
         bool m_ev_calc = false;                               // Flag to indicate if eigenvectors/values calculated
+        bool m_magops_calc = false;                           // Flag to indicate if magnetic operators calculated
         RowMatrixXcd m_hamiltonian;                           // Cached Hamiltonian
         RowMatrixXcd m_eigenvectors;                          // Cached eigenvectors
         VectorXd m_eigenvalues;                               // Cached eigenvalues
+        std::vector<RowMatrixXcd> m_magops;                   // Cached magnetic operators
         RowMatrixXcd _hamiltonian(bool upper=true);
+        void calc_mag_ops();
         void fill_upper();
 
     public:
