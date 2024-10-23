@@ -6,8 +6,6 @@
  * This program is licensed under the GNU General Purpose License, version 3. Please see the LICENSE file
  */
 
-#include "cfpars.hpp"
-#include <pybind11/pybind11.h>
 #include "pycfpars.hpp"
 
 namespace py = pybind11;
@@ -29,25 +27,28 @@ static const std::unordered_map<std::string, cfpars::Units> unit_names = {
     {"meV", cfpars::Units::meV}, {"cm", cfpars::Units::cm}, {"K", cfpars::Units::K} };
 static const std::string unit_err = "Invalid unit, must be one of 'meV', 'cm', or 'K'";
 
-void cf_parse(cfpars *cls, py::args args, py::kwargs kwargs) {
+void cf_parse(cfpars *cls, py::args args, py::kwargs kwargs, bool is_ic1ion) {
     if (!args && !kwargs) {
         return;
     }
     if (args && args.size() > 0) {
         try {
-            double J = args[0].cast<double>();
-            cls->set_J(J);
+            std::string ionname = args[0].cast<std::string>();
+            cls->set_name(ionname);
         } catch (py::cast_error) {
+            if (is_ic1ion) {
+                throw std::runtime_error("ic1ion module can only be initialised by an ion name");
+            }
             try {
-                std::string ionname = args[0].cast<std::string>();
-                cls->set_name(ionname);
+                double J = args[0].cast<double>();
+                cls->set_J(J);
             } catch (py::cast_error) {
                 throw std::runtime_error("Invalid first argument: must be the ion name as a string "
                                          "or the total angular momentum quantum number J");
             }
         }
     }
-    else if (kwargs.contains("J")) {
+    else if (!is_ic1ion && kwargs.contains("J")) {
         cls->set_J(kwargs["J"].cast<double>());
     }
     else if (kwargs.contains("ionname")) {

@@ -25,25 +25,6 @@ static const double F625 = 0.016104;       // Ratios of F_6/F_2 slater integrals
 // Conversion factors for different energy units[from][to], order: [meV, cm, K].
 static const std::array<double, 3> ICENERGYCONV = {0.1239841973, 1., 1.4387773587};
 
-// Conversion factors for different magnetic units for magnetisation. Order: [bohr, cgs, SI].
-// NAMUB is N_A * MU_B in J/T/mol == Am^2/mol is the SI unit. 
-// The cgs unit is N_A * MU_B in erg/G/mol == emu/mol is different only by a factor of 1000 larger
-static const std::array<double, 3> MAGCONV = {1., NAMUB*1000, NAMUB};
-
-// Note these constants are strange because the default energy unit in this module is cm-1
-static const double NAMUBSQ_ERG = 0.26074098;     // N_A * muB[erg/G] * muB[cm/T] * [Tesla_to_Gauss=1e-4]
-static const double NAMUBSQ_JOULE = 3.276568e-06; // N_A * muB[J/T] * muB[cm/T] * mu0
-// Factor of mu0 is needed in SI due to different definition of the magnetisation, B and H fields
-
-// Conversion factors for different magnetic units for magnetic susceptibility. Order: [bohr, cgs, SI].
-// The susceptibility prefactor is (in principle) N_A * MU_B^2 but we need to account for various units...
-// The atomic (bohr) susceptibility is in uB/T/ion; cgs is in erg/G^2/mol==cm^3/mol; SI in J/T^2/mol==m^3/mol
-// Note that chi_SI = (4pi*10^-6)chi_cgs [*not* 4pi*10-7!]
-static const std::array<double, 3> SUSCCONV = {MU_B, NAMUBSQ_ERG, NAMUBSQ_JOULE};
-
-// EPSILON to determine if energy levels are degenerate or not
-static const double DELTA_EPS = 1e-6;
-
 // Helper vectors for indexing into CF parameters array
 static const std::array<std::array<int, 4>, 12> idq = { {{2,2,0,4}, {2,1,1,3}, {4,4,5,13}, {4,3,6,12}, {4,2,7,11}, {4,1,8,10},
                                                         {6,6,14,26}, {6,5,15,25}, {6,4,16,24}, {6,3,17,23}, {6,2,18,22}, {6,1,19,21}} };
@@ -90,6 +71,7 @@ void ic1ion::set_unit(cfpars::Units const newunit) {
         if (ii < 3) 
             m_alpha[ii] = m_alpha_i[ii] * m_econv;
     }
+    physprop::m_meVconv = ENERGYCONV[(int)m_unit];
 }
 
 void ic1ion::set_type(const cfpars::Type newtype) {
@@ -635,120 +617,6 @@ RowMatrixXcd ic1ion::hamiltonian() {
     if (!m_ham_calc)
         calculate_hamiltonian();
     return m_hamiltonian;
-}
-
-// --------------------------------------------------------------------------------------------------------------- //
-// Calculates bulk properties (magnetisation, susceptibility)
-// --------------------------------------------------------------------------------------------------------------- //
-std::vector<double> ic1ion::calculate_boltzmann(VectorXd en, double T)
-{
-    std::vector<double> boltzmann, en_meV;
-    // Need kBT in external energy units. K_B is in meV/K
-    double kBT = K_B * T * m_econv;
-    double Emin = std::numeric_limits<double>::max();
-    for (size_t i=0; i < (size_t)en.size(); i++) {
-        Emin = (en(i) < Emin) ? en(i) : Emin;
-    }
-    for (size_t i=0; i < (size_t)en.size(); i++) {
-        const double expi = exp(-(en(i) - Emin) / kBT);
-        boltzmann.push_back((fabs(expi) > DELTA_EPS) ? expi : 0.);
-    }
-    return boltzmann;
-}
-
-std::vector<double> ic1ion::magnetisation(std::vector<double> Hvec, std::vector<double> Hdir, double T, MagUnits unit_type)
-{
-    // Normalise the field direction vector
-    double Hnorm = sqrt(Hdir[0] * Hdir[0] + Hdir[1] * Hdir[1] + Hdir[2] * Hdir[2]);
-    if (fabs(Hnorm) < 1.e-6) {
-        throw std::runtime_error("ic1ion::magnetisation(): Direction vector cannot be zero");
-    }
-    std::vector<double> nHdir;
-    std::transform(Hdir.begin(), Hdir.end(), std::back_inserter(nHdir), [Hnorm](double Hd){ return Hd / Hnorm; });
-    // Calculates Magnetisation M(H) at specified T
-    if (!m_ham_calc)
-        calculate_hamiltonian();
-    std::vector<double> M;
-    M.reserve(Hvec.size());
-    // Loops through all the input field magnitudes and calculates the magnetisation
-    for (auto H: Hvec) {
-        if (unit_type == MagUnits::cgs) {
-            H /= 1e4;   // For cgs, input field is in Gauss, need to convert to Tesla for Zeeman calculation
-        }
-        RowMatrixXcd ham = m_hamiltonian - zeeman_hamiltonian(H, Hdir);
-        SelfAdjointEigenSolver<RowMatrixXcd> es(ham);
-        // calculate_moments returns a vector of 3 moments *squared* vectors, in the x, y, z directions
-        std::vector< std::vector<double> > moments_vec = calculate_moments(es.eigenvectors());
-        std::vector<double> boltzmann = calculate_boltzmann(es.eigenvalues(), T);
-        std::vector<double> Mdir;
-        for (auto moments: moments_vec) {
-            double Mexp = 0., Z = 0.;
-            //std::inner_product(moments.begin(), moments.end(), boltzmann.begin(), Mexp);
-            //std::accumulate(boltzmann.begin(), boltzmann.end(), Z);
-            for (int ii=0; ii<ham.cols(); ii++) {
-                Mexp += moments[ii] * boltzmann[ii];
-                Z += boltzmann[ii];
-            }
-            Mdir.push_back(Mexp / Z);
-        }
-        M.push_back(sqrt(Mdir[0] * Mdir[0] + Mdir[1] * Mdir[1] + Mdir[2] * Mdir[2]) * MAGCONV[(int)unit_type]);
-    }
-    return M;
-}
-
-std::vector<double> ic1ion::susceptibility(std::vector<double> Tvec, std::vector<double> Hdir, MagUnits unit_type)
-{
-    // Normalise the field direction vector
-    double Hnorm = sqrt(Hdir[0] * Hdir[0] + Hdir[1] * Hdir[1] + Hdir[2] * Hdir[2]);
-    if (fabs(Hnorm) < 1.e-6) {
-        throw std::runtime_error("ic1ion::magnetisation(): Direction vector cannot be zero");
-    }
-    std::vector<double> nHdir;
-    std::transform(Hdir.begin(), Hdir.end(), std::back_inserter(nHdir), [Hnorm](double Hd){ return Hd / Hnorm; });
-    // Calculates the susceptibility chi(T)
-    if (!m_ev_calc)
-        calculate_eigensystem();
-    std::vector<double> chi;
-    chi.reserve(Tvec.size());
-    // Calculates the moments matrices in the x, y, z directions, and get the resultant
-    std::vector<RowMatrixXcd> moments_mat_vec = calculate_moments_matrix(m_eigenvectors);
-    RowMatrixXcd moments_mat = moments_mat_vec[0] * nHdir[0]
-                               + moments_mat_vec[1] * nHdir[1]
-                               + moments_mat_vec[2] * nHdir[2];
-    // Now calculate the first and second order terms in the Van Vleck equation
-    size_t nlev = m_eigenvectors.cols();
-    std::vector<double> mu(nlev, 0.);
-    std::vector<double> mu2(nlev, 0.);
-    for (size_t ii=0; ii<nlev; ii++) {
-        for (size_t jj=0; jj<nlev; jj++) {
-            const double delta = m_eigenvalues[ii] - m_eigenvalues[jj];
-            const double matel = (moments_mat(ii, jj) * std::conj(moments_mat(ii, jj))).real();
-            if (fabs(delta) < DELTA_EPS) {
-                mu[ii] += matel;           // First order term
-            } else {
-                mu2[ii] += matel / delta;  // Second order term
-            }
-        }
-    }
-
-    // Loops through all the input temperatures and calculates the susceptibility using:
-    //                                 2                     2
-    //           N_A --- [ <V_n|mu|V_n>      --- <V_n|mu|V_m>  ]
-    // chi(T) =  --- >   [ ------------  - 2 >   ------------  ] exp(-E/k_BT)
-    //            Z  --- [    k_B T          ---   En - Em     ]
-    //                n                     m!=n
-
-    for (auto T: Tvec) {
-        std::vector<double> boltzmann = calculate_boltzmann(m_eigenvalues, T);
-        const double beta = 1. / (K_B * T);
-        double U = 0., Z = 0.;
-        for (size_t ii=0; ii<nlev; ii++) {
-            U += ((mu[ii] * beta) - (2 * mu2[ii])) * boltzmann[ii];
-            Z += boltzmann[ii];
-        }
-        chi.push_back(SUSCCONV[(int)unit_type] * U / Z);
-    }
-    return chi;
 }
 
 /*

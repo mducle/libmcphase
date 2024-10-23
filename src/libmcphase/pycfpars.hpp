@@ -8,6 +8,11 @@
 
 #pragma once
 
+#include "cfpars.hpp"
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
+using namespace libMcPhase;
+
 template <typename T> T set_enum(std::string key, std::unordered_map<std::string, T> enum_map, std::string errmsg) {
     auto it = enum_map.find(key);
     if (it == enum_map.end()) {
@@ -27,3 +32,4 @@ static const char* cfpars_init_str = "Construct a cfpars object\n"
                                      "               see online documentation or McPhase webpage for definitions\n"
                                      "        Blm - value of parameters, e.g. cfp = cfpars('Pr3+', B20=0.1, B22=-0.01, B40=0.001)\n";
 
+void cf_parse(cfpars *cls, py::args args, py::kwargs kwargs, bool is_ic1ion=false);

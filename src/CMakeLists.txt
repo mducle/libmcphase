@@ -11,6 +11,7 @@ set(SINGLEION_SOURCES
     singleion/ic_socf.cpp
     singleion/ic_tensorops.cpp
     singleion/ic1ion.cpp
+    singleion/physprop.cpp
 )
 
 # Adds the source modules as object libraries

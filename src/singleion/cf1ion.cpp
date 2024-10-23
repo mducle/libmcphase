@@ -31,6 +31,7 @@ void cf1ion::set(int l, int m, double val) {
 
 void cf1ion::set_unit(cfpars::Units const newunit) {
     cfpars::set_unit(newunit);
+    physprop::m_meVconv = m_econv;
     m_ham_calc = false;
     m_ev_calc = false;
 }
@@ -45,19 +46,33 @@ void cf1ion::set_name(const std::string &ionname) {
     cfpars::set_name(ionname);
     m_ham_calc = false;
     m_ev_calc = false;
+    m_magops_calc = false;
 }
 
 void cf1ion::set_J(const double J) {
     cfpars::set_J(J);
     m_ham_calc = false;
     m_ev_calc = false;
+    m_magops_calc = false;
 }
 
 // --------------------------------------------------------------------------------------------------------------- //
 // General methods for the cf1ion class
 // --------------------------------------------------------------------------------------------------------------- //
-RowMatrixXcd cf1ion::hamiltonian(bool upper) {
+void cf1ion::fill_upper() {
+    int dimj = m_J2 + 1;
+    for (int i=0; i<dimj; i++) {
+        for (int j=i+1; j<dimj; j++) {
+            m_hamiltonian(i,j) = std::conj(m_hamiltonian(j,i));
+        }
+    }
+}
+
+RowMatrixXcd cf1ion::_hamiltonian(bool upper) {
     if (m_ham_calc) {
+        if (upper && !m_upper) {
+            fill_upper();
+        }
         return m_hamiltonian;
     }
     if (m_J2 <= 0) {
@@ -155,25 +170,88 @@ RowMatrixXcd cf1ion::hamiltonian(bool upper) {
 
     // Fill in upper triangle
     if (upper) {
-        for (int i=0; i<dimj; i++) {
-            for (int j=i+1; j<dimj; j++) {
-                m_hamiltonian(i,j) = std::conj(m_hamiltonian(j,i));
-            }
-        }
+        fill_upper();
     }
 
     m_ham_calc = true;
+    m_upper = upper;
     return m_hamiltonian; 
+}
+
+RowMatrixXcd cf1ion::hamiltonian() {
+    return _hamiltonian(true);
 }
 
 std::tuple<RowMatrixXcd, VectorXd> cf1ion::eigensystem() {
     if (!m_ev_calc) {
-        SelfAdjointEigenSolver<RowMatrixXcd> es(hamiltonian(false));
+        SelfAdjointEigenSolver<RowMatrixXcd> es(_hamiltonian(false));
         m_eigenvectors = es.eigenvectors();
         m_eigenvalues = es.eigenvalues();
         m_ev_calc = true;
     }
     return std::tuple<RowMatrixXcd, VectorXd>(m_eigenvectors, m_eigenvalues);
+}
+
+void cf1ion::calc_mag_ops() {
+    // Calculates the magnetic operators Jx, Jy, Jz
+    if (m_magops_calc)
+        return;
+    int dimj = m_J2 + 1;
+    m_magops = std::vector<RowMatrixXcd>(3, RowMatrixXcd::Zero(dimj, dimj));
+    // RM1 = (1/2) * sqrt( factorial(2*J+1+1) / factorial(2*J-1) );
+    double rm1 = sqrt( m_racah.f(m_J2 + 2) / m_racah.f(m_J2 - 1) ) / 2.;
+    double rm1_sq2 = rm1 / sqrt(2.);
+    for (size_t i=0; i<dimj; i++) {
+        int mj = 2*(int)i - m_J2;
+        double phase = pow(-1., (m_J2-mj)/2.);
+        // The diagonal elements (the Jz operator)
+        m_magops[2](i,i) += phase * m_racah.threej(m_J2, 2, m_J2, -mj, 0, mj) * rm1;
+        // The off-diagonal elements
+        if (i < dimj-1) {
+            int mjp = 2*((int)i+1) - m_J2;
+            double Op = phase * m_racah.threej(m_J2, 2, m_J2, -mj, 2, mjp) * rm1_sq2;
+            double Om = phase * m_racah.threej(m_J2, 2, m_J2, -mj, -2, mjp) * rm1_sq2;
+            m_magops[0](i+1,i) += Om - Op;                            // Jx
+            m_magops[1](i+1,i) += std::complex<double>(0., Om + Op);  // Jy
+        }
+    }
+    // Fill the upper triangle
+    for (int i=0; i<dimj-1; i++) {
+        m_magops[0](i,i+1) = m_magops[0](i+1,i);
+        m_magops[1](i,i+1) = std::conj(m_magops[1](i+1,i));
+    }
+    m_magops_calc = true;
+}
+
+RowMatrixXcd cf1ion::zeeman_hamiltonian(double H, std::vector<double> Hdir) {
+    if (m_GJ < 0) {
+        throw std::runtime_error("Lande g-factor not defined. Either set the ion name or set GJ.");
+    }
+    if (Hdir.size() != 3) {
+        throw std::runtime_error("cf1ion::zeeman_hamiltonian(): Hdir must be a 3-vector");
+    }
+    // Normalise the field direction vector
+    double Hnorm = sqrt(Hdir[0] * Hdir[0] + Hdir[1] * Hdir[1] + Hdir[2] * Hdir[2]);
+    if (fabs(Hnorm) < 1.e-6) {
+        throw std::runtime_error("cf1ion::zeeman_hamiltonian(): Direction vector cannot be zero");
+    }
+    std::vector<double> nHdir;
+    std::transform(Hdir.begin(), Hdir.end(), std::back_inserter(nHdir), [Hnorm](double Hd){ return Hd / Hnorm; });
+    // Calculates the Jx, Jy, Jz operators if not done already.
+    calc_mag_ops();
+    RowMatrixXcd zeeman = RowMatrixXcd::Zero(m_J2+1, m_J2+1);
+    zeeman = (m_magops[0] * nHdir[0]) + (m_magops[1] * nHdir[1]) + (m_magops[2] * nHdir[2]);
+    double H_in_energy = m_GJ * H * MU_B * m_econv; // want H in user requested external energy units
+    return (zeeman * H_in_energy);
+}
+
+std::vector<RowMatrixXcd> cf1ion::calculate_moments_matrix(RowMatrixXcd ev) {
+    calc_mag_ops();
+    std::vector<RowMatrixXcd> moments;
+    for (size_t ii=0; ii<3; ii++) {
+        moments.push_back((ev.adjoint()) * (m_magops[ii] * ev) * m_GJ);
+    }
+    return moments;
 }
 
 } // namespace libMcPhase
