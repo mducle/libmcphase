@@ -56,11 +56,10 @@ class physprop {
         virtual RowMatrixXcd zeeman_hamiltonian(double H, std::vector<double> Hdir) = 0;
         virtual std::tuple<RowMatrixXcd, VectorXd> eigensystem() = 0;
         virtual std::vector<RowMatrixXcd> calculate_moments_matrix(RowMatrixXcd ev) = 0;
-      //std::vector< std::vector<double> > calculate_moments(RowMatrixXcd ev);
-        std::vector<double> calculate_boltzmann(VectorXd en, double T);
-        std::vector<double> heatcapacity(std::vector<double> Tvec);
-        std::vector< std::vector<double> > magnetisation(std::vector<double> H, std::vector<double> Hdir, std::vector<double> Tvec, MagUnits type);
-        std::vector<double> susceptibility(std::vector<double> T, std::vector<double> Hdir, MagUnits type);
+        VectorXd calculate_boltzmann(VectorXd en, double T);
+        VectorXd heatcapacity(std::vector<double> Tvec);
+        RowMatrixXd magnetisation(std::vector<double> H, std::vector<double> Hdir, std::vector<double> Tvec, MagUnits type);
+        VectorXd susceptibility(std::vector<double> T, std::vector<double> Hdir, MagUnits type);
 };
 
 // Mapping for Python binding to map string to enum

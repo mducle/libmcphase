@@ -16,9 +16,9 @@ namespace libMcPhase {
 // Calculates bulk properties (heat capacity, magnetisation, susceptibility)
 // --------------------------------------------------------------------------------------------------------------- //
 
-std::vector<double> physprop::calculate_boltzmann(VectorXd en, double T) // Note that energy must be in meV in this routine
+VectorXd physprop::calculate_boltzmann(VectorXd en, double T) // Note that energy must be in meV in this routine
 {
-    std::vector<double> boltzmann;
+    VectorXd boltzmann = VectorXd::Zero(en.size());
     // Need kBT in external energy units. K_B is in cm-1/K
     double beta = 1. / (K_B * T * m_meVconv);
     double Emin = std::numeric_limits<double>::max();
@@ -27,29 +27,27 @@ std::vector<double> physprop::calculate_boltzmann(VectorXd en, double T) // Note
     }
     for (size_t i=0; i < (size_t)en.size(); i++) {
         const double expi = exp(-(en(i) - Emin) * beta);
-        boltzmann.push_back((fabs(expi) > DELTA_EPS) ? expi : 0.);
+        boltzmann(i) = (fabs(expi) > DELTA_EPS) ? expi : 0.;
     }
     return boltzmann;
 }
 
-std::vector<double> physprop::heatcapacity(std::vector<double> Tvec) {
+VectorXd physprop::heatcapacity(std::vector<double> Tvec) {
     auto es = eigensystem();
-    std::vector<double> out;
-    out.reserve(Tvec.size());
-    std::vector<double> en;
-    double Emin = std::numeric_limits<double>::max();
+    VectorXd out = VectorXd::Zero(Tvec.size());
     size_t sz = std::get<1>(es).size();
-    en.reserve(sz);
+    VectorXd en = VectorXd::Zero(sz);
+    double Emin = std::numeric_limits<double>::max();
     for (size_t i=0; i < sz; i++) {
-        en.push_back(std::get<1>(es)(i) / m_meVconv);
+        en(i) = std::get<1>(es)(i) / m_meVconv;
         Emin = (en[i] < Emin) ? en[i] : Emin;
     }
     for (size_t i=0; i < sz; i++) {
         en[i] -= Emin;
     }
-    for (auto T: Tvec) {
-        double Z = 0., U = 0., U2 = 0.;
-        std::vector<double> expfact = calculate_boltzmann(std::get<1>(es), T);
+    for (size_t tt=0; tt<Tvec.size(); tt++) {
+        double Z = 0., U = 0., U2 = 0., T = Tvec[tt];
+        VectorXd expfact = calculate_boltzmann(std::get<1>(es), T);
         for (size_t i=0; i < sz; i++) {
             Z += expfact[i];
             U += en[i] * expfact[i];
@@ -57,12 +55,12 @@ std::vector<double> physprop::heatcapacity(std::vector<double> Tvec) {
         }
         U /= Z;
         U2 /= Z;
-        out.push_back( ((U2 - U * U) / (K_B * T * T)) * NAMEV );
+        out(tt) = ((U2 - U * U) / (K_B * T * T)) * NAMEV;
     }
     return out;
 }
 
-std::vector< std::vector<double> > physprop::magnetisation(std::vector<double> Hvec, std::vector<double> Hdir, std::vector<double> Tvec, MagUnits unit_type)
+RowMatrixXd physprop::magnetisation(std::vector<double> Hvec, std::vector<double> Hdir, std::vector<double> Tvec, MagUnits unit_type)
 {
     // Normalise the field direction vector
     double Hnorm = sqrt(Hdir[0] * Hdir[0] + Hdir[1] * Hdir[1] + Hdir[2] * Hdir[2]);
@@ -73,35 +71,32 @@ std::vector< std::vector<double> > physprop::magnetisation(std::vector<double> H
     std::transform(Hdir.begin(), Hdir.end(), std::back_inserter(nHdir), [Hnorm](double Hd){ return Hd / Hnorm; });
     // Calculates Magnetisation M(H) at specified T
     RowMatrixXcd ham0 = hamiltonian();
-    std::vector< std::vector<double> > M;
-    M.reserve(Hvec.size());
+    RowMatrixXd M = RowMatrixXd::Zero(Hvec.size(), Tvec.size());
     // Loops through all the input field magnitudes and calculates the magnetisation
     std::vector<RowMatrixXcd> mag_ops = calculate_moments_matrix(RowMatrixXcd::Identity(ham0.rows(), ham0.cols()));
     RowMatrixXcd Jmat = nHdir[0] * mag_ops[0] + nHdir[1] * mag_ops[1] + nHdir[2] * mag_ops[2];
-    for (auto H: Hvec) {
+    for (size_t hh=0; hh<Hvec.size(); hh++) {
+        double H = Hvec[hh];
         if (unit_type == MagUnits::cgs) {
             H /= 1e4;   // For cgs, input field is in Gauss, need to convert to Tesla for Zeeman calculation
         }
         RowMatrixXcd ham = ham0 - zeeman_hamiltonian(H, Hdir);
         SelfAdjointEigenSolver<RowMatrixXcd> es(ham);
-        std::vector<double> Mt;
-        Mt.reserve(Tvec.size());
-        for (auto T: Tvec) {
-            std::vector<double> boltzmann = calculate_boltzmann(es.eigenvalues(), T);
+        for (size_t tt=0; tt<Tvec.size(); tt++) {
+            VectorXd boltzmann = calculate_boltzmann(es.eigenvalues(), Tvec[tt]);
             RowMatrixXcd me = (es.eigenvectors().adjoint()) * (Jmat * es.eigenvectors());
             double Mexp = 0., Z = 0.;
             for (int ii=0; ii<ham.cols(); ii++) {
                 Mexp += me(ii,ii).real() * boltzmann[ii];
                 Z += boltzmann[ii];
             }
-            Mt.push_back((Mexp / Z) * MAGCONV[(int)unit_type]);
+            M(hh, tt) = (Mexp / Z) * MAGCONV[(int)unit_type];
         }
-        M.push_back(Mt);
     }
     return M;
 }
 
-std::vector<double> physprop::susceptibility(std::vector<double> Tvec, std::vector<double> Hdir, MagUnits unit_type)
+VectorXd physprop::susceptibility(std::vector<double> Tvec, std::vector<double> Hdir, MagUnits unit_type)
 {
     // Normalise the field direction vector
     double Hnorm = sqrt(Hdir[0] * Hdir[0] + Hdir[1] * Hdir[1] + Hdir[2] * Hdir[2]);
@@ -112,8 +107,7 @@ std::vector<double> physprop::susceptibility(std::vector<double> Tvec, std::vect
     std::transform(Hdir.begin(), Hdir.end(), std::back_inserter(nHdir), [Hnorm](double Hd){ return Hd / Hnorm; });
     // Calculates the susceptibility chi(T)
     std::tuple<RowMatrixXcd, VectorXd> es = eigensystem();
-    std::vector<double> chi;
-    chi.reserve(Tvec.size());
+    VectorXd chi = VectorXd::Zero(Tvec.size());
     // Calculates the moments matrices in the x, y, z directions, and get the resultant
     std::vector<RowMatrixXcd> moments_mat_vec = calculate_moments_matrix(std::get<0>(es));
     RowMatrixXcd moments_mat = moments_mat_vec[0] * nHdir[0]
@@ -145,15 +139,15 @@ std::vector<double> physprop::susceptibility(std::vector<double> Tvec, std::vect
     //            Z  --- [    k_B T          ---   En - Em     ]
     //                n                     m!=n
 
-    for (auto T: Tvec) {
-        std::vector<double> boltzmann = calculate_boltzmann(std::get<1>(es), T);
-        const double beta = 1. / (K_B * T);
+    for (size_t tt=0; tt<Tvec.size(); tt++) {
+        VectorXd boltzmann = calculate_boltzmann(std::get<1>(es), Tvec[tt]);
+        const double beta = 1. / (K_B * Tvec[tt]);
         double U = 0., Z = 0.;
         for (size_t ii=0; ii<nlev; ii++) {
             U += ((mu[ii] * beta) - (2 * mu2[ii])) * boltzmann[ii];
             Z += boltzmann[ii];
         }
-        chi.push_back(SUSCCONV[(int)unit_type] * U / Z);
+        chi(tt) = SUSCCONV[(int)unit_type] * U / Z;
     }
     return chi;
 }

@@ -83,24 +83,24 @@ class ic1ionTests(unittest.TestCase):
         # Test susceptibility / M(T) calculations in the LS-limit
         cf = libmcphase.ic1ion('Ce3+', **self.pp_cfpars)
         tt = np.linspace(1, 300, 50)
-        cc = [np.array(cf.susceptibility(tt, hdir, 'cgs')) for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
+        cc = [cf.susceptibility(tt, hdir, 'cgs') for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
         chi_powder = (cc[0] + cc[1] + cc[2]) / 3
         self.assertAlmostEqual(chi_powder[5], 1.92026e-2, 3)
         self.assertAlmostEqual(chi_powder[10], 1.03471e-2, 3)
         self.assertAlmostEqual(chi_powder[15], 0.73004e-2, 3)
         # Test susceptibility and M(T) calculations similar in the limit of small applied fields
-        mm = [np.array(cf.magnetisation([1.0], hdir, tt, 'cgs')) for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
+        mm = [cf.magnetisation([1.0], hdir, tt, 'cgs') for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
         mt_powder = np.squeeze(mm[0] + mm[1] + mm[2]) / 3
         self.assertAlmostEqual(chi_powder[5], mt_powder[5], 3)
         self.assertAlmostEqual(chi_powder[10], mt_powder[10], 3)
         self.assertAlmostEqual(chi_powder[15], mt_powder[15], 3)
         # Test different Hmag
-        mm = [np.array(cf.magnetisation([10.], hdir, tt, 'bohr')) for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
+        mm = [cf.magnetisation([10.], hdir, tt, 'bohr') for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
         h_mag_10 = np.squeeze(mm[0] + mm[1] + mm[2]) / 3
         self.assertAlmostEqual(h_mag_10[5], 0.323607, 3)
         self.assertAlmostEqual(h_mag_10[10], 0.182484, 3)
         self.assertAlmostEqual(h_mag_10[15], 0.129909, 3)
-        mm = [np.array(cf.magnetisation([5.], hdir, tt, 'bohr')) for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
+        mm = [cf.magnetisation([5.], hdir, tt, 'bohr') for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
         h_mag_5 = np.squeeze(mm[0] + mm[1] + mm[2]) / 3
         self.assertAlmostEqual(h_mag_5[5], 0.16923426, 3)
         self.assertAlmostEqual(h_mag_5[10], 0.09228022, 3)

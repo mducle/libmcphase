@@ -202,13 +202,13 @@ void cf1ion::calc_mag_ops() {
     double rm1 = sqrt( m_racah.f(m_J2 + 2) / m_racah.f(m_J2 - 1) ) / 2.;
     double rm1_sq2 = rm1 / sqrt(2.);
     for (size_t i=0; i<dimj; i++) {
-        int mj = 2*i - m_J2;
+        int mj = 2*(int)i - m_J2;
         double phase = pow(-1., (m_J2-mj)/2.);
         // The diagonal elements (the Jz operator)
         m_magops[2](i,i) += phase * m_racah.threej(m_J2, 2, m_J2, -mj, 0, mj) * rm1;
         // The off-diagonal elements
         if (i < dimj-1) {
-            int mjp = 2*(i+1) - m_J2;
+            int mjp = 2*((int)i+1) - m_J2;
             double Op = phase * m_racah.threej(m_J2, 2, m_J2, -mj, 2, mjp) * rm1_sq2;
             double Om = phase * m_racah.threej(m_J2, 2, m_J2, -mj, -2, mjp) * rm1_sq2;
             m_magops[0](i+1,i) += Om - Op;                            // Jx

@@ -113,7 +113,7 @@ class cf1ionTests(unittest.TestCase):
         cf = libmcphase.cf1ion('Ce3+', **self.pp_cfpars)
         #Tchi_powder, chi_powder = cf.getSusceptibility(np.linspace(1, 300, 50), Hdir="powder")
         tt = np.linspace(1, 300, 50)
-        cc = [np.array(cf.susceptibility(tt, hdir, 'cgs')) for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
+        cc = [cf.susceptibility(tt, hdir, 'cgs') for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
         chi_powder = (cc[0] + cc[1] + cc[2]) / 3
         #self.assertAlmostEqual(Tchi_powder[10], 62.02, 2)
         self.assertAlmostEqual(chi_powder[5], 1.92026e-2, 6)
@@ -125,8 +125,8 @@ class cf1ionTests(unittest.TestCase):
         cf = libmcphase.cf1ion('Ce3+', **self.pp_cfpars)
         tt = np.linspace(1, 300, 50)
         #Tmt_powder, mt_powder = cf.getMagneticMoment(1.0, Temperature=np.linspace(1, 300, 50), Hdir="powder", Unit="cgs")
-        cc = [np.array(cf.susceptibility(tt, hdir, 'cgs')) for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
-        mm = [np.array(cf.magnetisation([1.0], hdir, tt, 'cgs')) for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
+        cc = [cf.susceptibility(tt, hdir, 'cgs') for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
+        mm = [cf.magnetisation([1.0], hdir, tt, 'cgs') for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
         chi_powder = (cc[0] + cc[1] + cc[2]) / 3
         mt_powder = np.squeeze(mm[0] + mm[1] + mm[2]) / 3
         self.assertAlmostEqual(chi_powder[5], mt_powder[5], 6)
@@ -139,13 +139,13 @@ class cf1ionTests(unittest.TestCase):
 
         # Test different Hmag
         #_, h_mag_10 = cf.getMagneticMoment(Hmag=10, Temperature=np.linspace(1, 300, 50), Hdir="powder", Unit="bohr")
-        mm = [np.array(cf.magnetisation([10.], hdir, tt, 'bohr')) for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
+        mm = [cf.magnetisation([10.], hdir, tt, 'bohr') for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
         h_mag_10 = np.squeeze(mm[0] + mm[1] + mm[2]) / 3
         self.assertAlmostEqual(h_mag_10[5], 0.323607, 5)
         self.assertAlmostEqual(h_mag_10[10], 0.182484, 5)
         self.assertAlmostEqual(h_mag_10[15], 0.129909, 5)
         #_, h_mag_5 = cf.getMagneticMoment(Hmag=5, Temperature=np.linspace(1, 300, 50), Hdir="powder", Unit="bohr")
-        mm = [np.array(cf.magnetisation([5.], hdir, tt, 'bohr')) for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
+        mm = [cf.magnetisation([5.], hdir, tt, 'bohr') for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
         h_mag_5 = np.squeeze(mm[0] + mm[1] + mm[2]) / 3
         self.assertAlmostEqual(h_mag_5[5], 0.16923426, 6)
         self.assertAlmostEqual(h_mag_5[10], 0.09228022, 6)
