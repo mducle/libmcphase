@@ -19,6 +19,8 @@ class ic1ionTests(unittest.TestCase):
                         -554.178, -553.457, -194.468, -191.231, -190.087, -188.514, -186.898, -184.581, -183.756, -181.359, -180.12, 687.351, 691.495,
                         694.211, 695.196, 696.31, 1161.97, 1238.78, 1238.85, 1239.82, 1241.21, 1242.38, 1243.71, 1244, 1246.92, 1247.8, 1248.35,
                         1249.18, 1250.33, 1251.35, 1252.72, 1254.41, 1254.74, 1392.24, 1393.39, 1394.75, 1395.45, 1395.9, 4395.7])
+    soc_en_ref = [-344.537, -242.765, -232.284, 53.757, 78.024, 109.005, 110.101, 124.149, 176.359, 348.294, 445.594, 473.504, 474.274]
+    slat_en_ref = [-1088.304, -568.177, -343.142, 717.946, 1241.54, 1287.725, 4363.09]
 
     pars_orth = {'B20':9.1381e-04, 'B22':1.0386e-01, 
                  'B40':-7.2952e-04, 'B42':-3.3059e-03, 'B44':-4.5648e-03, 
@@ -30,6 +32,16 @@ class ic1ionTests(unittest.TestCase):
     all_pars = dict(pars_real, **pars_imag)
 
     pp_cfpars = {'B20':0.37737, 'B22':3.9770, 'B40':-0.031787, 'B42':-0.11611, 'B44':-0.12544, 'zeta':1.e9}
+
+    def test_soc(self):
+        cfp = libmcphase.ic1ion('Pr3+', slater=[0,0,0,0], zeta=100)
+        Esoc = np.sort(np.unique(np.round(cfp.eigensystem()[1], decimals=3)))
+        nptest.assert_allclose(Esoc, self.soc_en_ref, atol=1e-3)
+
+    def test_slater(self):
+        cfp = libmcphase.ic1ion('Pr3+', zeta=0)
+        Eslat = np.sort(np.unique(np.round(cfp.eigensystem()[1], decimals=3)))
+        nptest.assert_allclose(Eslat, self.slat_en_ref, atol=1e-3)
 
     def test_creation_and_diagonalisation(self):
         with self.assertRaises(RuntimeError):   # Can only be constructed from ion name
