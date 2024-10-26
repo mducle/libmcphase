@@ -72,7 +72,7 @@ class qR7
 
       // Other member functions //
       int set(int w1_, int w2_, int w3_);					// Set value
-      bool isequal (const char * Wstr);						// (isequal to string)
+      bool isequal (int w);
 
       // Overloaded operators //
       bool operator == (const qR7 & wp) const;					// (isequal)
@@ -102,7 +102,7 @@ class qG2
 
       // Other member functions //
       int set(int u1_, int u2_);						// Set value
-      bool isequal (const char * Ustr);						// (isequal to string)
+      bool isequal (int u);
 
       // Overloaded operators //
       bool operator == (const qG2 & up) const;					// (isequal)

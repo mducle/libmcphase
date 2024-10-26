@@ -37,14 +37,14 @@ double racah_ulf(qG2 U, orbital L, qG2 Up, orbital Lp)
    double ulf=0;
    int id=-1;
 
-   if(Up.isequal("00") && Lp==S && U.isequal("10") && L==F) { ulf = 1.; }             // Column 1 of Table IV, Racah IVa.
+   if(Up.isequal(00) && Lp==S && U.isequal(10) && L==F) { ulf = 1.; }             // Column 1 of Table IV, Racah IVa.
    else if(Up.u1==0 && Up.u2==0 && Lp==S && U.u1==1 && U.u2==0 && L==F) { ulf = 1.; } //   ditto - to overcome isequal bug
-   else if(Up.isequal("10") && Lp==3)                                                 // Column 2 of Table IV, Racah IVa. 
+   else if(Up.isequal(10) && Lp==3)                                                 // Column 2 of Table IV, Racah IVa. 
    {
-      if((U.isequal("10")&&L==3) || (U.isequal("11")&&(L==1||L==5)) || (U.isequal("20")&&(L==2||L==4||L==6))) { ulf = 1.; }
-      else if(U.isequal("00") && L==0) { ulf = -1.; }
+      if((U.isequal(10)&&L==3) || (U.isequal(11)&&(L==1||L==5)) || (U.isequal(20)&&(L==2||L==4||L==6))) { ulf = 1.; }
+      else if(U.isequal(00) && L==0) { ulf = -1.; }
    }
-   else if(Up.isequal("11") || Up.isequal("20") || Up.isequal("21"))
+   else if(Up.isequal(11) || Up.isequal(20) || Up.isequal(21))
    {
       // U' | (11)  |       |       (20)       |          |               (21)               |                  L  U
       // L' P       H       D        G         I       [  D       F      G      H     K      L
@@ -77,21 +77,21 @@ double racah_ulf(qG2 U, orbital L, qG2 Up, orbital Lp)
             0,      0,      0,       0,        0,         0,      0,     0,     0,   -5,    11,};//]./ 16];   % N
       // ^------------ Racah IV, table IVa --------------^     ^--------- Racah IV, table IVb ----------^
 #define SW(u,l,i) if(U.isequal(u)&&L==l) id=i
-      SW("00",S,0); SW("10",F,1); SW("11",P,2); SW("11",H,3); SW("20",D,4); SW("20",G,5); SW("20",I,6);
+      SW(00,S,0); SW(10,F,1); SW(11,P,2); SW(11,H,3); SW(20,D,4); SW(20,G,5); SW(20,I,6);
 #define SL(l,i) else if(L==l) id=i
-      if(U.isequal("21")) { if(L==2) id=7; SL(3,8); SL(4,9); SL(5,10); SL(7,11); SL(8,12); }
-      if(U.isequal("30")) { if(L==1) id=13; SL(3,14); SL(4,15); SL(5,16); SL(6,17); SL(7,18); SL(9,19); }
-      if(U.isequal("22")) { if(L==0) id=20; SL(2,21); SL(4,22); SL(5,23); SL(6,24); SL(8,25); SL(10,26); }
-      if(id<0) { if(Up.isequal("21")) { id = -1; } else { return ulf; } }
+      if(U.isequal(21)) { if(L==2) id=7; SL(3,8); SL(4,9); SL(5,10); SL(7,11); SL(8,12); }
+      if(U.isequal(30)) { if(L==1) id=13; SL(3,14); SL(4,15); SL(5,16); SL(6,17); SL(7,18); SL(9,19); }
+      if(U.isequal(22)) { if(L==0) id=20; SL(2,21); SL(4,22); SL(5,23); SL(6,24); SL(8,25); SL(10,26); }
+      if(id<0) { if(Up.isequal(21)) { id = -1; } else { return ulf; } }
 
-      if(Up.isequal("11")) { if(Lp==P) { ulf = t[id*11]; } else if(Lp==H) { ulf = t[id*11+1]; } }
-      else if(Up.isequal("20"))
+      if(Up.isequal(11)) { if(Lp==P) { ulf = t[id*11]; } else if(Lp==H) { ulf = t[id*11+1]; } }
+      else if(Up.isequal(20))
       {
          if(Lp==D) { ulf = t[id*11+2]; }
          else if(Lp==G) { ulf = t[id*11+3]; }
          else if(Lp==I) { ulf = t[id*11+4]; }
       }
-      else if(Up.isequal("21"))
+      else if(Up.isequal(21))
       {
          if(id!=-1)
 	 {
@@ -105,7 +105,7 @@ double racah_ulf(qG2 U, orbital L, qG2 Up, orbital Lp)
             else if(Lp==8) { 
 	    ulf = t[id*11+10]/den[id]; }
 	 }
-  	 else if(U.isequal("31"))
+  	 else if(U.isequal(31))
 	 {
             // Table IIb from Wybourne, J. Chem. Phys. 36 (1961) 2295, modified by numbers from ACRY program of Allison
             // U'=(21) D        F        G        H        K        L                         U=(31)
@@ -148,7 +148,7 @@ double racah_ulf(qG2 U, orbital L, qG2 Up, orbital Lp)
 	 }
       }
    }
-   else if(Up.isequal("30"))
+   else if(Up.isequal(30))
    {
       //  .--------------------- Table IVc, from Racah IV --------------------.
       // U'                               (30)                                                          L  U
@@ -216,12 +216,12 @@ double racah_ulf(qG2 U, orbital L, qG2 Up, orbital Lp)
                 0,         0,         0,         0,         0,         0,         1}; //];            % Q
       // Reminder: #define SW(u,l,i) if(U.isequal(u)&&L==l) id=i
       //           #define CD(c,d) case c: id = d; break
-      SW("20",D,0); SW("20",G,1); SW("20",I,2);
-      if(U.isequal("21")) { switch (L) { CD(D,3);  CD(F,4);  CD(G,5);  CD(H,6);   CD(K,7);  CD(8,8); default: return ulf; } }
-      if(U.isequal("30")) { switch (L) { CD(P,9);  CD(F,10); CD(G,11); CD(H,12);  CD(I,13); CD(K,14); CD(M,15); default: return ulf; } }
-      if(U.isequal("31")) { switch (L) { CD(P,16); CD(D,17); CD(F,18); CD(Fp,19); CD(G,20); CD(H,21); CD(Hp,22); CD(I,23); 
+      SW(20,D,0); SW(20,G,1); SW(20,I,2);
+      if(U.isequal(21)) { switch (L) { CD(D,3);  CD(F,4);  CD(G,5);  CD(H,6);   CD(K,7);  CD(8,8); default: return ulf; } }
+      if(U.isequal(30)) { switch (L) { CD(P,9);  CD(F,10); CD(G,11); CD(H,12);  CD(I,13); CD(K,14); CD(M,15); default: return ulf; } }
+      if(U.isequal(31)) { switch (L) { CD(P,16); CD(D,17); CD(F,18); CD(Fp,19); CD(G,20); CD(H,21); CD(Hp,22); CD(I,23); 
                                          CD(Ip,24); CD(K,25); CD(Kp,26); CD(8,27); CD(M,28); CD(N,29); CD(O,30); default: return ulf; } }
-      if(U.isequal("40")) { switch (L) { CD(S,31); CD(D,32); CD(F,33); CD(G,34); CD(Gp,35); CD(H,36); CD(I,37); CD(Ip,38); 
+      if(U.isequal(40)) { switch (L) { CD(S,31); CD(D,32); CD(F,33); CD(G,34); CD(Gp,35); CD(H,36); CD(I,37); CD(Ip,38); 
                                          CD(K,39); CD(8,40); CD(-8,41); CD(M,42); CD(N,43); CD(Q,44); default: return ulf; } }
       double den[] = {490.,5929.,22022.,2695.,1694.,630630.,55055.,165165.,17017.,16.,1232.,55440.,11440.,32032.,
                       510510.,3808.,16.,3080.,2541.,3696.,240240.,68640.,1057056.,5285280.,680680.,1,1,272272.,
@@ -234,8 +234,8 @@ double racah_ulf(qG2 U, orbital L, qG2 Up, orbital Lp)
       else if(Lp==I) { ulf = t[id*7+4]/den[id]; }
       else if(Lp==K) { ulf = t[id*7+5]/den[id]; }
       else if(Lp==M) { ulf = t[id*7+6]/den[id]; }
-   }  // if(Up.isequal("30")
-   else if(Up.isequal("22"))
+   }  // if(Up.isequal(30)
+   else if(Up.isequal(22))
    {
       // T6 is not complete! It has been partially reassembled from the tabulated cfp listed in 
       //   C.W. Neilson and G.F. Koster, 1963.
@@ -263,9 +263,9 @@ double racah_ulf(qG2 U, orbital L, qG2 Up, orbital Lp)
                  0,    -4095,      121296,      -6864,      46410,      -206720,           0, //] ./ 385385; % H
                  0,        0,        1008,        572,       4459,         8976,        8580, //] ./ 23595;  % K
                  0,        0,           0,       1020,        315,        -1360,        6468};//] ./ 9163];  % L
-      if(U.isequal("31")) { switch (L) { CD(P,0); CD(D,1); CD(F,2); CD(Fp,3); CD(G,4); CD(H,5); CD(Hp,6); CD(I,7); 
+      if(U.isequal(31)) { switch (L) { CD(P,0); CD(D,1); CD(F,2); CD(Fp,3); CD(G,4); CD(H,5); CD(Hp,6); CD(I,7); 
                                          CD(Ip,8); CD(K,9); CD(Kp,10); CD(8,11); CD(M,12); CD(N,13); CD(O,14); default: return ulf; } }
-      if(U.isequal("21")) { switch (L) { CD(D,15); CD(F,16); CD(G,17); CD(H,18); CD(K,19); CD(8,20); default: return ulf; } }
+      if(U.isequal(21)) { switch (L) { CD(D,15); CD(F,16); CD(G,17); CD(H,18); CD(K,19); CD(8,20); default: return ulf; } }
       double den[] = {35.,1925.,12705.,2310.,11550.,150150.,330330.,25025.,25025.,1265.,354200.,1,1,95.,19.,1,
                       11858.,6930.,385385.,23595.,9163.};
       if(id<0) { return ulf; }
@@ -277,7 +277,7 @@ double racah_ulf(qG2 U, orbital L, qG2 Up, orbital Lp)
       else if(Lp==8) { ulf = t[id*7+5]/den[id]; }
       else if(Lp==N) { ulf = t[id*7+6]/den[id]; }
    }
-   else if(Up.isequal("31"))
+   else if(Up.isequal(31))
    {  /*
       % Tables from ACRY program of Allison et al. (Comp. Phys. Comm. vol 8, p 246-256, 1974)
       % Expressed in rational form by guesswork and using the reciprocity relations (Judd 1963, p180, eq 7-37)
@@ -297,7 +297,7 @@ double racah_ulf(qG2 U, orbital L, qG2 Up, orbital Lp)
                 0           0           0           0           0           0;          % D  (20)
                 0           0           0           0           0           0;          % G
                 0           0           0           0           0           0;          % I */
-      if(U.isequal("21"))
+      if(U.isequal(21))
       {
          //id = (L==D?0:-1)+(L==F?1:-1)+(L==G?2:-1)+(L==H?3:-1)+(L==K?4:-1)+(L==L?5:-1); if(id<0) { return ulf; }
 	 switch (L) { CD(D,0); CD(F,1); CD(G,2); CD(H,3); CD(K,4); CD(8,5); default: return ulf; } 
@@ -339,7 +339,7 @@ double racah_ulf(qG2 U, orbital L, qG2 Up, orbital Lp)
            %    -125000/147147 -12160/682227 640/4851    95/1071     20/153     -1472/3213;  % L
            %-------------------- Reciprocal of original Wybourne values ---------------------%  */
       }
-      else if(U.isequal("22"))
+      else if(U.isequal(22))
       {
 	 switch (L) { CD(S,0); CD(D,1); CD(G,2); CD(H,3); CD(I,4); CD(8,5); CD(N,6); default: return ulf; }
          if(abs(Lp)<6 || Lp==I)
@@ -369,7 +369,7 @@ double racah_ulf(qG2 U, orbital L, qG2 Up, orbital Lp)
 	    else if(Lp==M) { ulf = t[id*7+4]; } else if(Lp==N)  { ulf = t[id*7+5]; } else if(Lp==O) { ulf = t[id*7+6]; }
 	 }
       }
-      else if(U.isequal("30"))
+      else if(U.isequal(30))
       {
 	 switch (L) { CD(P,0); CD(F,1); CD(G,2); CD(H,3); CD(I,4); CD(K,5); CD(M,6); default: return ulf; }
          if(abs(Lp)<6 || Lp==I)
@@ -399,7 +399,7 @@ double racah_ulf(qG2 U, orbital L, qG2 Up, orbital Lp)
 	    else if(Lp==M) { ulf = t[id*7+4]; } else if(Lp==N)  { ulf = t[id*7+5]; } else if(Lp==O) { ulf = t[id*7+6]; }
          }
       }
-      else if(U.isequal("31"))
+      else if(U.isequal(31))
       {
          switch (L) { CD(P,0); CD(D,1); CD(F,2); CD(Fp,3); CD(G,4); CD(H,5); CD(Hp,6); CD(I,7); 
                       CD(Ip,8); CD(K,9); CD(Kp,10); CD(8,11); CD(M,12); CD(N,13); CD(O,14); default: return ulf; break; }
@@ -446,7 +446,7 @@ double racah_ulf(qG2 U, orbital L, qG2 Up, orbital Lp)
 	    else if(Lp==M) { ulf = t[id*7+4]; } else if(Lp==N)  { ulf = t[id*7+5]; } else if(Lp==O) { ulf = t[id*7+6]; }
          }
       }
-      else if(U.isequal("40"))
+      else if(U.isequal(40))
       {
          switch (L) { CD(S,0); CD(D,1); CD(F,2); CD(G,3); CD(Gp,4); CD(H,5); CD(I,6); CD(Ip,7); CD(K,8); 
 	              CD(8,9); CD(-8,10); CD(M,11); CD(N,12); CD(Q,13); default: return ulf; break; }
@@ -492,10 +492,10 @@ double racah_ulf(qG2 U, orbital L, qG2 Up, orbital Lp)
 	    else if(Lp==M) { ulf = t[id*6+3]; } else if(Lp==N)  { ulf = t[id*6+4]; } else if(Lp==O) { ulf = t[id*6+5]; }
          }
       }
-   } // if(Up.isequal("31"))
-   else if(Up.isequal("40"))
+   } // if(Up.isequal(31))
+   else if(Up.isequal(40))
    {
-      if(U.isequal("30"))
+      if(U.isequal(30))
       {
 	 switch (L) { CD(P,0); CD(F,1); CD(G,2); CD(H,3); CD(I,4); CD(K,5); CD(M,6); default: return ulf; }
          if(abs(Lp)<8)
@@ -531,7 +531,7 @@ double racah_ulf(qG2 U, orbital L, qG2 Up, orbital Lp)
               0,         0,         0,         0,         0,         0,         0,         0,         0,        // I
               0,         0,         0,         0,         0,         0,         0,         0,         0,        // L
               0,         0,         0,         0,         0,         0,         0,         0,         0,        // N */
-      else if(U.isequal("31"))
+      else if(U.isequal(31))
       {
          switch (L) { CD(P,0); CD(D,1); CD(F,2); CD(Fp,3); CD(G,4); CD(H,5); CD(Hp,6); CD(I,7); 
                       CD(Ip,8); CD(K,9); CD(Kp,10); CD(8,11); CD(M,12); CD(N,13); CD(O,14); default: return ulf; break; }
@@ -577,7 +577,7 @@ double racah_ulf(qG2 U, orbital L, qG2 Up, orbital Lp)
             else if(Lp==N)  { ulf = t[id*5+3]; } else if(Lp==Q)  { ulf = t[id*5+4]; }
          }
       }
-      else if(U.isequal("40"))
+      else if(U.isequal(40))
       {
          switch (L) { CD(S,0); CD(D,1); CD(F,2); CD(G,3); CD(Gp,4); CD(H,5); CD(I,6); CD(Ip,7); CD(K,8); 
 	              CD(8,9); CD(-8,10); CD(M,11); CD(N,12); CD(Q,13); default: return ulf; break; }
@@ -621,7 +621,7 @@ double racah_ulf(qG2 U, orbital L, qG2 Up, orbital Lp)
             else if(Lp==N)  { ulf = t[id*5+3]; } else if(Lp==Q)  { ulf = t[id*5+4]; }
          }
       }
-   } // if(Up.isequal("40"))
+   } // if(Up.isequal(40))
    if(ulf==0) { return ulf; }
    else { 
    //std::cout << sqrt(fabs(ulf))*(ulf/fabs(ulf)) << "\t"; 
@@ -668,52 +668,52 @@ t=[0   1    0    0   0    0    0    0    0     0     0     0     0     0    0   
 % Table continues below, reconstructed from tabulated cfp and also from the code of Allison and McNulty CPC 8 (1974) 246
 % And also using the reciprocity relations (Judd, Op. Techniques in At. Spectr., p.181, eq 7-36). */
 
-   if(Wp.isequal("000") && Up.isequal("00") && W.isequal("100") && U.isequal("10")) { wupf = 1.; }
+   if(Wp.isequal(000) && Up.isequal(00) && W.isequal(100) && U.isequal(10)) { wupf = 1.; }
 #define EQ(uw,v) uw.isequal(v)
-   else if((EQ(Wp,"100")&&EQ(Up,"10"))&&((EQ(W,"000")&&EQ(U,"00"))||(EQ(W,"110")&&(EQ(U,"10")||EQ(U,"11")))||
-           (EQ(W,"200")&&EQ(U,"20")))) { wupf=1.; }
-   else if((EQ(Wp,"200")&&EQ(Up,"20"))&&((EQ(W,"100")&&EQ(U,"10"))||(EQ(W,"210")&&(EQ(U,"11")||EQ(U,"20")||EQ(U,"21"))))) 
+   else if((EQ(Wp,100)&&EQ(Up,10))&&((EQ(W,000)&&EQ(U,00))||(EQ(W,110)&&(EQ(U,10)||EQ(U,11)))||
+           (EQ(W,200)&&EQ(U,20)))) { wupf=1.; }
+   else if((EQ(Wp,200)&&EQ(Up,20))&&((EQ(W,100)&&EQ(U,10))||(EQ(W,210)&&(EQ(U,11)||EQ(U,20)||EQ(U,21))))) 
      { wupf = 1.; }
-   else if(Wp.isequal("110"))
+   else if(Wp.isequal(110))
    {
 #define UW(w,u,i) else if(W.isequal(w)&&U.isequal(u)) id=i
-      if(W.isequal("000")&&U.isequal("00")) id=0; UW("100","10",1); UW("110","10",2); UW("110","11",3); UW("200","20",4);
-         UW("111","00",5); UW("111","10",6); UW("111","20",7); UW("210","11",8); UW("210","20",9); UW("210","21",10); 
+      if(W.isequal(000)&&U.isequal(00)) id=0; UW(100,10,1); UW(110,10,2); UW(110,11,3); UW(200,20,4);
+         UW(111,00,5); UW(111,10,6); UW(111,20,7); UW(210,11,8); UW(210,20,9); UW(210,21,10); 
       else { return wupf; }
-      if(Up.isequal("10")) { double t[] = {0,1./3,0,0,0,1.,2./3,2./9,1.,7./9,0}; wupf = t[id]; }
-      else if(Up.isequal("11")) { double t[] = {0,2./3,0,0,0,0,-1./3,-7./9,0,2./9,1.}; wupf = t[id]; }
+      if(Up.isequal(10)) { double t[] = {0,1./3,0,0,0,1.,2./3,2./9,1.,7./9,0}; wupf = t[id]; }
+      else if(Up.isequal(11)) { double t[] = {0,2./3,0,0,0,0,-1./3,-7./9,0,2./9,1.}; wupf = t[id]; }
    }
-   else if(Wp.isequal("111"))
+   else if(Wp.isequal(111))
    {
-      if(W.isequal("110")&&U.isequal("10")) id=0; UW("110","11",1); UW("200","20",2); UW("111","00",3); UW("111","10",4);
-         UW("111","20",5); UW("210","11",6); UW("210","20",7); UW("210","21",8); UW("211","10",9); UW("211","11",10); 
-	 UW("211","20",11); UW("211","21",12); UW("211","30",13); else { return wupf; }
+      if(W.isequal(110)&&U.isequal(10)) id=0; UW(110,11,1); UW(200,20,2); UW(111,00,3); UW(111,10,4);
+         UW(111,20,5); UW(210,11,6); UW(210,20,7); UW(210,21,8); UW(211,10,9); UW(211,11,10); 
+	 UW(211,20,11); UW(211,21,12); UW(211,30,13); else { return wupf; }
       //           (110)(10)(11) (200)(20) (111)(00)(10)(20) (210)(11)(20)(21)  (211)(10)(11)(20)(21)(30)
       double t[] = { 3./35,    0,    0,    0, -1./7,    0,    0,    0,    0, 27./35,    0,    0,    0,    0,   // (00)
                       2./5, -1./10,  0,  -1., -3./8,   1./8,  0,    0,    0, -9./40,  9./10, 7./8,  0,    0,   // (10)
                     18./35, -9./10,  0,    0, 27./56, -7./8,  0,    0,    0, 1./280, -1./10, 1./8,  1.,   1.}; // (20)
-      if(Up.isequal("00")) { wupf = t[id]; }
-      else if(Up.isequal("10")) { wupf = t[id+14]; }
-      else if(Up.isequal("20")) { wupf = t[id+28]; }
+      if(Up.isequal(00)) { wupf = t[id]; }
+      else if(Up.isequal(10)) { wupf = t[id+14]; }
+      else if(Up.isequal(20)) { wupf = t[id+28]; }
    }
-   else if(Wp.isequal("210"))
+   else if(Wp.isequal(210))
    {
-      if(W.isequal("110")&&U.isequal("10")) id=0; UW("110","11",1); UW("200","20",2); UW("211","10",3); UW("211","11",4);
-         UW("211","20",5); UW("211","21",6); UW("211","30",7); UW("220","20",8); UW("220","21",9); UW("220","22",10); 
+      if(W.isequal(110)&&U.isequal(10)) id=0; UW(110,11,1); UW(200,20,2); UW(211,10,3); UW(211,11,4);
+         UW(211,20,5); UW(211,21,6); UW(211,30,7); UW(220,20,8); UW(220,21,9); UW(220,22,10); 
       else { return wupf; }
       //  WU      (110)(10)(11)  (200)(20)   .--(211)(10)(11)(20)(21)(30)--.     (220)(20)(21)(22)         W'    U'
       double t[] = { 2./5,    0,   2./15, -3./5,    0,    1./3,   3./16,   0,   8./15,   -1./8,    0,  // (210) (11)
                      3./5, 3./35,  9./35,  2./5, 32./35,  2./7, -25./112, 1./7, -16./35, 27./56,   0,  //       (20)
                       0,  32./35, 64./105,  0,   -3./35, -8./21, 33./56,  6./7,  1./105, 11./28,  1.}; //       (21)
-      if(Up.isequal("11")) { wupf = t[id]; }
-      else if(Up.isequal("20")) { wupf = t[id+11]; }
-      else if(Up.isequal("21")) { wupf = t[id+22]; }
+      if(Up.isequal(11)) { wupf = t[id]; }
+      else if(Up.isequal(20)) { wupf = t[id+11]; }
+      else if(Up.isequal(21)) { wupf = t[id+22]; }
    }
-   else if(Wp.isequal("211"))
+   else if(Wp.isequal(211))
    {
-      if(W.isequal("111")&&U.isequal("00")) id=0; UW("111","10",1); UW("111","20",2); UW("210","11",3); UW("210","20",4);
-         UW("210","21",5); UW("211","10",6); UW("211","11",7); UW("211","20",8); UW("211","21",9); UW("211","30",10);
-	 UW("221","10",11); UW("221","11",12); UW("221","20",13); UW("221","21",14); UW("221","30",15); UW("221","31",16); 
+      if(W.isequal(111)&&U.isequal(00)) id=0; UW(111,10,1); UW(111,20,2); UW(210,11,3); UW(210,20,4);
+         UW(210,21,5); UW(211,10,6); UW(211,11,7); UW(211,20,8); UW(211,21,9); UW(211,30,10);
+	 UW(221,10,11); UW(221,11,12); UW(221,20,13); UW(221,21,14); UW(221,30,15); UW(221,31,16); 
       else { return wupf; }
       //   UW     (111)(00)(10)(20)   (210)(11)(20)(21)    (211)(10)(11)(20)(21)(30)      (221)(10)(11)(20)(21)(30)(31)
       double t[] = {1., -1.,    1.,   -7.,   98.,    0,  -5.,  35., -245.,    0,    0,   8.,  35.,    0,     0,   0,   0, // 10
@@ -722,31 +722,31 @@ t=[0   1    0    0   0    0    0    0    0     0     0     0     0     0    0   
                     0,    0, 2560.,   20., -500., 220.,    0,  64., -512.,-176.,  64.,    0,  -1.,   4.,  100.,  7.,  1., // 21
                     0,    0, 3080.,     0,  385., 385.,    0,    0,  616.,  77.,-224.,    0,    0,    0, -343.,  2.,  2.};// 30
       double den[]={1., 24., 5832.,   42., 1701., 672.,  72., 126., 2520., 315., 315.,   9.,  63.,  63., 2016.,  9.,  3.};
-      if(Up.isequal("10")) { wupf = t[id]/den[id]; }
-      else if(Up.isequal("11")) { wupf = t[id+17]/den[id]; }
-      else if(Up.isequal("20")) { wupf = t[id+34]/den[id]; }
-      else if(Up.isequal("21")) { wupf = t[id+51]/den[id]; }
-      else if(Up.isequal("30")) { wupf = t[id+68]/den[id]; }
+      if(Up.isequal(10)) { wupf = t[id]/den[id]; }
+      else if(Up.isequal(11)) { wupf = t[id+17]/den[id]; }
+      else if(Up.isequal(20)) { wupf = t[id+34]/den[id]; }
+      else if(Up.isequal(21)) { wupf = t[id+51]/den[id]; }
+      else if(Up.isequal(30)) { wupf = t[id+68]/den[id]; }
    }
-   else if(Wp.isequal("220"))
+   else if(Wp.isequal(220))
    {
-      if(W.isequal("210")&&U.isequal("11")) id=0; UW("210","20",1); UW("210","21",2); UW("221","10",3); UW("221","11",4);
-         UW("221","20",5); UW("221","21",6); UW("221","30",7); UW("221","31",8); else { return wupf; }
+      if(W.isequal(210)&&U.isequal(11)) id=0; UW(210,20,1); UW(210,21,2); UW(221,10,3); UW(221,11,4);
+         UW(221,20,5); UW(221,21,6); UW(221,30,7); UW(221,31,8); else { return wupf; }
       //   UW         (210)(11)(20)(21)           (221)(10)(11)(20)(21)(30)(31)
       double t[] = { 9./14, -2./7,    9.,    -1., 5./14, 5./7,  -165., -5./14,     0,  // (220) (20)
                     -5./14,  5./7,  880.,      0, 9./14, 2./7, -3888.,  9./14, -1./6,  //       (21)
                          0,     0, 2695.,      0,     0,    0,  1323.,      0,  5./6}; //       (22)
       double den[]={    1.,    1., 3584.,     1.,    1.,   1.,  5376.,     1.,    1.};
-      if(Up.isequal("20")) { wupf = t[id]/den[id]; }
-      else if(Up.isequal("21")) { wupf = t[id+9]/den[id]; }
-      else if(Up.isequal("22")) { wupf = t[id+18]/den[id]; }
+      if(Up.isequal(20)) { wupf = t[id]/den[id]; }
+      else if(Up.isequal(21)) { wupf = t[id+9]/den[id]; }
+      else if(Up.isequal(22)) { wupf = t[id+18]/den[id]; }
    }
-   else if(Wp.isequal("221"))
+   else if(Wp.isequal(221))
    {
-      if(W.isequal("211")&&U.isequal("10")) id=0; UW("211","11",1); UW("211","20",2); UW("211","21",3); UW("211","30",4);
-         UW("220","20",5); UW("220","21",6); UW("220","22",7); UW("221","10",8); UW("221","11",9); UW("221","20",10); 
-	 UW("221","21",11); UW("221","30",12); UW("221","31",13); UW("222","00",14); UW("222","10",15); UW("222","20",16); 
-	 UW("222","30",17); UW("222","40",18); else { return wupf; }
+      if(W.isequal(211)&&U.isequal(10)) id=0; UW(211,11,1); UW(211,20,2); UW(211,21,3); UW(211,30,4);
+         UW(220,20,5); UW(220,21,6); UW(220,22,7); UW(221,10,8); UW(221,11,9); UW(221,20,10); 
+	 UW(221,21,11); UW(221,30,12); UW(221,31,13); UW(222,00,14); UW(222,10,15); UW(222,20,16); 
+	 UW(222,30,17); UW(222,40,18); else { return wupf; }
       //W'                          (221)                                    %  U  W
       //U'    (10)     (11)      (20)       (21)       (30)       (31)       %
       double t[]={4./9, 5./9,     0,         0,         0,         0,        // 10 211
@@ -768,17 +768,17 @@ t=[0   1    0    0   0    0    0    0    0     0     0     0     0     0    0   
               55./972, -77./243,  121./396, -64./243,   14./243,   0,        // 20
               0,        0,        66./462,   128./231, -1./6,      3./22,    // 30
               0,        0,        0,         0,         1./4,      3./4};    // 40
-      if(Up.isequal("10")) { wupf = t[id*6]; }
-      else if(Up.isequal("11")) { wupf = t[id*6+1]; }
-      else if(Up.isequal("20")) { wupf = t[id*6+2]; }
-      else if(Up.isequal("21")) { wupf = t[id*6+3]; }
-      else if(Up.isequal("30")) { wupf = t[id*6+4]; }
-      else if(Up.isequal("31")) { wupf = t[id*6+5]; }
+      if(Up.isequal(10)) { wupf = t[id*6]; }
+      else if(Up.isequal(11)) { wupf = t[id*6+1]; }
+      else if(Up.isequal(20)) { wupf = t[id*6+2]; }
+      else if(Up.isequal(21)) { wupf = t[id*6+3]; }
+      else if(Up.isequal(30)) { wupf = t[id*6+4]; }
+      else if(Up.isequal(31)) { wupf = t[id*6+5]; }
    }
-   else if(Wp.isequal("222"))
+   else if(Wp.isequal(222))
    {
-      if(W.isequal("221")&&U.isequal("10")) id=0; UW("221","11",1); UW("221","20",2); UW("221","21",3); UW("221","30",4);
-         UW("221","31",5); UW("222","00",6); UW("222","10",7); UW("222","20",8); UW("222","30",9); UW("222","40",10); 
+      if(W.isequal(221)&&U.isequal(10)) id=0; UW(221,11,1); UW(221,20,2); UW(221,21,3); UW(221,30,4);
+         UW(221,31,5); UW(222,00,6); UW(222,10,7); UW(222,20,8); UW(222,30,9); UW(222,40,10); 
       else { return wupf; }
       //  W'                       (222)                         %  U  W
       //  U'    (00)     (10)      (20)     (30)     (40)        %
@@ -793,11 +793,11 @@ t=[0   1    0    0   0    0    0    0    0     0     0     0     0     0    0   
                  0,      11./60,  -7./20,    7./15,    0,        // 20
                  0,       0,       9./55,   -3./5,    -13./55,   // 30
                  0,       0,       0,       -1./10,   -9./10};   // 40
-      if(Up.isequal("00")) { wupf = t[id*5]; }
-      else if(Up.isequal("10")) { wupf = t[id*5+1]; }
-      else if(Up.isequal("20")) { wupf = t[id*5+2]; }
-      else if(Up.isequal("30")) { wupf = t[id*5+3]; }
-      else if(Up.isequal("40")) { wupf = t[id*5+4]; }
+      if(Up.isequal(00)) { wupf = t[id*5]; }
+      else if(Up.isequal(10)) { wupf = t[id*5+1]; }
+      else if(Up.isequal(20)) { wupf = t[id*5+2]; }
+      else if(Up.isequal(30)) { wupf = t[id*5+3]; }
+      else if(Up.isequal(40)) { wupf = t[id*5+4]; }
    }
    if(wupf!=0) wupf = sqrt(fabs(wupf))*(wupf/fabs(wupf)); 
    return wupf;
