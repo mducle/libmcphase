@@ -49,12 +49,12 @@ double racah_xwu(qR7 W, qG2 U, qG2 Up)
    double retval = 0;
    int id;
 
-   if(W.isequal("200"))
+   if(W.isequal(200))
    {
-      if(U.isequal("20") && Up.isequal("20"))
+      if(U.isequal(20) && Up.isequal(20))
          retval = 2;
    }
-   else if (W.isequal("210"))
+   else if (W.isequal(210))
    {
       // Racah IV, Table VII, W = (210)
       // U =          (11)            (20)            (21)       U'
@@ -65,7 +65,7 @@ double racah_xwu(qR7 W, qG2 U, qG2 Up)
       id = ( 2*(Up.u1-1)+Up.u2-1 )*3 + ( 2*(U.u1-1)+U.u2-1 ); 
       retval = t[id];
    }
-   else if (W.isequal("211"))
+   else if (W.isequal(211))
    {
       // Racah IV, Table VIII, W = (211)
       // U =          (10)            (11)            (20)            (21)            (30)       U'
@@ -78,7 +78,7 @@ double racah_xwu(qR7 W, qG2 U, qG2 Up)
       id = ( 2*(Up.u1-1)+Up.u2 )*5 + ( 2*(U.u1-1)+U.u2 ); 
       retval = t[id];
    }
-   else if (W.isequal("220"))
+   else if (W.isequal(220))
    {
       // Racah Table IX, W = (220)
       // U =          (20)           (21)           (22)        U'
@@ -89,7 +89,7 @@ double racah_xwu(qR7 W, qG2 U, qG2 Up)
       id = ( 2*(Up.u1-1)+Up.u2-2 )*3 + ( 2*(U.u1-1)+U.u2-2 ); 
       retval = t[id];
    }
-   else if (W.isequal("221"))
+   else if (W.isequal(221))
    {
       // Racah IV, Table X, W = (221)
       // U =          (10)             (11)            (20)             (21)             (30)            (31)       U'
@@ -103,7 +103,7 @@ double racah_xwu(qR7 W, qG2 U, qG2 Up)
       id = ( 2*(Up.u1-1)+Up.u2 )*6 + ( 2*(U.u1-1)+U.u2 ); 
       retval = t[id];
    }
-   else if (W.isequal("222"))
+   else if (W.isequal(222))
    {
       // Racah IV, Table XI, W = (222)
       // U =          (00)            (10)            (20)            (30)            (40)       U'
@@ -129,7 +129,7 @@ double racah_chi(orbital Lp, orbital L, qG2 U, qG2 Up)
 
    if(abs(L)!=abs(Lp)) { return retval; }     // Numerical values of L must equal - but can have L and Lp different
 
-   if(Up.isequal("31"))      // Use table VIb
+   if(Up.isequal(31))      // Use table VIb
    {
       if(L>0) { id = (L-1) + ( L>3 ? 1 : 0 ) + ( L>5 ? 1 : 0 ) + ( L>6 ? 1 : 0 ) + ( L>7 ? 1 : 0 ); }
       else    { id = (L==-3 ? 3 : 0) + (L!=-3 ? -2*L-4 : 0 ); }
@@ -151,16 +151,16 @@ double racah_chi(orbital Lp, orbital L, qG2 U, qG2 Up)
               0,               0,              0,              0,               0,          1672.,                 0, // N  10 13   9  4
               0,               0,              0,              0,               0,           220.,                 0};// O  11 14  10  4
 
-      if(U.isequal("10")) { retval = t[id*7]; }
-      else if(U.isequal("11")) { retval = t[id*7+1]; }
-      else if(U.isequal("20")) { retval = t[id*7+2]; }
-      else if(U.isequal("21")) { retval = t[id*7+3]; }
-      else if(U.isequal("30")) { retval = t[id*7+4]; }
-      else if(U.isequal("31")) { 
+      if(U.isequal(10)) { retval = t[id*7]; }
+      else if(U.isequal(11)) { retval = t[id*7+1]; }
+      else if(U.isequal(20)) { retval = t[id*7+2]; }
+      else if(U.isequal(21)) { retval = t[id*7+3]; }
+      else if(U.isequal(30)) { retval = t[id*7+4]; }
+      else if(U.isequal(31)) { 
          if(L==Lp) { retval = t[id*7+5]; }
          else      { retval = t[id*7+6]; } }
    }
-   else if(Up.isequal("40")) // Use table VIc
+   else if(Up.isequal(40)) // Use table VIc
    {
 #define CD(c,d) case c: id = d; break
       switch (L) { CD(0,0); CD(2,1); CD(3,2); CD(4,3); CD(-4,4); CD(5,5); CD(6,6); 
@@ -182,7 +182,7 @@ double racah_chi(orbital Lp, orbital L, qG2 U, qG2 Up)
               0,              0,                0,               0,          528.,                 0, // N  10  12
               0,              0,                0,               0,           22.,                 0};// Q  12  13
       
-      if(U.isequal("40")) { if(L==Lp) { retval = t[id*6+4]; } else { retval = t[id*6+5]; } }
+      if(U.isequal(40)) { if(L==Lp) { retval = t[id*6+4]; } else { retval = t[id*6+5]; } }
       else { retval = t[id*6+U.u1]; }
    }
    else                      // Use table VIa 
@@ -204,21 +204,21 @@ double racah_chi(orbital Lp, orbital L, qG2 U, qG2 Up)
            260.,       0,    -25.,      0,     94.,   104.,   -181.,       0,    -36.,       0,    40.}; // 22   22 
 
       if(L>=0) {
-      if(Up.isequal("20") && U.isequal("20")) { retval = t[L]; }
-      else if(Up.isequal("21")) {
-         if(U.isequal("11")) { retval = t[L+11]; }
-	 else if(U.isequal("20")) { retval = t[L+22]; }
-	 else if(U.isequal("21")) { retval = 0; } }
-      else if(Up.isequal("30")) {
-         if(U.isequal("10")) { retval = t[L+55]; }
-	 else if(U.isequal("11")) { retval = t[L+66]; }
-	 else if(U.isequal("20")) { retval = t[L+77]; }
-	 else if(U.isequal("21")) { retval = t[L+88]; }
-	 else if(U.isequal("30")) { retval = t[L+99]; } }
-      else if(Up.isequal("22")) {
-         if(U.isequal("20")) { retval = t[L+110]; }
-	 else if(U.isequal("21")) { retval = t[L+121]; }
-	 else if(U.isequal("22")) { retval = t[L+132]; }
+      if(Up.isequal(20) && U.isequal(20)) { retval = t[L]; }
+      else if(Up.isequal(21)) {
+         if(U.isequal(11)) { retval = t[L+11]; }
+	 else if(U.isequal(20)) { retval = t[L+22]; }
+	 else if(U.isequal(21)) { retval = 0; } }
+      else if(Up.isequal(30)) {
+         if(U.isequal(10)) { retval = t[L+55]; }
+	 else if(U.isequal(11)) { retval = t[L+66]; }
+	 else if(U.isequal(20)) { retval = t[L+77]; }
+	 else if(U.isequal(21)) { retval = t[L+88]; }
+	 else if(U.isequal(30)) { retval = t[L+99]; } }
+      else if(Up.isequal(22)) {
+         if(U.isequal(20)) { retval = t[L+110]; }
+	 else if(U.isequal(21)) { retval = t[L+121]; }
+	 else if(U.isequal(22)) { retval = t[L+132]; }
       }}
    }
    return retval;
@@ -251,12 +251,12 @@ double racah_e2prod(qR7 W, qG2 U, qG2 Up, orbital L, orbital Lp)
 {
    double x1=0,x2=0,c1,c2;
    double retval = 0;
-   if(U.isequal("21") && Up.isequal("21"))
+   if(U.isequal(21) && Up.isequal(21))
    {
-      if(W.isequal("210")) { x1 = (3./7); x2 = 0.; }
-      else if(W.isequal("211")) { x1 = (4./7);  x2 = 3.; }
-      else if(W.isequal("220")) { x1 = (-6./7); x2 = -3.; }
-      else if(W.isequal("221")) { x1 = (-1./7); x2 = (12./11); }
+      if(W.isequal(210)) { x1 = (3./7); x2 = 0.; }
+      else if(W.isequal(211)) { x1 = (4./7);  x2 = 3.; }
+      else if(W.isequal(220)) { x1 = (-6./7); x2 = -3.; }
+      else if(W.isequal(221)) { x1 = (-1./7); x2 = (12./11); }
       switch(L)
       {
          case 0: c1= 0;    c2= 0;    break;
@@ -319,7 +319,7 @@ double racah_yfn(int n, int v, int S2, qG2 U, int vp, qG2 Up)
    
    switch(n)
    {
-      case 2: if(S2==0 && vp==2 && v==2 && U.isequal("20") && Up.isequal("20")) { y = 2; } break;
+      case 2: if(S2==0 && vp==2 && v==2 && U.isequal(20) && Up.isequal(20)) { y = 2; } break;
       case 3: if(S2==1 && vp==3)
               {  // Table XV from Racah IV.
 	         // Up = (11)         (20)               (21)       U
@@ -348,8 +348,8 @@ double racah_yfn(int n, int v, int S2, qG2 U, int vp, qG2 Up)
                               0,      0,      0,         0,       0,  -sqrt(7./80),        0,          1./4};   //  4 0 (22)
 	         if(S2==2) { if(v==2) { id = U.u2*8 + 2*(Up.u1-1)+Up.u2; y = t[id]; }
 		             else if(v==4) { id = (2*(U.u1-1)+U.u2+2)*8 + 2*(Up.u1-1)+Up.u2; y = t[id]; } }
-	         else if(S2==0) { if(v==0 && U.isequal("00")) { y = t[Up.u2+61]; } 
-		             else if(v==2 && U.isequal("20")) { y = t[Up.u2+69]; }
+	         else if(S2==0) { if(v==0 && U.isequal(00)) { y = t[Up.u2+61]; } 
+		             else if(v==2 && U.isequal(20)) { y = t[Up.u2+69]; }
 		             else if(v==4) { id = (U.u2+9)*8 + Up.u2+5; y = t[id]; } }
 	      } break;
       case 5: if(vp==5)
@@ -448,7 +448,7 @@ double racah_phi(qG2 U, qG2 Up, orbital Lp, orbital L)
    double retval=0;
    int id;
 
-   if(Up.isequal("31"))
+   if(Up.isequal(31))
    {  //  Table XIVb from Racah IV. U' = (31)
       //  U = (10)   (11)         (21)         (30)              (31)               (31)'      L  Lnum id
       double t[]={0,sqrt(330.),     0,    17*sqrt(143.),         209.,                 0,  //  P   1   0
@@ -468,13 +468,13 @@ double racah_phi(qG2 U, qG2 Up, orbital Lp, orbital L)
               0,      0,            0,           0,              352.,                 0}; //  O  11  14
       switch (L) { CD(1,0); CD(2,1); CD(3,2); CD(-3,3); CD(4,4); CD(5,5); CD(-5,6); CD(6,7); 
                    CD(-6,8); CD(7,9); CD(-7,10); CD(8,11); CD(9,12); CD(10,13); CD(11,14); default: return retval; }
-      if(U.isequal("31")) { if(L==Lp) { retval = t[id*6+4]; } else { retval = t[id*6+5]; } }
-      else if(U.isequal("30")) { retval = t[id*6+3]; } 
-      else if(U.isequal("21")) { retval = t[id*6+2]; }
-      else if(U.isequal("11")) { retval = t[id*6+1]; }
-      else if(U.isequal("10")) { retval = t[id*6]; }
+      if(U.isequal(31)) { if(L==Lp) { retval = t[id*6+4]; } else { retval = t[id*6+5]; } }
+      else if(U.isequal(30)) { retval = t[id*6+3]; } 
+      else if(U.isequal(21)) { retval = t[id*6+2]; }
+      else if(U.isequal(11)) { retval = t[id*6+1]; }
+      else if(U.isequal(10)) { retval = t[id*6]; }
    }
-   else if(Up.isequal("40"))
+   else if(Up.isequal(40))
    {  //  Table XIVc from Racah IV. Up=(40)
       //  U =       (20)               (21)               (22)       L Lnum id
       double t[] = {   0,                 0,     2*sqrt(2145.),  //  S   0   0
@@ -491,9 +491,9 @@ double racah_phi(qG2 U, qG2 Up, orbital Lp, orbital L)
                        0,  -84*sqrt(19./31),       sqrt(2530.)}; //  N  10  11
       switch (L) { CD(0,0); CD(2,1); CD(3,2); CD(4,3); CD(-4,4); CD(5,5); CD(6,6); 
                    CD(-6,7); CD(7,8); CD(8,9); CD(-8,10); CD(10,11); default: return retval; }
-      if(U.isequal("20")) { retval = t[id*3]; }
-      else if(U.isequal("21")) { retval = t[id*3+1]; }
-      else if(U.isequal("22")) { retval = t[id*3+2]; }
+      if(U.isequal(20)) { retval = t[id*3]; }
+      else if(U.isequal(21)) { retval = t[id*3+1]; }
+      else if(U.isequal(22)) { retval = t[id*3+2]; }
    }
    else if(L>=0)
    {  //  Table XIVa from Racah IV.
@@ -513,31 +513,31 @@ double racah_phi(qG2 U, qG2 Up, orbital Lp, orbital L)
              1.,      0,      0,        0,        0,       0,       0,       0,      0,    0,    0,  // (00) (22)
               0,      0,3*sqrt(429.),   0, 4*sqrt(65.),    0, 3*sqrt(85.),   0,      0,    0,    0,  // (20) (22)
            144.,      0,     69.,       0,     -148.,    72.,     39.,       0,   -96.,    0,  56.}; // (22) (22)
-      if(U.isequal("11") && Up.isequal("11")) { retval = t[L]; }
-      else if(Up.isequal("20")) 
+      if(U.isequal(11) && Up.isequal(11)) { retval = t[L]; }
+      else if(Up.isequal(20)) 
       { 
-         if (U.isequal("20")) { retval = t[L+11]; } 
-	 else if(U.isequal("21")) { retval = t[L+22]; }
+         if (U.isequal(20)) { retval = t[L+11]; } 
+	 else if(U.isequal(21)) { retval = t[L+22]; }
       }
-      else if(Up.isequal("10") && U.isequal("21")) { retval = t[L+33]; }
-      else if(Up.isequal("21")) 
+      else if(Up.isequal(10) && U.isequal(21)) { retval = t[L+33]; }
+      else if(Up.isequal(21)) 
       { 
-         if (U.isequal("10")) { retval = t[L+33]; } 
-	 else if(U.isequal("20")) { retval = t[L+44]; }
-	 else if(U.isequal("21")) { retval = t[L+55]; }
+         if (U.isequal(10)) { retval = t[L+33]; } 
+	 else if(U.isequal(20)) { retval = t[L+44]; }
+	 else if(U.isequal(21)) { retval = t[L+55]; }
       }
-      else if(Up.isequal("30")) 
+      else if(Up.isequal(30)) 
       { 
-         if (U.isequal("11")) { retval = t[L+66]; }
-	 else if(U.isequal("20")) { retval = t[L+77]; }
-	 else if(U.isequal("21")) { retval = t[L+88]; }
-	 else if(U.isequal("30")) { retval = t[L+99]; }
+         if (U.isequal(11)) { retval = t[L+66]; }
+	 else if(U.isequal(20)) { retval = t[L+77]; }
+	 else if(U.isequal(21)) { retval = t[L+88]; }
+	 else if(U.isequal(30)) { retval = t[L+99]; }
       }
-      else if(Up.isequal("22")) 
+      else if(Up.isequal(22)) 
       { 
-         if (U.isequal("00")) { retval = t[L+110]; } 
-         else if(U.isequal("20")) { retval = t[L+121]; }
-	 else if(U.isequal("22")) { retval = t[L+132]; }
+         if (U.isequal(00)) { retval = t[L+110]; } 
+         else if(U.isequal(20)) { retval = t[L+121]; }
+	 else if(U.isequal(22)) { retval = t[L+132]; }
       }
    }
    return retval;
@@ -844,7 +844,7 @@ RowMatrixXd racah_ci(int n, double alpha)                                // For 
    //Up.set(1,1); std::vector<numdenom> xwu2 = racah_xwu(W,U,Up);
    //xwu = xwu2; std::cout << xwu[0] << ", " << xwu[1] << "\n";
    
-   //qG2 U(0,0); std::cout << U.isequal("00") << "\n";
+   //qG2 U(0,0); std::cout << U.isequal(00) << "\n";
    //qG2 Up(2,2);
    //std::cout << racah_phi(U,Up,S,S) << "\n";
    //std::vector< std::vector<double> > e2 = racah_e2(2);

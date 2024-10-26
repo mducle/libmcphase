@@ -11,34 +11,43 @@
 
 #include "eigen.hpp"
 #include "cfpars.hpp"
+#include "physprop.hpp"
 
 namespace libMcPhase {
 
-class cf1ion: public cfpars {
+class cf1ion: public cfpars, public physprop {
 
     protected:
         bool m_ham_calc = false;                              // Flag to indicate if Hamiltonian calculated
+        bool m_upper = true;                                  // Flag to indicate if upper triangle of Ham is calc
         bool m_ev_calc = false;                               // Flag to indicate if eigenvectors/values calculated
+        bool m_magops_calc = false;                           // Flag to indicate if magnetic operators calculated
         RowMatrixXcd m_hamiltonian;                           // Cached Hamiltonian
         RowMatrixXcd m_eigenvectors;                          // Cached eigenvectors
         VectorXd m_eigenvalues;                               // Cached eigenvalues
+        std::vector<RowMatrixXcd> m_magops;                   // Cached magnetic operators
+        RowMatrixXcd _hamiltonian(bool upper=true);
+        void calc_mag_ops();
+        void fill_upper();
 
     public:
         // Setters
-        virtual void set_unit(const Units newunit);
-        virtual void set_type(const Type newtype);
-        virtual void set_name(const std::string &ionname);
-        virtual void set_J(const double J);
-        virtual void set(const Blm blm, double val);
-        virtual void set(int l, int m, double val);
+        void set_unit(const Units newunit);
+        void set_type(const Type newtype);
+        void set_name(const std::string &ionname);
+        void set_J(const double J);
+        void set(const Blm blm, double val);
+        void set(int l, int m, double val);
         // Constructors
         cf1ion() : cfpars() {};
         cf1ion(const int J2) : cfpars(J2) {};
         cf1ion(const double J) : cfpars(J) {};
         cf1ion(const std::string &ionname) : cfpars(ionname) {};
         // Methods
-        RowMatrixXcd hamiltonian(bool upper=true);
+        RowMatrixXcd hamiltonian();
         std::tuple<RowMatrixXcd, VectorXd> eigensystem();
+        RowMatrixXcd zeeman_hamiltonian(double H, std::vector<double> Hdir);
+        std::vector<RowMatrixXcd> calculate_moments_matrix(RowMatrixXcd ev);
 
 }; // class cf1ion
 

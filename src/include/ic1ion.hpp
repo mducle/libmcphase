@@ -13,17 +13,15 @@
 #define IC1ION_H
 
 #include "cfpars.hpp"
+#include "physprop.hpp"
 #include "eigen.hpp"
 #include "ic_states.hpp"
 #include <algorithm>
 #include <vector>
-#include <unordered_map>
 
 namespace libMcPhase {
 
-// Declare K_B and MU_B in cm here (meV version declared in cfpars.cpp)
-static const double K_B = 0.6950348004;    // cm/K - Boltzmann constant
-static const double MU_B = 0.46686447783;  // cm/T - Bohr magneton
+static const double GS = 2.0023193043622;  // The electron gyromagnetic ratio
 
 struct pair_hash
 {
@@ -33,7 +31,7 @@ struct pair_hash
     }
 };
 
-class ic1ion : public cfpars {
+class ic1ion : public cfpars, public physprop {
 
     public:
         enum class CoulombType { Slater = 0, CondonShortley = 1, Racah = 2 };
@@ -80,18 +78,17 @@ class ic1ion : public cfpars {
         void calculate_eigensystem();                          // Diagonalises the Hamiltonian
         // Declarations for functions in ic_tensoropts.cpp
         void calc_tensorops(int num);                          // Populates m_tensorops vector
-        std::vector< RowMatrixXcd > calculate_moments_matrix(RowMatrixXcd ev);
 
     public:
         // Setters
-        virtual void set_unit(const Units newunit);
-        virtual void set_type(const Type newtype);
-        virtual void set_name(const std::string &ionname);
-        virtual void set(const Blm blm, double val);
-        virtual void set(int l, int m, double val);
-        virtual void set_coulomb(std::vector<double> val, CoulombType type = CoulombType::Slater);
-        virtual void set_ci(std::vector<double> val);
-        virtual void set_spinorbit(double val, SpinOrbType type = SpinOrbType::Zeta);
+        void set_unit(const Units newunit);
+        void set_type(const Type newtype);
+        void set_name(const std::string &ionname);
+        void set(const Blm blm, double val);
+        void set(int l, int m, double val);
+        void set_coulomb(std::vector<double> val, CoulombType type = CoulombType::Slater);
+        void set_ci(std::vector<double> val);
+        void set_spinorbit(double val, SpinOrbType type = SpinOrbType::Zeta);
         // Getters
         std::array<double, 4> get_coulomb() const { return m_F; };
         double get_spinorbit() const { return m_xi; };
@@ -104,13 +101,9 @@ class ic1ion : public cfpars {
         // Methods
         RowMatrixXcd hamiltonian();
         std::tuple<RowMatrixXcd, VectorXd> eigensystem();
-        std::vector<double> magnetisation(std::vector<double> H, std::vector<double> Hdir, double T, MagUnits type);
-        std::vector<double> susceptibility(std::vector<double> T, std::vector<double> Hdir, MagUnits type);
         RowMatrixXcd zeeman_hamiltonian(double H,              // Calculates the Zeeman Hamiltonian for applied
             std::vector<double> Hdir);                         //   field H in direction Hdir
-        std::vector< std::vector<double> > calculate_moments(RowMatrixXcd ev);
-        std::vector<double> calculate_boltzmann(               // Calculates the Boltzmann factor exp(-E/kT)
-            VectorXd en, double T);
+        std::vector< RowMatrixXcd > calculate_moments_matrix(RowMatrixXcd ev);
         std::vector<fstates_t> get_states();
 
 }; // class ic1ion

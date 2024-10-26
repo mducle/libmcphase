@@ -116,27 +116,27 @@ int qR7::set(int w1_, int w2_, int w3_)
 
 bool qR7::operator == (const qR7 & wp) const
 {
-   if (w1==wp.w1 && w2==wp.w2 && w3==wp.w3) { return true; }
-   else { return false; }
+   return (w1==wp.w1 && w2==wp.w2 && w3==wp.w3);
 }
 
 bool qR7::operator != (const qR7 & wp) const
 {
-   if (w1!=wp.w1 || w2!=wp.w2 || w3!=wp.w3) { return true; }
-   else { return false; }
+   return (w1!=wp.w1 || w2!=wp.w2 || w3!=wp.w3);
 }
 
-bool qR7::isequal (const char * Wstr)
+bool qR7::isequal (int w)
 {
-   char ws=0;
-   int  w1n=0,w2n=1,w3n=2;
-
-   ws = Wstr[0]; w1n = atoi(&ws);
-   ws = Wstr[1]; w2n = atoi(&ws);
-   ws = Wstr[2]; w3n = atoi(&ws);
-
-   if (w1==w1n && w2==w2n && w3==w3n) { return true; }
-   else { return false; }
+   // In C++ a literal beginning with 0 is octal
+   if (w > 99) {  // Decimal literal
+      std::div_t w1d = std::div(w, 100);
+      std::div_t w2d = std::div(w1d.rem, 10);
+      return (w1==w1d.quot && w2==w2d.quot && w3==w2d.rem);
+   } else if (w > 0) {  // Octal literal, w1=0
+      std::div_t w2d = std::div(w, 8);
+      return (w1==0 && w2==w2d.quot && w3==w2d.rem);
+   } else {
+      return (w1==0 && w2==0 && w3==0);
+   }
 }
 
 // --------------------------------------------------------------------------------------------------------------- //
@@ -149,26 +149,24 @@ int qG2::set(int u1_, int u2_)
 
 bool qG2::operator == (const qG2 & up) const
 {
-   if (u1==up.u1 && u2==up.u2) { return true; }
-   else { return false; }
+   return (u1==up.u1 && u2==up.u2);
 }
 
 bool qG2::operator != (const qG2 & up) const
 {
-   if (u1!=up.u1 || u2!=up.u2) { return true; }
-   else { return false; }
+   return (u1!=up.u1 || u2!=up.u2);
 }
 
-bool qG2::isequal (const char * Ustr)
+bool qG2::isequal (int u)
 {
-   char us=0;
-   int  u1n=0,u2n=1;
-
-   us = Ustr[0]; u1n = atoi(&us);
-   us = Ustr[1]; u2n = atoi(&us);
-
-   if (u1==u1n && u2==u2n) { return true; }
-   else { return false; }
+   if (u > 9) {  // Decimal literal
+      std::div_t u1d = std::div(u, 10);
+      return (u1==u1d.quot && u2==u1d.rem);
+   } else if (u > 0) {  // Octal literal
+      return (u1==0 && u2==u);
+   } else {
+      return (u1==0 && u2==0);
+   }
 }
 
 // --------------------------------------------------------------------------------------------------------------- //
@@ -861,7 +859,7 @@ void fconf::set(int n, bool mJflag, orbital l)
              << ", U=[" << conf.states[0].U.u1 << " " << conf.states[0].U.u2
 	     << "], W=[" << conf.states[0].W.w1 << " " << conf.states[0].W.w2 << " " << conf.states[0].W.w3 << "]\n";
 
-   WisW = conf.states[0].W.isequal("100");
+   WisW = conf.states[0].W.isequal(100);
    //fprintf(stdout,"W=[%i %i %i] == [1 0 0] is %s\n",conf.states[0].W.w1,conf.states[0].W.w2,conf.states[0].W.w3,
    //        WisW ? "true" : "false");
    std::cout << "W=[" << conf.states[0].W.w1 << " " << conf.states[0].W.w2 << " " << conf.states[0].W.w3
