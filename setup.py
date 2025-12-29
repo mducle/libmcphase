@@ -124,10 +124,10 @@ KEYWORDARGS = dict(
     cmdclass=cmdclass,
     url="https://github.com/mducle/libmcphase",
     zip_safe=False,
+    license="GPL-3.0-or-later",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Operating System :: Microsoft :: Windows :: Windows 10",
         "Operating System :: POSIX :: Linux",
         "Programming Language :: C++",

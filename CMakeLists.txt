@@ -5,6 +5,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 set(CMAKE_MACOSX_RPATH TRUE)
 set(CMAKE_CXX_STANDARD 11)
 set(CXX_STANDARD_REQUIRED 11)
+cmake_policy(SET CMP0148 OLD)  # New policy gives error when cannot find shared libs
 
 set(LIBMCPHASE_PYTHON_MODULE libmcphase)
 
@@ -18,11 +19,26 @@ if(WIN32)
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -d2:-FH4-")
 endif(WIN32)
 
-include(Eigen)
-include_directories(${EIGEN3_INCLUDE_DIR})
+if (DEFINED ENV{CONDA_PREFIX})
+    message(STATUS "Searching $ENV{CONDA_PREFIX} for Pybind11 and Eigen")
+    file(GLOB pybind11_search $ENV{CONDA_PREFIX}/share/cmake/pybind11/pybind11Config.cmake)
+    if (NOT pybind11_search STREQUAL "")
+        cmake_path(GET pybind11_search PARENT_PATH pybind11_DIR)
+    endif()
+    file(GLOB eigen_search $ENV{CONDA_PREFIX}/share/eigen3/cmake/Eigen3Config.cmake)
+    if (NOT eigen_search STREQUAL "")
+        cmake_path(GET eigen_search PARENT_PATH Eigen3_DIR)
+    endif()
+endif()
 
-include(PyBind11)
-add_subdirectory(${PyBind11_DIR})
+if (EMSCRIPTEN)
+    message(STATUS "Emscripten detected - setting Pybind to use cross-compiler")
+    set(PYBIND11_USE_CROSSCOMPILING TRUE)
+endif()
+
+find_package(Eigen3 REQUIRED NO_MODULE)
+include_directories(${EIGEN3_INCLUDE_DIR})
+find_package(pybind11 CONFIG)
 
 add_subdirectory(src)
 

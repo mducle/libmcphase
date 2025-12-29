@@ -2,8 +2,11 @@
 *.swo
 *.o
 *.exe
+*.whl
 __pycache__
 
 build
 dist
 libMcPhase.egg-info
+libmcphase.egg-info
+emsdk

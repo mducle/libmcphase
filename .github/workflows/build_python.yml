@@ -34,17 +34,17 @@ jobs:
           cache-downloads: true
       - name: Build wheels
         run: |
-          $MAMBA_EXE create -n cibuildwheel python=3.12
+          $MAMBA_EXE create -n cibuildwheel python=3.13 eigen pybind11
           eval "$($MAMBA_EXE shell activate cibuildwheel)"
           python -m pip install cibuildwheel
           if [[ $OSTYPE == "darwin23" ]] || [[ $OSTYPE == "darwin22" ]]
           then
             # For some reason cibuildwheel on builds 3.9-3.12 arm64 on macos-latest
-            export CIBW_BUILD="cp39* cp310* cp311* cp312*"
+            export CIBW_BUILD="cp310* cp311* cp312*"
           fi
           python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_BUILD: "cp38-* cp39* cp310-* cp311-* cp312-*"
+          CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-* cp314-*"
           CIBW_SKIP: "*musllinux* *win32* *i686*"
           CIBW_ARCHS_MACOS: "native"
           CIBW_BUILD_VERBOSITY: 1
@@ -54,9 +54,9 @@ jobs:
           set -e
           if [[ $OSTYPE == "darwin23" ]] || [[ $OSTYPE == "darwin22" ]]
           then
-            export PYVERS="3.9 3.10 3.11 3.12"
+            export PYVERS="3.10 3.11 3.12"
           else
-            export PYVERS="3.8 3.9 3.10 3.11 3.12"
+            export PYVERS="3.10 3.11 3.12 3.13 3.14"
           fi
           for pyver in $PYVERS
           do
