@@ -23,28 +23,26 @@ jobs:
   build_and_test:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
+        os: [ubuntu-latest, windows-latest, macos-14, macos-15-intel]
     name: Build and test, ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
       - uses: mamba-org/setup-micromamba@v1
         with:
           cache-downloads: true
       - name: Build wheels
         run: |
-          $MAMBA_EXE create -n cibuildwheel python=3.12
+          $MAMBA_EXE create -n cibuildwheel python=3.12 eigen pybind11
           eval "$($MAMBA_EXE shell activate cibuildwheel)"
           python -m pip install cibuildwheel
-          if [[ $OSTYPE == "darwin23" ]] || [[ $OSTYPE == "darwin22" ]]
+          if [[ $OSTYPE == "linux-gnu" ]]
           then
-            # For some reason cibuildwheel on builds 3.9-3.12 arm64 on macos-latest
-            export CIBW_BUILD="cp39* cp310* cp311* cp312*"
+            export CIBW_ENVIRONMENT="CONDA_PREFIX=/host/$CONDA_PREFIX"
           fi
           python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_BUILD: "cp38-* cp39* cp310-* cp311-* cp312-*"
+          CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-* cp314-*"
           CIBW_SKIP: "*musllinux* *win32* *i686*"
           CIBW_ARCHS_MACOS: "native"
           CIBW_BUILD_VERBOSITY: 1
@@ -52,13 +50,7 @@ jobs:
         run: |
           # set -e makes sure the script fails if any command in the loop fails
           set -e
-          if [[ $OSTYPE == "darwin23" ]] || [[ $OSTYPE == "darwin22" ]]
-          then
-            export PYVERS="3.9 3.10 3.11 3.12"
-          else
-            export PYVERS="3.8 3.9 3.10 3.11 3.12"
-          fi
-          for pyver in $PYVERS
+          for pyver in 3.10 3.11 3.12 3.13 3.14
           do
             $MAMBA_EXE create -n py$pyver -c conda-forge python=$pyver numpy
             eval "$($MAMBA_EXE shell activate py$pyver)"
@@ -67,6 +59,11 @@ jobs:
             python -m unittest
             cd ..
           done
+      - name: Build Pyodide wheel
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          eval "$($MAMBA_EXE shell activate cibuildwheel)"
+          CIBW_BUILD="cp312*" python -m cibuildwheel --output-dir wheelhouse --platform pyodide
       - name: Upload release wheels
         if: |
           contains(github.event.pull_request.title, 'RELEASE') &&

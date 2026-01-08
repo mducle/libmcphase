@@ -2,8 +2,15 @@
 *.swo
 *.o
 *.exe
+*.whl
 __pycache__
 
+.pyodide-xbuildenv
 build
 dist
 libMcPhase.egg-info
+libmcphase.egg-info
+emsdk
+Emscripten.cmake
+
+libmcphase/*pyd

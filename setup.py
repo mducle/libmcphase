@@ -2,7 +2,7 @@ import os
 import re
 import sys
 import subprocess
-import pkgutil
+import importlib.util
 from sysconfig import get_platform
 from subprocess import CalledProcessError, check_output, check_call
 from distutils.version import LooseVersion
@@ -14,7 +14,7 @@ import versioneer
 # Except that in the manylinux builds it's placed at /opt/python/[version]/bin/
 # (as a symlink at least) which is *not* on the path.
 # If cmake is a known module, import it and use it tell us its binary directory
-if pkgutil.find_loader('cmake') is not None:
+if (cmakemod := importlib.util.find_spec('cmake')) and cmakemod.loader:
     import cmake
     CMAKE_BIN = cmake.CMAKE_BIN_DIR + os.path.sep + 'cmake'
 else:
@@ -124,10 +124,10 @@ KEYWORDARGS = dict(
     cmdclass=cmdclass,
     url="https://github.com/mducle/libmcphase",
     zip_safe=False,
+    license="GPL-3.0-or-later",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Operating System :: Microsoft :: Windows :: Windows 10",
         "Operating System :: POSIX :: Linux",
         "Programming Language :: C++",
