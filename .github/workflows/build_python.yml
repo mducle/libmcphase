@@ -23,24 +23,22 @@ jobs:
   build_and_test:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
+        os: [ubuntu-latest, windows-latest, macos-14]
     name: Build and test, ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
       - uses: mamba-org/setup-micromamba@v1
         with:
           cache-downloads: true
       - name: Build wheels
         run: |
-          $MAMBA_EXE create -n cibuildwheel python=3.13 eigen pybind11
+          $MAMBA_EXE create -n cibuildwheel python=3.12 eigen pybind11
           eval "$($MAMBA_EXE shell activate cibuildwheel)"
           python -m pip install cibuildwheel
-          if [[ $OSTYPE == "darwin23" ]] || [[ $OSTYPE == "darwin22" ]]
+          if [[ $OSTYPE == "linux-gnu" ]]
           then
-            # For some reason cibuildwheel on builds 3.9-3.12 arm64 on macos-latest
-            export CIBW_BUILD="cp310* cp311* cp312*"
+            export CIBW_ENVIRONMENT="CONDA_PREFIX=/host/$CONDA_PREFIX"
           fi
           python -m cibuildwheel --output-dir wheelhouse
         env:
@@ -52,13 +50,7 @@ jobs:
         run: |
           # set -e makes sure the script fails if any command in the loop fails
           set -e
-          if [[ $OSTYPE == "darwin23" ]] || [[ $OSTYPE == "darwin22" ]]
-          then
-            export PYVERS="3.10 3.11 3.12"
-          else
-            export PYVERS="3.10 3.11 3.12 3.13 3.14"
-          fi
-          for pyver in $PYVERS
+          for pyver in 3.10 3.11 3.12 3.13 3.14
           do
             $MAMBA_EXE create -n py$pyver -c conda-forge python=$pyver numpy
             eval "$($MAMBA_EXE shell activate py$pyver)"

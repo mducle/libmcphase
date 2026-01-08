@@ -2,7 +2,7 @@ import os
 import re
 import sys
 import subprocess
-import pkgutil
+import importlib.util
 from sysconfig import get_platform
 from subprocess import CalledProcessError, check_output, check_call
 from distutils.version import LooseVersion
@@ -14,7 +14,7 @@ import versioneer
 # Except that in the manylinux builds it's placed at /opt/python/[version]/bin/
 # (as a symlink at least) which is *not* on the path.
 # If cmake is a known module, import it and use it tell us its binary directory
-if pkgutil.find_loader('cmake') is not None:
+if (cmakemod := importlib.util.find_spec('cmake')) and cmakemod.loader:
     import cmake
     CMAKE_BIN = cmake.CMAKE_BIN_DIR + os.path.sep + 'cmake'
 else:
