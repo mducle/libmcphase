@@ -23,7 +23,7 @@ jobs:
   build_and_test:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-14]
+        os: [ubuntu-latest, windows-latest, macos-14, macos-15-intel]
     name: Build and test, ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     steps:
@@ -59,6 +59,11 @@ jobs:
             python -m unittest
             cd ..
           done
+      - name: Build Pyodide wheel
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          eval "$($MAMBA_EXE shell activate cibuildwheel)"
+          CIBW_BUILD="cp312*" python -m cibuildwheel --output-dir wheelhouse --platform pyodide
       - name: Upload release wheels
         if: |
           contains(github.event.pull_request.title, 'RELEASE') &&
