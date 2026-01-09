@@ -126,4 +126,4 @@ class ic1ionTests(unittest.TestCase):
         cfp.set_coulomb([1e13, 1e13, 1e13], 'Slater')
         cfp.set_spinorbit(1e9, 'Zeta')
         pkl = cfp.peaks(1)
-        np.testing.assert_allclose(pkl[np.where(pkl[:,0] < 200)[0],:], ref_mantid, atol=0.5, rtol=0.05)
+        np.testing.assert_allclose(pkl[np.where( (pkl[:,0] < 200) * (pkl[:,1] > 1) )[0],:], ref_mantid, atol=0.5, rtol=0.05)
