@@ -185,7 +185,8 @@ RowMatrixXd physprop::peaks(double T)
     ndegen.reserve(pkl.size());
     ndegen.push_back(j);
     for (int i=1; i<pkl.size(); i++) {
-        if ((pkl[j].first - pkl[i].first) < 1e-3) {
+        double dE = pkl[j].first - pkl[i].first;
+        if (dE < 1e-3 || (dE/pkl[i].first) < 1e-2) {
             pkl[j].second += pkl[i].second;
         } else {
             j = i;

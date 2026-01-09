@@ -14,3 +14,4 @@ emsdk
 Emscripten.cmake
 
 libmcphase/*pyd
+libmcphase/libmcphase.cpython*
