@@ -19,6 +19,9 @@ static const std::unordered_map<std::string, cfpars::Blm> Blm_names = {
     {"B62S", cfpars::Blm::B62S}, {"B61S", cfpars::Blm::B61S}, {"B60", cfpars::Blm::B60}, {"B61", cfpars::Blm::B61}, {"B62", cfpars::Blm::B62},
     {"B63", cfpars::Blm::B63}, {"B64", cfpars::Blm::B64}, {"B65", cfpars::Blm::B65}, {"B66", cfpars::Blm::B66} };
 
+static const std::array<std::string, 27> Blmvec = {{"B22S", "B21S", "B20", "B21", "B22", "B44S", "B43S", "B42S", "B41S", 
+    "B40", "B41", "B42", "B43", "B44", "B66S", "B65S", "B64S", "B63S", "B62S", "B61S", "B60", "B61", "B62", "B63", "B64", "B65", "B66" }};
+
 static const std::unordered_map<std::string, cfpars::Type> type_names = {
     {"Alm", cfpars::Type::Alm}, {"Blm", cfpars::Type::Blm}, {"Llm", cfpars::Type::Llm}, {"ARlm", cfpars::Type::ARlm} };
 static const std::string type_err = "Invalid type name, must be one of 'Alm', 'ARlm', 'Blm', 'Llm', 'Vlm' or 'Wlm'";
@@ -26,6 +29,16 @@ static const std::string type_err = "Invalid type name, must be one of 'Alm', 'A
 static const std::unordered_map<std::string, cfpars::Units> unit_names = {
     {"meV", cfpars::Units::meV}, {"cm", cfpars::Units::cm}, {"K", cfpars::Units::K} };
 static const std::string unit_err = "Invalid unit, must be one of 'meV', 'cm', or 'K'";
+
+static const std::unordered_map<std::string, cfpars::Sym> sym_names = {
+    {"Ci", cfpars::Sym::Ci}, {"C1", cfpars::Sym::C1}, {"C2", cfpars::Sym::C2}, {"Cs", cfpars::Sym::Cs}, {"C2h", cfpars::Sym::C2h},
+    {"C2v", cfpars::Sym::C2v}, {"D2", cfpars::Sym::D2}, {"D2h", cfpars::Sym::D2h}, {"C4", cfpars::Sym::C4}, {"S4", cfpars::Sym::S4},
+    {"C4h", cfpars::Sym::C4h}, {"D4", cfpars::Sym::D4}, {"C4v", cfpars::Sym::C4v}, {"D2d", cfpars::Sym::D2d}, {"D4h", cfpars::Sym::D4h},
+    {"C3", cfpars::Sym::C3}, {"S6", cfpars::Sym::S6}, {"D3", cfpars::Sym::D3}, {"C3v", cfpars::Sym::C3v}, {"D3d", cfpars::Sym::D3d},
+    {"C6", cfpars::Sym::C6}, {"C3h", cfpars::Sym::C3h}, {"C6h", cfpars::Sym::C6h}, {"D6", cfpars::Sym::D6}, {"C6v", cfpars::Sym::C6v},
+    {"D3h", cfpars::Sym::D3h}, {"D6h", cfpars::Sym::D6h}, {"T", cfpars::Sym::T}, {"Th", cfpars::Sym::Th}, {"Td", cfpars::Sym::Td},
+    {"O", cfpars::Sym::O}, {"Oh", cfpars::Sym::Oh} };
+static const std::string sym_err = "Invalid point symmetry, must be a Schoenflies symbol";
 
 void cf_parse(cfpars *cls, py::args args, py::kwargs kwargs, bool is_ic1ion) {
     if (!args && !kwargs) {
@@ -59,6 +72,9 @@ void cf_parse(cfpars *cls, py::args args, py::kwargs kwargs, bool is_ic1ion) {
     }
     if (kwargs.contains("unit")) {
         cls->set_unit(set_enum(kwargs["unit"].cast<std::string>(), unit_names, unit_err));
+    }
+    if (kwargs.contains("sym")) {
+        cls->set_sym(set_enum(kwargs["sym"].cast<std::string>(), sym_names, sym_err));
     }
     if (kwargs) {
         for (auto const &bname : Blm_names) {
@@ -94,14 +110,30 @@ void wrap_cfpars(py::module &m) {
         .value("Llm", cfpars::Type::Llm)
         .value("ARlm", cfpars::Type::ARlm);
 
+    py::enum_<cfpars::Sym>(pycfpars, "Sym")
+        .value("Ci", cfpars::Sym::Ci).value("C1", cfpars::Sym::C1)
+        .value("C2", cfpars::Sym::C2).value("Cs", cfpars::Sym::Cs).value("C2h", cfpars::Sym::C2h)
+        .value("C2v", cfpars::Sym::C2v).value("D2", cfpars::Sym::D2).value("D2h", cfpars::Sym::D2h)
+        .value("C4", cfpars::Sym::C4).value("S4", cfpars::Sym::S4).value("C4h", cfpars::Sym::C4h)
+        .value("D4", cfpars::Sym::D4).value("C4v", cfpars::Sym::C4v).value("D2d", cfpars::Sym::D2d) .value("D4h", cfpars::Sym::D4h)
+        .value("C3", cfpars::Sym::C3).value("S6", cfpars::Sym::S6)
+        .value("D3", cfpars::Sym::D3).value("C3v", cfpars::Sym::C3v).value("D3d", cfpars::Sym::D3d)
+        .value("C6", cfpars::Sym::C6).value("C3h", cfpars::Sym::C3h).value("C6h", cfpars::Sym::C6h)
+        .value("D6", cfpars::Sym::D6).value("C6v", cfpars::Sym::C6v).value("D3h", cfpars::Sym::D3h) .value("D6h", cfpars::Sym::D6h)
+        .value("T", cfpars::Sym::T).value("Th", cfpars::Sym::Th).value("Td", cfpars::Sym::Td).value("O", cfpars::Sym::O).value("Oh", cfpars::Sym::Oh);
+
     pycfpars.def(py::init<>())
         .def(py::init<const std::string &>(), py::arg("ionname"))
         .def(py::init<const double &>(), py::arg("J"))
         .def(py::init(&cfpars_init), cfpars_init_str)
+        .def("get_sym_allowed_pars", [](cfpars &self) { std::vector<cfpars::Blm> r0 = self.get_sym_allowed_Blm(); std::vector<std::string> rv(r0.size());
+            std::transform(r0.begin(), r0.end(), rv.begin(), [](cfpars::Blm b) { return Blmvec[(int)b]; }); return rv; })
         .def_property("unit", &cfpars::get_unit, [](cfpars &self, std::string unit) { self.set_unit(set_enum(unit, unit_names, unit_err)); },
             "energy unit of the parameters")
         .def_property("type", &cfpars::get_type, [](cfpars &self, std::string type) { self.set_type(set_enum(type, type_names, type_err)); },
             "type of CF parameters. When changed, parameters values will be automatically converted.")
+        .def_property("sym", &cfpars::get_sym, [](cfpars &self, std::string sym) { self.set_sym(set_enum(sym, sym_names, sym_err)); },
+            "point symmetry of site in Schoenflies notation")
         .def_property("ion", &cfpars::get_name, &cfpars::set_name, "ion type. If reset, parameters will be updated by scaling by Stevens factors.")
         .def_property("J", &cfpars::get_J, &cfpars::set_J, "the total angular momentum quantum number of this multiplet")
         .def_property_readonly("normalisation", &cfpars::get_normalisation, "normalisation of CF parameters")

@@ -3,7 +3,7 @@
  * A class for calculating the physical properties (magnetisation, susceptibility, heat capacity) associated with
  * a crystal field type single-ion Hamiltonian.
  *
- * (C) 2024 Duc Le - duc.le@stfc.ac.uk
+ * (C) 2024-2026 Duc Le - duc.le@stfc.ac.uk
  * This program is licensed under the GNU General Purpose License, version 3. Please see the LICENSE file
  */
 

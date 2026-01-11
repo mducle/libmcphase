@@ -2,7 +2,7 @@
  * 
  * A class for calculating the crystal field Hamiltonian in Russell-Saunders (LS-) coupling.
  *
- * (C) 2018 Duc Le - duc.le@stfc.ac.uk
+ * (C) 2018-2026 Duc Le - duc.le@stfc.ac.uk
  * This program is licensed under the GNU General Purpose License, version 3. Please see the LICENSE file
  */
 
@@ -48,6 +48,7 @@ class cf1ion: public cfpars, public physprop {
         std::tuple<RowMatrixXcd, VectorXd> eigensystem();
         RowMatrixXcd zeeman_hamiltonian(double H, std::vector<double> Hdir);
         std::vector<RowMatrixXcd> calculate_moments_matrix(RowMatrixXcd ev);
+        RowMatrixXd split2range(double E0);
 
 }; // class cf1ion
 

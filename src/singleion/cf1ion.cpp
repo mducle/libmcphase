@@ -2,7 +2,7 @@
  * 
  * A class for calculating the crystal field Hamiltonian in Russell-Saunders (LS-) coupling.
  *
- * (C) 2018 Duc Le - duc.le@stfc.ac.uk
+ * (C) 2018-2026 Duc Le - duc.le@stfc.ac.uk
  * This program is licensed under the GNU General Purpose License, version 3. Please see the LICENSE file
  */
 
@@ -66,6 +66,7 @@ void cf1ion::fill_upper() {
             m_hamiltonian(i,j) = std::conj(m_hamiltonian(j,i));
         }
     }
+    m_upper = true;
 }
 
 RowMatrixXcd cf1ion::_hamiltonian(bool upper) {
@@ -81,6 +82,7 @@ RowMatrixXcd cf1ion::_hamiltonian(bool upper) {
 
     int dimj = m_J2 + 1;
     m_hamiltonian = RowMatrixXcd::Zero(dimj, dimj);
+    m_upper = false;
     // For J=1/2, all Stevens operators are zero
     if (dimj == 2) {
         m_ham_calc = true;
@@ -174,7 +176,6 @@ RowMatrixXcd cf1ion::_hamiltonian(bool upper) {
     }
 
     m_ham_calc = true;
-    m_upper = upper;
     return m_hamiltonian; 
 }
 
@@ -184,7 +185,8 @@ RowMatrixXcd cf1ion::hamiltonian() {
 
 std::tuple<RowMatrixXcd, VectorXd> cf1ion::eigensystem() {
     if (!m_ev_calc) {
-        SelfAdjointEigenSolver<RowMatrixXcd> es(_hamiltonian(false));
+        if (!m_ham_calc) _hamiltonian(false);
+        SelfAdjointEigenSolver<RowMatrixXcd> es(m_hamiltonian);
         m_eigenvectors = es.eigenvectors();
         m_eigenvalues = es.eigenvalues();
         m_ev_calc = true;
@@ -252,6 +254,9 @@ std::vector<RowMatrixXcd> cf1ion::calculate_moments_matrix(RowMatrixXcd ev) {
         moments.push_back((ev.adjoint()) * (m_magops[ii] * ev) * m_GJ);
     }
     return moments;
+}
+
+RowMatrixXd split2range(double energy_splitting) {
 }
 
 } // namespace libMcPhase
