@@ -48,7 +48,7 @@ class cf1ion: public cfpars, public physprop {
         std::tuple<RowMatrixXcd, VectorXd> eigensystem();
         RowMatrixXcd zeeman_hamiltonian(double H, std::vector<double> Hdir);
         std::vector<RowMatrixXcd> calculate_moments_matrix(RowMatrixXcd ev);
-        RowMatrixXd split2range(double E0);
+        std::vector<double> split2range(double E0, bool use_sym=false, reset_pars=false);
 
 }; // class cf1ion
 

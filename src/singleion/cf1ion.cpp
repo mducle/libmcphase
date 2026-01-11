@@ -256,7 +256,43 @@ std::vector<RowMatrixXcd> cf1ion::calculate_moments_matrix(RowMatrixXcd ev) {
     return moments;
 }
 
-RowMatrixXd split2range(double energy_splitting) {
+std::vector<double> cf1ion::split2range(double energy_splitting, bool use_sym, bool reset_pars) {
+    std::vector<int> nnz;
+    if (use_sym) {
+        int sy = (int)m_sym/10;
+        for (int id=0; id<27; id++) {
+            if (BLM_SYM[id] & SYM_CLASS[sy]) {
+                nnz.push_back(id);
+                m_Bi[id] = 1. / (lambda[id] * FABINORM[m_J2][id]);
+            } else {
+                m_Bi[id] = 0.;
+            }
+        }
+    } else {
+        for (int id=0; id<27; id++) {
+            if (m_Bi[id] != 0.0) {
+                nnz.push_back(id);
+                m_Bi[id] = 1. / (lambda[id] * FABINORM[m_J2][id]);
+            }
+        }
+    }
+    m_ham_calc = false;
+    SelfAdjointEigenSolver<RowMatrixXcd> es(_hamiltonian());
+    double splitting_factor = 2. * energy_splitting / (es.eigenvalues().maxCoeff() - es.eigenvalues().minCoeff());
+    std::vector<double> rv;
+    for (auto id: nnz) {
+        rv.push_back(splitting_factor / FABINORM[m_J2][id]);
+    }
+    if (reset_pars) {
+        for (int id=0; id<27; id++) {
+            m_Bo[id] = m_Bi[id] * m_convfact[id] * m_econv; }
+    } else {
+        for (int id=0; id<27; id++) {
+            m_Bi[id] = m_Bo[id] / m_convfact[id] / m_econv; }
+        m_ham_calc = false;
+    }
+    m_ev_calc = false;
+    return rv;
 }
 
 } // namespace libMcPhase

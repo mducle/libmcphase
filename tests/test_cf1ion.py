@@ -168,4 +168,15 @@ class cf1ionTests(unittest.TestCase):
     def test_peaks_upd3(self):
         cfp = libmcphase.cf1ion('Pr3+', type='Blm', B20=0.035, B40=-0.012, B43=-0.027, B60=-0.00012, B63=0.0025, B66=0.0068)
         ref_mantid = np.array([[30.0265, 210.2884], [0., 183.5082], [20.6513, 126.348], [9.6356, 76.4194], [4.3651, 19.3257], [52.4979, 2.1114]])
-        np.testing.assert_allclose(cfp.peaks(1), ref_mantid, atol=1e-3)
+        nptest.assert_allclose(cfp.peaks(1), ref_mantid, atol=1e-3)
+
+    def test_norm_split2range(self):
+        ref_mantid = [0.7299684691827522, 0.014315859494885794, 0.23955014769698493, 0.0006854843972749612, 0.009933612654546054, 0.007366964314003879]
+        ref_E = [0., 0., 4.3651248452, 9.6355538971, 9.6355538971, 20.6512567727, 30.0265185296, 30.0265185296, 52.4978908089]
+        cf = libmcphase.cf1ion('Pr3+', sym='C3v', B20=0.035, B40=-0.012, B43=-0.027, B60=-0.00012, B63=0.0025, B66=0.0068)
+        nptest.assert_allclose(cf.split2range(50, True), ref_mantid, atol=1e-3)
+        V, E = cf.eigensystem()
+        nptest.assert_allclose(E - np.min(E), ref_E, atol=1e-3)
+
+
+

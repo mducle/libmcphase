@@ -23,8 +23,8 @@ static const std::array<std::string, 27> Blmvec = {{"B22S", "B21S", "B20", "B21"
     "B40", "B41", "B42", "B43", "B44", "B66S", "B65S", "B64S", "B63S", "B62S", "B61S", "B60", "B61", "B62", "B63", "B64", "B65", "B66" }};
 
 static const std::unordered_map<std::string, cfpars::Type> type_names = {
-    {"Alm", cfpars::Type::Alm}, {"Blm", cfpars::Type::Blm}, {"Llm", cfpars::Type::Llm}, {"ARlm", cfpars::Type::ARlm} };
-static const std::string type_err = "Invalid type name, must be one of 'Alm', 'ARlm', 'Blm', 'Llm', 'Vlm' or 'Wlm'";
+    {"Alm", cfpars::Type::Alm}, {"Blm", cfpars::Type::Blm}, {"Llm", cfpars::Type::Llm}, {"ARlm", cfpars::Type::ARlm}, {"Nlm", cfpars::Type::Nlm} };
+static const std::string type_err = "Invalid type name, must be one of 'Alm', 'ARlm', 'Blm', 'Llm', 'Nlm', 'Vlm' or 'Wlm'";
 
 static const std::unordered_map<std::string, cfpars::Units> unit_names = {
     {"meV", cfpars::Units::meV}, {"cm", cfpars::Units::cm}, {"K", cfpars::Units::K} };
@@ -108,7 +108,8 @@ void wrap_cfpars(py::module &m) {
         .value("Alm", cfpars::Type::Alm)
         .value("Blm", cfpars::Type::Blm)
         .value("Llm", cfpars::Type::Llm)
-        .value("ARlm", cfpars::Type::ARlm);
+        .value("ARlm", cfpars::Type::ARlm)
+        .value("Nlm", cfpars::Type::Nlm);
 
     py::enum_<cfpars::Sym>(pycfpars, "Sym")
         .value("Ci", cfpars::Sym::Ci).value("C1", cfpars::Sym::C1)

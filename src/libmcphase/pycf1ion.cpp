@@ -40,7 +40,8 @@ void wrap_cf1ion(py::module &m) {
              set_enum(unit, mag_unit_names, "Invalid magnetic unit, must be one of: 'bohr', 'cgs', or 'SI'")); })
         .def("susceptibility", [](cf1ion &self, std::vector<double> T, std::vector<double> Hdir, std::string unit) { return self.susceptibility(T, Hdir,
              set_enum(unit, mag_unit_names, "Invalid magnetic unit, must be one of: 'bohr', 'cgs', or 'SI'")); })
-        .def("peaks", &cf1ion::peaks, "list of peaks with intensity in mb/sr");
+        .def("peaks", &cf1ion::peaks, "list of peaks with intensity in mb/sr")
+        .def("split2range", &cf1ion::split2range, "returns maximum absolute values of Blm which when sampled will give on average E0 splitting");
 }
 
 
