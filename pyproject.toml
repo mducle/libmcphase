@@ -1,0 +1,42 @@
+[build-system]
+requires = ["scikit-build-core>=0.10", "pybind11"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "libmcphase"
+dynamic = ["version"]
+description = "A mean-field Monte Carlo simulation program for magnetic phase diagrams and excitations"
+readme = "README.md"
+authors = [
+  { name = "Duc Le", email = "duc.le@stfc.ac.uk" },
+  { name = "Martin Rotter" },
+]
+requires-python = ">=3.8"
+license = "GPL-3.0-or-later"
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "Operating System :: Microsoft :: Windows :: Windows 10",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = ["numpy>=1.18"]
+
+[project.urls]
+Repository = "https://github.com/mducle/libmcphase"
+
+[tool.scikit-build.cmake.define]
+CMAKE_CXX_FLAGS_RELEASE = "-O2 -DNDEBUG"
+
+[tool.scikit-build]
+metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
+sdist.include = ["libmcphase/_version.py"]
+cmake.args = ["-G Unix Makefiles"]
+build.tool-args = ["-j8"]
+#build.verbose = true
+#logging.level = "INFO"
+
+[tool.setuptools_scm]  # Section required
+write_to = "libmcphase/_version.py"
