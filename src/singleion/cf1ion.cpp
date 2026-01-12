@@ -333,7 +333,7 @@ void cf1ion::fitengy(std::vector<double> E_in, bool use_sym) {
     VectorXd E0 = Ecalc;
     if (E_in.size() < dimj) {
         double anydif = std::accumulate(E_in.begin(), E_in.end(), E_in[0]-1., [](double a, double b) {
-            return isnan(a) ? NAN : (fabs(a-b)<EDIFDEGEN ? NAN : b); });
+            return std::isnan(a) ? NAN : (fabs(a-b)<EDIFDEGEN ? NAN : b); });
         std::unordered_map<int, int> idx;
         for (int i=0; i<dimj; i++)
             idx.insert({i, i});
@@ -342,16 +342,18 @@ void cf1ion::fitengy(std::vector<double> E_in, bool use_sym) {
             std::transform(Ecalc.begin(), Ecalc.end(), Edif.begin(),
                 [en](double v) { return fabs(v - en); });
             auto Idif = std::min_element(idx.begin(), idx.end(),
-                [Edif](auto a, auto b) { return Edif[a.first] < Edif[b.first]; });
-            if (isnan(anydif)) { // There are degeneracies in E_in, treat degenerate calculated levels separately
+                [Edif](std::pair<int, int> a, std::pair<int, int> b) { return Edif[a.first] < Edif[b.first]; });
+            if (std::isnan(anydif)) { // There are degeneracies in E_in, treat degenerate calculated levels separately
                 E0[(*Idif).first] = en;
                 idx.erase(Idif);
             } else {             // No degeneracies in E_in, get degeneracies from Ecalc
                 double Eref = Edif[(*Idif).first];
-                for (auto i: idx) {
-                    if (fabs(Edif[i.first] - Eref) < EDIFDEGEN) {
-                        E0[i.first] = en;
-                        idx.erase(idx.find(i.first));
+                for (auto i=idx.begin(); i!=idx.end(); ) {
+                    if (fabs(Edif[(*i).first] - Eref) < EDIFDEGEN) {
+                        E0[(*i).first] = en;
+                        i = idx.erase(i);
+                    } else {
+                        i++; 
                     }
                 }
             }
@@ -391,7 +393,7 @@ void cf1ion::fitengy(std::vector<double> E_in, bool use_sym) {
         auto EV = eigensystem();
         // newlsq = sum( (Ecalc - E0)**2 )
         double newlsq = std::inner_product(std::get<1>(EV).begin(), std::get<1>(EV).end(), E0.begin(), 0.0,
-            std::plus<>(), [](double a, double b) { return pow(a - b, 2.); });
+            std::plus<double>(), [](double a, double b) { return pow(a - b, 2.); });
         if (fabs(lsqfit - newlsq) < 1e-7) {
             break; }
         if (newlsq > lsqfit) {
