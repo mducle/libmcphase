@@ -13,6 +13,8 @@ namespace libMcPhase {
 static const std::array<std::array<int, 4>, 12> idq = { {{2,2,0,4}, {2,1,1,3}, {4,4,5,13}, {4,3,6,12}, {4,2,7,11}, {4,1,8,10}, 
                                                         {6,6,14,26}, {6,5,15,25}, {6,4,16,24}, {6,3,17,23}, {6,2,18,22}, {6,1,19,21}} };
 static const std::array<std::array<int, 2>, 3> idq0 = { {{2,2}, {4,9}, {6,20}} };
+static const std::array<std::array<int, 2>, 27> ikq = { {{2,-2}, {2,-1}, {2,0}, {2,1}, {2,2}, {4,-4}, {4,-3}, {4,-2}, {4,-1}, 
+    {4,0}, {4,1}, {4,2}, {4,3}, {4,4}, {6,-6}, {6,-5}, {6,-4}, {6,-3}, {6,-2}, {6,-1}, {6,0}, {6,1}, {6,2}, {6,3}, {6,4}, {6,5}, {6,6}} };
 
 // --------------------------------------------------------------------------------------------------------------- //
 // Setter/getter methods for cfpars class
@@ -67,6 +69,30 @@ void cf1ion::fill_upper() {
         }
     }
     m_upper = true;
+}
+
+void cf1ion::_fill_ham_m(RowMatrixXcd &ham, int k, int q, double val, double rme) {
+    int dimj = m_J2 + 1;
+    for (int i=0; i<(dimj-q); i++) {
+        int mj = 2*i - m_J2, mjp = 2*(i+q) - m_J2;
+        double tjp = m_racah.threej(m_J2, 2*k, m_J2, -mj, 2*q, mjp) - m_racah.threej(m_J2, 2*k, m_J2, -mj, -2*q, mjp);
+        ham(i+q,i) += std::complex<double>(0., pow(-1., (m_J2-mj)/2.) * tjp * rme * val * m_econv);
+    }
+}
+void cf1ion::_fill_ham_p(RowMatrixXcd &ham, int k, int q, double val, double rme) {
+    int dimj = m_J2 + 1;
+    for (int i=0; i<(dimj-q); i++) {
+        int mj = 2*i - m_J2, mjp = 2*(i+q) - m_J2;
+        double tjp = m_racah.threej(m_J2, 2*k, m_J2, -mj, 2*q, mjp) + m_racah.threej(m_J2, 2*k, m_J2, -mj, -2*q, mjp);
+        ham(i+q,i) += pow(-1., (m_J2-mj)/2.) * tjp * rme * val * m_econv;
+    }
+}
+void cf1ion::_fill_ham_0(RowMatrixXcd &ham, int k, double val, double rme) {
+    int dimj = m_J2 + 1;
+    for (int i=0; i<dimj; i++) {
+        int mj = 2*i - m_J2;
+        ham(i,i) += pow(-1., (m_J2-mj)/2.) * m_racah.threej(m_J2, 2*k, m_J2, -mj, 0, mj) * rme * val * m_econv;
+    }
 }
 
 RowMatrixXcd cf1ion::_hamiltonian(bool upper) {
@@ -142,31 +168,18 @@ RowMatrixXcd cf1ion::_hamiltonian(bool upper) {
 
     // First the diagonal elements (q=0 terms)
     for (auto iq: idq0) {
-        int k = iq[0], m = iq[1];
-        if (std::fabs(m_Bi[m]) > 1e-12) {
-            for (int i=0; i<dimj; i++) {
-                int mj = 2*i - m_J2;
-                m_hamiltonian(i,i) += pow(-1., (m_J2-mj)/2.) * m_racah.threej(m_J2, 2*k, m_J2, -mj, 0, mj) * rme[k] * m_Bi[m] * m_econv;
-            }
-        }
+        if (std::fabs(m_Bi[iq[1]]) > 1e-12)
+            _fill_ham_0(m_hamiltonian, iq[0], m_Bi[iq[1]], rme[iq[0]]);
     }
 
     // Now the off-diagonal terms - using a helper vector defined globally above to index
     for (auto iq: idq) {
         int k = iq[0], q = iq[1], m = iq[2], p = iq[3];
         if (std::fabs(m_Bi[m]) > 1e-12) {
-            for (int i=0; i<(dimj-q); i++) {
-                int mj = 2*i - m_J2, mjp = 2*(i+q) - m_J2;
-                double tjp = m_racah.threej(m_J2, 2*k, m_J2, -mj, 2*q, mjp) - m_racah.threej(m_J2, 2*k, m_J2, -mj, -2*q, mjp);
-                m_hamiltonian(i+q,i) += std::complex<double>(0., pow(-1., (m_J2-mj)/2.) * tjp * rme[k] * m_Bi[m] * m_econv);
-            }
+            _fill_ham_m(m_hamiltonian, k, q, m_Bi[m], rme[k]);
         }
         if (std::fabs(m_Bi[p]) > 1e-12) {
-            for (int i=0; i<(dimj-q); i++) {
-                int mj = 2*i - m_J2, mjp = 2*(i+q) - m_J2;
-                double tjp = m_racah.threej(m_J2, 2*k, m_J2, -mj, 2*q, mjp) + m_racah.threej(m_J2, 2*k, m_J2, -mj, -2*q, mjp);
-                m_hamiltonian(i+q,i) += pow(-1., (m_J2-mj)/2.) * tjp * rme[k] * m_Bi[p] * m_econv;
-            }
+            _fill_ham_p(m_hamiltonian, k, q, m_Bi[p], rme[k]);
         }
     }
 
@@ -256,14 +269,17 @@ std::vector<RowMatrixXcd> cf1ion::calculate_moments_matrix(RowMatrixXcd ev) {
     return moments;
 }
 
-std::vector<double> cf1ion::split2range(double energy_splitting, bool use_sym, bool reset_pars) {
+std::vector<int> cf1ion::_set_pars(bool use_sym, bool use_rand) {
+    m_ham_calc = false;
     std::vector<int> nnz;
+    if (use_rand) {
+        std::srand(std::time({})); }
     if (use_sym) {
         int sy = (int)m_sym/10;
         for (int id=0; id<27; id++) {
             if (BLM_SYM[id] & SYM_CLASS[sy]) {
                 nnz.push_back(id);
-                m_Bi[id] = 1. / (lambda[id] * FABINORM[m_J2][id]);
+                m_Bi[id] = (use_rand ? 2*float(std::rand()/RAND_MAX)-1. : 1.) / (lambda[id] * FABINORM[m_J2][id]);
             } else {
                 m_Bi[id] = 0.;
             }
@@ -276,12 +292,16 @@ std::vector<double> cf1ion::split2range(double energy_splitting, bool use_sym, b
             }
         }
     }
-    m_ham_calc = false;
+    return nnz;
+}
+
+std::vector<double> cf1ion::split2range(double energy_splitting, bool use_sym, bool reset_pars) {
+    std::vector<int> nnz = _set_pars(use_sym);
     SelfAdjointEigenSolver<RowMatrixXcd> es(_hamiltonian());
     double splitting_factor = 2. * energy_splitting / (es.eigenvalues().maxCoeff() - es.eigenvalues().minCoeff());
     std::vector<double> rv;
     for (auto id: nnz) {
-        rv.push_back(splitting_factor / FABINORM[m_J2][id]);
+        rv.push_back(fabs(splitting_factor / FABINORM[m_J2][id]));
     }
     if (reset_pars) {
         for (int id=0; id<27; id++) {
@@ -293,6 +313,45 @@ std::vector<double> cf1ion::split2range(double energy_splitting, bool use_sym, b
     }
     m_ev_calc = false;
     return rv;
+}
+
+void cf1ion::fitengy(std::vector<double> E_in, bool use_sym) {
+    std::vector<int> nnz;
+    if (use_sym) {
+        nnz = _set_pars(true, true);
+    } else {
+        for (int id=0; id<27; id++) if (m_Bi[id] != 0.0) nnz.push_back(id);
+    }
+    // Computes current eigensystem to get reference energies
+    SelfAdjointEigenSolver<RowMatrixXcd> es(_hamiltonian());
+    Eigen::Map<VectorXd> Et(E_in.data(), E_in.size());
+    VectorXd E0;
+/*  if (E_in.size() < es.eigenvalues().size()) {
+    } else {
+        E0 = Et - Et.mean();
+    }*/
+    // Computes the Stevens operator matrices for non-zero Blm
+    int dimj = m_J2 + 1;
+    std::array<double, 7> rme{}; 
+    for (int k=2; k<=6; k+=2) {
+        rme[k] = (m_J2 > k) ? pow(2., -k) * sqrt( m_racah.f(m_J2 + k + 1) / m_racah.f(m_J2 - k) ) : 0.;
+    }
+    std::vector<RowMatrixXcd> Omat;
+    std::vector<double> denom;
+    for (auto id: nnz) {
+        RowMatrixXcd ham = RowMatrixXcd::Zero(dimj, dimj);
+        if (ikq[id][1] < 0) {
+            _fill_ham_m(ham, ikq[id][0], ikq[id][1], 1.0, rme[ikq[id][0]]); }
+        else if (ikq[id][1] > 0) {
+            _fill_ham_p(ham, ikq[id][0], ikq[id][1], 1.0, rme[ikq[id][0]]); }
+        else {
+            _fill_ham_0(ham, ikq[id][0], 1.0, rme[ikq[id][0]]); }
+        for (int i=0; i<dimj; i++) {
+            for (int j=i+1; j<dimj; j++) {
+                ham(i,j) = std::conj(ham(j,i)); } }
+        Omat.push_back(ham);
+        denom.push_back( (ham.adjoint() * ham).trace().real() );
+    }
 }
 
 } // namespace libMcPhase

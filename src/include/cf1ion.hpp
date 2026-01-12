@@ -12,6 +12,8 @@
 #include "eigen.hpp"
 #include "cfpars.hpp"
 #include "physprop.hpp"
+#include <cstdlib>
+#include <ctime>
 
 namespace libMcPhase {
 
@@ -29,6 +31,10 @@ class cf1ion: public cfpars, public physprop {
         RowMatrixXcd _hamiltonian(bool upper=true);
         void calc_mag_ops();
         void fill_upper();
+        std::vector<int> _set_pars(bool use_sym=false, bool use_rand=false);
+        void _fill_ham_m(RowMatrixXcd &ham, int k, int q, double val, double rme);
+        void _fill_ham_p(RowMatrixXcd &ham, int k, int q, double val, double rme);
+        void _fill_ham_0(RowMatrixXcd &ham, int k, double val, double rme);
 
     public:
         // Setters
@@ -48,7 +54,8 @@ class cf1ion: public cfpars, public physprop {
         std::tuple<RowMatrixXcd, VectorXd> eigensystem();
         RowMatrixXcd zeeman_hamiltonian(double H, std::vector<double> Hdir);
         std::vector<RowMatrixXcd> calculate_moments_matrix(RowMatrixXcd ev);
-        std::vector<double> split2range(double E0, bool use_sym=false, reset_pars=false);
+        std::vector<double> split2range(double E0, bool use_sym=false, bool reset_pars=false);
+        void fitengy(std::vector<double> E0, bool use_sym=false);
 
 }; // class cf1ion
 
