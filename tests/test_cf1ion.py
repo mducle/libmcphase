@@ -178,5 +178,13 @@ class cf1ionTests(unittest.TestCase):
         V, E = cf.eigensystem()
         nptest.assert_allclose(E - np.min(E), ref_E, atol=1e-3)
 
-
+    def test_fitengy(self):
+        # Test values from Mantid function
+        ref1 = [0.033203742032045895, -0.01174207044845451, -0.02606886438909303, -0.00012163307624938078, 0.0022326316235320837, 0.006886821595013801]
+        ref2 = [0.055185081912631335, -0.008744257519347313, -0.0880384277475906, -0.00014477480672137673, 0.0005308760990602457, 0.007381916019568393]
+        cf = libmcphase.cf1ion('Pr3+', sym='C3v', B20=0.035, B40=-0.012, B43=-0.027, B60=-0.00012, B63=0.0025, B66=0.0068)
+        cf.fitengy([0, 5, 10, 20], False)
+        nptest.assert_allclose([getattr(cf, blm) for blm in ['B20', 'B40', 'B43', 'B60', 'B63', 'B66']], ref1, atol=1e-3)
+        cf.fitengy([0, 5, 10, 20, 20], False)
+        nptest.assert_allclose([getattr(cf, blm) for blm in ['B20', 'B40', 'B43', 'B60', 'B63', 'B66']], ref2, atol=1e-3)
 

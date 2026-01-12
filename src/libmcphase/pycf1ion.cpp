@@ -42,7 +42,8 @@ void wrap_cf1ion(py::module &m) {
              set_enum(unit, mag_unit_names, "Invalid magnetic unit, must be one of: 'bohr', 'cgs', or 'SI'")); })
         .def("peaks", &cf1ion::peaks, "list of peaks with intensity in mb/sr")
         .def("split2range", [](cf1ion &self, double E, bool s) { return self.split2range(E, s); }, py::arg("Energy_splitting"), py::arg("use_sym")=false,
-            "returns maximum absolute values of Blm which when sampled will give on average E0 splitting");
+            "returns maximum absolute values of Blm which when sampled will give on average E0 splitting")
+        .def("fitengy", &cf1ion::fitengy, py::arg("E"), py::arg("use_sym"), "update parameters to fit input energies using Newman-Ng algorithm");
 }
 
 

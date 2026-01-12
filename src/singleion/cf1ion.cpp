@@ -16,6 +16,8 @@ static const std::array<std::array<int, 2>, 3> idq0 = { {{2,2}, {4,9}, {6,20}} }
 static const std::array<std::array<int, 2>, 27> ikq = { {{2,-2}, {2,-1}, {2,0}, {2,1}, {2,2}, {4,-4}, {4,-3}, {4,-2}, {4,-1}, 
     {4,0}, {4,1}, {4,2}, {4,3}, {4,4}, {6,-6}, {6,-5}, {6,-4}, {6,-3}, {6,-2}, {6,-1}, {6,0}, {6,1}, {6,2}, {6,3}, {6,4}, {6,5}, {6,6}} };
 
+static const double EDIFDEGEN = 1e-6;
+
 // --------------------------------------------------------------------------------------------------------------- //
 // Setter/getter methods for cfpars class
 // --------------------------------------------------------------------------------------------------------------- //
@@ -273,7 +275,7 @@ std::vector<int> cf1ion::_set_pars(bool use_sym, bool use_rand) {
     m_ham_calc = false;
     std::vector<int> nnz;
     if (use_rand) {
-        std::srand(std::time({})); }
+        std::srand(static_cast<unsigned int>(std::time({}))); }
     if (use_sym) {
         int sy = (int)m_sym/10;
         for (int id=0; id<27; id++) {
@@ -316,6 +318,7 @@ std::vector<double> cf1ion::split2range(double energy_splitting, bool use_sym, b
 }
 
 void cf1ion::fitengy(std::vector<double> E_in, bool use_sym) {
+    size_t dimj = m_J2 + 1;
     std::vector<int> nnz;
     if (use_sym) {
         nnz = _set_pars(true, true);
@@ -324,14 +327,42 @@ void cf1ion::fitengy(std::vector<double> E_in, bool use_sym) {
     }
     // Computes current eigensystem to get reference energies
     SelfAdjointEigenSolver<RowMatrixXcd> es(_hamiltonian());
-    Eigen::Map<VectorXd> Et(E_in.data(), E_in.size());
-    VectorXd E0;
-/*  if (E_in.size() < es.eigenvalues().size()) {
+    VectorXd Ecalc = es.eigenvalues();
+    double ein_min = *(std::min_element(Ecalc.begin(), Ecalc.end()));
+    std::transform(Ecalc.begin(), Ecalc.end(), Ecalc.begin(), [ein_min](double v) { return v - ein_min; });
+    VectorXd E0 = Ecalc;
+    if (E_in.size() < dimj) {
+        double anydif = std::accumulate(E_in.begin(), E_in.end(), E_in[0]-1., [](double a, double b) {
+            return isnan(a) ? NAN : (fabs(a-b)<EDIFDEGEN ? NAN : b); });
+        std::unordered_map<int, int> idx;
+        for (int i=0; i<dimj; i++)
+            idx.insert({i, i});
+        std::vector<double> Edif(dimj, 0.0);
+        for (auto en: E_in) {
+            std::transform(Ecalc.begin(), Ecalc.end(), Edif.begin(),
+                [en](double v) { return fabs(v - en); });
+            auto Idif = std::min_element(idx.begin(), idx.end(),
+                [Edif](auto a, auto b) { return Edif[a.first] < Edif[b.first]; });
+            if (isnan(anydif)) { // There are degeneracies in E_in, treat degenerate calculated levels separately
+                E0[(*Idif).first] = en;
+                idx.erase(Idif);
+            } else {             // No degeneracies in E_in, get degeneracies from Ecalc
+                double Eref = Edif[(*Idif).first];
+                for (auto i: idx) {
+                    if (fabs(Edif[i.first] - Eref) < EDIFDEGEN) {
+                        E0[i.first] = en;
+                        idx.erase(idx.find(i.first));
+                    }
+                }
+            }
+        }
+        double emean = std::accumulate(E0.begin(), E0.end(), 0.0) / E0.size();
+        std::transform(E0.begin(), E0.end(), E0.begin(), [emean](double v) { return v - emean; });
     } else {
-        E0 = Et - Et.mean();
-    }*/
+        double emean = std::accumulate(E_in.begin(), E_in.end(), 0.0) / E0.size();
+        std::transform(E_in.begin(), E_in.end(), E0.begin(), [emean](double v) { return v - emean; });
+    }
     // Computes the Stevens operator matrices for non-zero Blm
-    int dimj = m_J2 + 1;
     std::array<double, 7> rme{}; 
     for (int k=2; k<=6; k+=2) {
         rme[k] = (m_J2 > k) ? pow(2., -k) * sqrt( m_racah.f(m_J2 + k + 1) / m_racah.f(m_J2 - k) ) : 0.;
@@ -352,6 +383,29 @@ void cf1ion::fitengy(std::vector<double> E_in, bool use_sym) {
         Omat.push_back(ham);
         denom.push_back( (ham.adjoint() * ham).trace().real() );
     }
+    // The main algorithm loop
+    double lsqfit = 0.0;
+    int div_count = 0;
+    for (int it=0; it<100; it++) {
+        m_ev_calc = m_ham_calc = false;
+        auto EV = eigensystem();
+        // newlsq = sum( (Ecalc - E0)**2 )
+        double newlsq = std::inner_product(std::get<1>(EV).begin(), std::get<1>(EV).end(), E0.begin(), 0.0,
+            std::plus<>(), [](double a, double b) { return pow(a - b, 2.); });
+        if (fabs(lsqfit - newlsq) < 1e-7) {
+            break; }
+        if (newlsq > lsqfit) {
+            if (++div_count > 10) { // Diverging fit, break
+                break; } }
+        lsqfit = newlsq;
+        for (int i=0; i<nnz.size(); i++) {
+            // numer = sum(diag( V.H @ Omat[i] @ V ) * E0)
+            double numer = (std::get<0>(EV).adjoint() * Omat[i] * std::get<0>(EV)).diagonal().cwiseProduct(E0).sum().real();
+            m_Bi[nnz[i]] = numer / denom[i];
+        }
+    }
+    for (int id=0; id<27; id++) {
+        m_Bo[id] = m_Bi[id] * m_convfact[id] * m_econv; }
 }
 
 } // namespace libMcPhase

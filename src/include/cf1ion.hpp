@@ -14,6 +14,8 @@
 #include "physprop.hpp"
 #include <cstdlib>
 #include <ctime>
+#include <numeric>
+#include <algorithm>
 
 namespace libMcPhase {
 
