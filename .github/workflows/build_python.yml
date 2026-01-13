@@ -67,7 +67,7 @@ jobs:
           mamba install nodejs
           npm install
           npm test
-          mv dist/*wasm.whl wheelhouse/
+          mv dist/*wasm*.whl wheelhouse/
       - name: Upload release wheels
         if: |
           contains(github.event.pull_request.title, 'RELEASE') &&
