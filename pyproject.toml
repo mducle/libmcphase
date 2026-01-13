@@ -37,6 +37,10 @@ cmake.args = ["-G Unix Makefiles"]
 build.tool-args = ["-j8"]
 #build.verbose = true
 #logging.level = "INFO"
+[[tool.scikit-build.overrides]]
+if.platform-system = "^win"
+cmake.args = []
+build.tool-args = []
 
 [tool.setuptools_scm]  # Section required
 write_to = "libmcphase/_version.py"
