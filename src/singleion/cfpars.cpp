@@ -2,7 +2,7 @@
  * 
  * A class encapsulating crystal field parameters and their conversions
  *
- * (C) 2018 Duc Le - duc.le@stfc.ac.uk
+ * (C) 2018-2026 Duc Le - duc.le@stfc.ac.uk
  * This program is licensed under the GNU General Purpose License, version 3. Please see the LICENSE file
  */
 
@@ -13,13 +13,6 @@ namespace libMcPhase {
 // --------------------------------------------------------------------------------------------------------------- //
 // Reference tables (values taken from program cfield, by Peter Fabi, FZ Juelich, file theta.c)
 // --------------------------------------------------------------------------------------------------------------- //
-
-// Conversion factors from Stevens to Wybourn normalisation
-static const std::array<double, 27> lambda = {
-    {sqrt(6.)/2., sqrt(6.), 1./2., sqrt(6.), sqrt(6.)/2., // l=2
-     sqrt(70.)/8., sqrt(35.)/2., sqrt(10.)/4., sqrt(5.)/2., 1./8., sqrt(5.)/2., sqrt(10.)/4., sqrt(35.)/2., sqrt(70.)/8., // l=4
-     sqrt(231.)/16., 3*sqrt(77.)/8., 3*sqrt(14.)/16., sqrt(105.)/8., sqrt(105.)/16., sqrt(42.)/8., // l=6, m=-6 to m=-1
-     1./16., sqrt(42.)/8., sqrt(105.)/16., sqrt(105.)/8., 3*sqrt(14.)/16., 3*sqrt(77.)/8., sqrt(231.)/16.} };
 
 static const std::array<int, 27> id2l = { {0,0,0,0,0, 1,1,1,1,1,1,1,1,1, 2,2,2,2,2,2,2,2,2,2,2,2,2} };
 
@@ -151,10 +144,25 @@ void cfpars::getfromionname(const std::string &ionname) {
 	m_rk = rk_table->second;
 }
 
+bool cfpars::is_sym_allowed(const Blm blm) {
+    return BLM_SYM[(int)blm] & SYM_CLASS[(int)m_sym/10];
+}
+
+std::vector<cfpars::Blm> cfpars::get_sym_allowed_Blm() {
+    std::vector<cfpars::Blm> rv;
+    int sy = (int)m_sym/10;
+    for (int i=0; i<27; i++) {
+        if (BLM_SYM[i] & SYM_CLASS[sy]) rv.push_back(static_cast<Blm>(i));
+    }
+    return rv;
+}
+
 // --------------------------------------------------------------------------------------------------------------- //
 // Setter/getter methods for cfpars class
 // --------------------------------------------------------------------------------------------------------------- //
 void cfpars::set(const Blm blm, double val) {
+    if (!is_sym_allowed(blm)) {
+        throw std::runtime_error("cfpars::set() Parameter not allowed by symmetry"); }
     int id = (int)blm;
     m_Bo[id] = val;
     m_Bi[id] = val / m_convfact[id] / m_econv;
@@ -169,6 +177,8 @@ void cfpars::set(int l, int m, double val) {
         default:
             return;
     }
+    if (!is_sym_allowed(static_cast<Blm>(id))) {
+        throw std::runtime_error("cfpars::set() Parameter not allowed by symmetry"); }
     m_Bo[id] = val;
     m_Bi[id] = val / m_convfact[id] / m_econv;
 }
@@ -216,6 +226,10 @@ void cfpars::set_type(const cfpars::Type newtype) {
             for (int id=0; id<27; id++)
                 if(m_stevfact[id2l[id]] != 0)
                     m_convfact[id] = 1. / m_stevfact[id2l[id]];
+            break;
+        case cfpars::Type::Nlm:
+            for (int id=0; id<27; id++)
+                m_convfact[id] = lambda[id] * FABINORM[m_J2][id];
             break;
     }
     for (int id=0; id<27; id++)

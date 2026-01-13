@@ -126,7 +126,7 @@ class cf1ionTests(unittest.TestCase):
         tt = np.linspace(1, 300, 50)
         #Tmt_powder, mt_powder = cf.getMagneticMoment(1.0, Temperature=np.linspace(1, 300, 50), Hdir="powder", Unit="cgs")
         cc = [cf.susceptibility(tt, hdir, 'cgs') for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
-        mm = [cf.magnetisation([1.0], hdir, tt, 'cgs') for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
+        mm = [cf.magnetisation(tt, [1.0], hdir, 'cgs') for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
         chi_powder = (cc[0] + cc[1] + cc[2]) / 3
         mt_powder = np.squeeze(mm[0] + mm[1] + mm[2]) / 3
         self.assertAlmostEqual(chi_powder[5], mt_powder[5], 6)
@@ -139,13 +139,13 @@ class cf1ionTests(unittest.TestCase):
 
         # Test different Hmag
         #_, h_mag_10 = cf.getMagneticMoment(Hmag=10, Temperature=np.linspace(1, 300, 50), Hdir="powder", Unit="bohr")
-        mm = [cf.magnetisation([10.], hdir, tt, 'bohr') for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
+        mm = [cf.magnetisation(tt, [10.], hdir, 'bohr') for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
         h_mag_10 = np.squeeze(mm[0] + mm[1] + mm[2]) / 3
         self.assertAlmostEqual(h_mag_10[5], 0.323607, 5)
         self.assertAlmostEqual(h_mag_10[10], 0.182484, 5)
         self.assertAlmostEqual(h_mag_10[15], 0.129909, 5)
         #_, h_mag_5 = cf.getMagneticMoment(Hmag=5, Temperature=np.linspace(1, 300, 50), Hdir="powder", Unit="bohr")
-        mm = [cf.magnetisation([5.], hdir, tt, 'bohr') for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
+        mm = [cf.magnetisation(tt, [5.], hdir, 'bohr') for hdir in [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]]
         h_mag_5 = np.squeeze(mm[0] + mm[1] + mm[2]) / 3
         self.assertAlmostEqual(h_mag_5[5], 0.16923426, 6)
         self.assertAlmostEqual(h_mag_5[10], 0.09228022, 6)
@@ -155,12 +155,36 @@ class cf1ionTests(unittest.TestCase):
         # Test M(H) calculations
         cf = libmcphase.cf1ion('Ce3+', **self.pp_cfpars)
         #Hmag_SI, mag_SI = cf.getMagneticMoment(np.linspace(0, 30, 15), Temperature=10, Hdir=[0, 1, -1], Unit="SI")
-        mag_SI = np.squeeze(cf.magnetisation(np.linspace(0, 30, 15), [0, 1, -1], [10], 'SI'))
+        mag_SI = np.squeeze(cf.magnetisation([10], np.linspace(0, 30, 15), [0, 1, -1], 'SI'))
         self.assertAlmostEqual(mag_SI[1], 1.8139, 3)
         self.assertAlmostEqual(mag_SI[5], 6.7859, 3)
         self.assertAlmostEqual(mag_SI[9], 8.2705, 3)
         #_, mag_bohr = cf.getMagneticMoment(np.linspace(0, 30, 15), Temperature=10, Hdir=[0, 1, -1], Unit="bohr")
-        mag_bohr = np.squeeze(cf.magnetisation(np.linspace(0, 30, 15), [0, 1, -1], [10], 'bohr'))
+        mag_bohr = np.squeeze(cf.magnetisation([10], np.linspace(0, 30, 15), [0, 1, -1], 'bohr'))
         self.assertAlmostEqual(mag_SI[1] / 5.5849, mag_bohr[1], 3)
         self.assertAlmostEqual(mag_SI[5] / 5.5849, mag_bohr[5], 3)
         self.assertAlmostEqual(mag_SI[9] / 5.5849, mag_bohr[9], 3)
+
+    def test_peaks_upd3(self):
+        cfp = libmcphase.cf1ion('Pr3+', type='Blm', B20=0.035, B40=-0.012, B43=-0.027, B60=-0.00012, B63=0.0025, B66=0.0068)
+        ref_mantid = np.array([[30.0265, 210.2884], [0., 183.5082], [20.6513, 126.348], [9.6356, 76.4194], [4.3651, 19.3257], [52.4979, 2.1114]])
+        nptest.assert_allclose(cfp.peaks(1), ref_mantid, atol=1e-3)
+
+    def test_norm_split2range(self):
+        ref_mantid = [0.7299684691827522, 0.014315859494885794, 0.23955014769698493, 0.0006854843972749612, 0.009933612654546054, 0.007366964314003879]
+        ref_E = [0., 0., 4.3651248452, 9.6355538971, 9.6355538971, 20.6512567727, 30.0265185296, 30.0265185296, 52.4978908089]
+        cf = libmcphase.cf1ion('Pr3+', sym='C3v', B20=0.035, B40=-0.012, B43=-0.027, B60=-0.00012, B63=0.0025, B66=0.0068)
+        nptest.assert_allclose(cf.split2range(50, True), ref_mantid, atol=1e-3)
+        V, E = cf.eigensystem()
+        nptest.assert_allclose(E - np.min(E), ref_E, atol=1e-3)
+
+    def test_fitengy(self):
+        # Test values from Mantid function
+        ref1 = [0.033203742032045895, -0.01174207044845451, -0.02606886438909303, -0.00012163307624938078, 0.0022326316235320837, 0.006886821595013801]
+        ref2 = [0.055185081912631335, -0.008744257519347313, -0.0880384277475906, -0.00014477480672137673, 0.0005308760990602457, 0.007381916019568393]
+        cf = libmcphase.cf1ion('Pr3+', sym='C3v', B20=0.035, B40=-0.012, B43=-0.027, B60=-0.00012, B63=0.0025, B66=0.0068)
+        cf.fitengy([0, 5, 10, 20], False)
+        nptest.assert_allclose([getattr(cf, blm) for blm in ['B20', 'B40', 'B43', 'B60', 'B63', 'B66']], ref1, atol=1e-3)
+        cf.fitengy([0, 5, 10, 20, 20], False)
+        nptest.assert_allclose([getattr(cf, blm) for blm in ['B20', 'B40', 'B43', 'B60', 'B63', 'B66']], ref2, atol=1e-3)
+

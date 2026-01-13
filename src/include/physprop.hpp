@@ -11,6 +11,8 @@
 #include "eigen.hpp"
 #include <vector>
 #include <unordered_map>
+#include <utility>
+#include <algorithm>
 
 namespace libMcPhase {
 
@@ -45,6 +47,9 @@ static const double NAMEV = 96.48533212;          // J/mol = N_A * meV
 // EPSILON to determine if energy levels are degenerate or not
 static const double DELTA_EPS = 1e-6;
 
+// The neutron-magnetic cross-section in milibarn/sr/uB^2
+static const double MAGXSEC_MBSR = 48.28133274;
+
 // Base class for physical properties calculations. Must derive and implement zeeman_hamiltonian
 class physprop {
     protected:
@@ -58,8 +63,9 @@ class physprop {
         virtual std::vector<RowMatrixXcd> calculate_moments_matrix(RowMatrixXcd ev) = 0;
         VectorXd calculate_boltzmann(VectorXd en, double T);
         VectorXd heatcapacity(std::vector<double> Tvec);
-        RowMatrixXd magnetisation(std::vector<double> H, std::vector<double> Hdir, std::vector<double> Tvec, MagUnits type);
+        RowMatrixXd magnetisation(std::vector<double> Tvec, std::vector<double> H, std::vector<double> Hdir, MagUnits type);
         VectorXd susceptibility(std::vector<double> T, std::vector<double> Hdir, MagUnits type);
+        RowMatrixXd peaks(double T);
 };
 
 // Mapping for Python binding to map string to enum

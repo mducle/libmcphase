@@ -10,7 +10,10 @@ build
 dist
 libMcPhase.egg-info
 libmcphase.egg-info
-emsdk
+emsdk*
 Emscripten.cmake
+node_modules
+package-lock.json
 
 libmcphase/*pyd
+libmcphase/libmcphase.cpython*

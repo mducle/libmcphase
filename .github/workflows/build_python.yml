@@ -59,11 +59,15 @@ jobs:
             python -m unittest
             cd ..
           done
-      - name: Build Pyodide wheel
+      - name: Build and test Pyodide wheel
         if: matrix.os == 'ubuntu-latest'
         run: |
           eval "$($MAMBA_EXE shell activate cibuildwheel)"
-          CIBW_BUILD="cp312*" python -m cibuildwheel --output-dir wheelhouse --platform pyodide
+          CIBW_BUILD="cp312*" python -m cibuildwheel --output-dir dist --platform pyodide
+          mamba install nodejs
+          npm install
+          npm test
+          mv dist/*wasm*.whl wheelhouse/
       - name: Upload release wheels
         if: |
           contains(github.event.pull_request.title, 'RELEASE') &&

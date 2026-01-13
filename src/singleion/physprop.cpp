@@ -3,7 +3,7 @@
  * A class for calculating the physical properties (magnetisation, susceptibility, heat capacity) associated with
  * a crystal field type single-ion Hamiltonian.
  *
- * (C) 2024 Duc Le - duc.le@stfc.ac.uk
+ * (C) 2024-2026 Duc Le - duc.le@stfc.ac.uk
  * This program is licensed under the GNU General Purpose License, version 3. Please see the LICENSE file
  */
 
@@ -60,7 +60,7 @@ VectorXd physprop::heatcapacity(std::vector<double> Tvec) {
     return out;
 }
 
-RowMatrixXd physprop::magnetisation(std::vector<double> Hvec, std::vector<double> Hdir, std::vector<double> Tvec, MagUnits unit_type)
+RowMatrixXd physprop::magnetisation(std::vector<double> Tvec, std::vector<double> Hvec, std::vector<double> Hdir, MagUnits unit_type)
 {
     // Normalise the field direction vector
     double Hnorm = sqrt(Hdir[0] * Hdir[0] + Hdir[1] * Hdir[1] + Hdir[2] * Hdir[2]);
@@ -150,6 +150,56 @@ VectorXd physprop::susceptibility(std::vector<double> Tvec, std::vector<double> 
         chi(tt) = SUSCCONV[(int)unit_type] * U / Z;
     }
     return chi;
+}
+
+RowMatrixXd physprop::peaks(double T)
+{
+    auto es = eigensystem();
+    std::vector<RowMatrixXcd> moments_mat_vec = calculate_moments_matrix(std::get<0>(es));
+    RowMatrixXcd trans = moments_mat_vec[0].cwiseProduct(moments_mat_vec[0].conjugate()) +
+                         moments_mat_vec[1].cwiseProduct(moments_mat_vec[1].conjugate()) +
+                         moments_mat_vec[2].cwiseProduct(moments_mat_vec[2].conjugate());
+    size_t sz = std::get<1>(es).size();
+    double Z = 0.;
+    VectorXd expfact = calculate_boltzmann(std::get<1>(es), T);
+    for (size_t i=0; i < sz; i++) {
+        Z += expfact[i];
+        trans.col(i) *= expfact[i];
+    }
+    trans *= MAGXSEC_MBSR / Z;  // The magnetic cross-section in milibarn/sr
+    // Match transition matrix elements to energies
+    std::vector< std::pair<double, double> > pkl;
+    pkl.reserve(sz * sz);
+    for (int i=0; i<sz; i++) {
+        for (int j=0; j<sz; j++) {
+            if (trans(i, j).real() > 1e-6) {
+                pkl.push_back(std::make_pair(std::get<1>(es)[i] - std::get<1>(es)[j], trans(i,j).real()));
+            }
+        }
+    }
+    // Sums degenerate transitions
+    std::sort(pkl.begin(), pkl.end(), 
+        [](std::pair<double, double> a, std::pair<double, double> b) { return a.first > b.first; });
+    std::vector<int> ndegen;
+    int n_ex = 0, j = 0;
+    ndegen.reserve(pkl.size());
+    ndegen.push_back(j);
+    for (int i=1; i<pkl.size(); i++) {
+        double dE = pkl[j].first - pkl[i].first;
+        if (dE < 1e-3 || (dE/pkl[i].first) < 1e-2) {
+            pkl[j].second += pkl[i].second;
+        } else {
+            j = i;
+            ndegen.push_back(j);
+        }
+    }
+    RowMatrixXd rv = RowMatrixXd::Zero(ndegen.size(), 2);
+    // Sort by intensity
+    std::sort(ndegen.begin(), ndegen.end(), [&pkl](int a, int b) { return pkl[a].second > pkl[b].second; });
+    for (int i=0; i<ndegen.size(); i++) {
+        rv.row(i) << pkl[ndegen[i]].first, pkl[ndegen[i]].second;
+    }
+    return rv;
 }
 
 } // namespace libMcPhase

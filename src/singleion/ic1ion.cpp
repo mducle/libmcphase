@@ -126,6 +126,8 @@ void ic1ion::set_coulomb(const std::vector<double> val, ic1ion::CoulombType type
             break;
     }
     std::transform(m_F.begin(), m_F.end(), m_F_i.begin(), [=](double v) { return v / m_econv; });
+    m_ham_calc = false;
+    m_ev_calc = false;
 }
 
 void ic1ion::set_ci(std::vector<double> val) {
@@ -135,6 +137,8 @@ void ic1ion::set_ci(std::vector<double> val) {
     }
     std::copy(val.begin(), val.end(), m_alpha.begin());
     std::transform(val.begin(), val.end(), m_alpha_i.begin(), [=](double v) { return v / m_econv; });
+    m_ham_calc = false;
+    m_ev_calc = false;
 }
 
 void ic1ion::set_spinorbit(double val, ic1ion::SpinOrbType type) {
