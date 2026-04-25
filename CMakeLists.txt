@@ -3,8 +3,8 @@ project(libMcPhase)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 set(CMAKE_MACOSX_RPATH TRUE)
-set(CMAKE_CXX_STANDARD 11)
-set(CXX_STANDARD_REQUIRED 11)
+set(CMAKE_CXX_STANDARD 14)
+set(CXX_STANDARD_REQUIRED 14)
 
 set(LIBMCPHASE_PYTHON_MODULE libmcphase)
 
@@ -36,6 +36,9 @@ if (EMSCRIPTEN)
 endif()
 
 find_package(Eigen3 REQUIRED NO_MODULE)
+if (NOT EIGEN3_INCLUDE_DIR)
+    get_target_property(EIGEN3_INCLUDE_DIR Eigen3::Eigen INTERFACE_INCLUDE_DIRECTORIES)
+endif()
 include_directories(${EIGEN3_INCLUDE_DIR})
 find_package(pybind11 CONFIG)
 
