@@ -1,3 +1,19 @@
+### [v0.2.0](https://github.com/mducle/libmcphase/compare/v0.1.3...v0.2.0)
+
+Add `fitengy` algorithm and refactor physical properties calculations.
+Add new webassembly version (runs under Pyodide)
+
+* Refactor physical properties into a separate class inherited by `cf1ion` and `ic1ion`.
+* This allows heat capacity and magnetisation / susceptibility calculations to both classes.
+* Fix constants and units bug in physical properties calculations
+* Change behaviour of magnetisation to be consistent with McPhase and not FOCUS/Mantid
+  That is, M(H) is outputed as the component parallel to H (`M_parallel`) not the
+  mean-square of individual components.
+* Update CMakeFile and switch to using pyproject.toml and scikit-build
+* Add `fitengy` algorithm
+* Add Fabi normalised parameters and `split2range` function.
+
+
 ### [v0.1.3](https://github.com/mducle/libmcphase/compare/v0.1.2...v0.1.3)
 
 Library / dependencies update
