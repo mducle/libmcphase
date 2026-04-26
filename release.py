@@ -17,7 +17,7 @@ def main():
 
     if args.version_check:
         file_ver, _ = _version_check()
-        print(f'Version string "{file_ver}" in files match')
+        print(file_ver)
 
     token = args.token
     if token is None and 'GITHUB_TOKEN' in os.environ:
@@ -44,7 +44,7 @@ def release_github(test=True, create_tag=False, token=None):
     elif git_ver != file_ver:
         raise Exception(f'version mismatch! __version__: {git_ver}; files: {file_ver}')
 
-    desc = re.search('# \[v[0-9\.]*\]\(http.*?\)\n(.*?)# \[v[0-9\.]*\]', changelog,
+    desc = re.search(r'# \[v[0-9\.]*\]\(http.*?\)\n(.*?)# \[v[0-9\.]*\]', changelog,
                      re.DOTALL | re.MULTILINE).groups()[0].strip()
     payload = {
         "tag_name": git_ver,
@@ -61,7 +61,7 @@ def release_github(test=True, create_tag=False, token=None):
         if not upload_url:
             upload_url = _create_gh_release(payload, token)
         else:
-            upload_url = re.search('^(.*)\{\?', upload_url).groups()[0]
+            upload_url = re.search(r'^(.*)\{\?', upload_url).groups()[0]
         _upload_assets(upload_url, token)
 
 
@@ -125,7 +125,7 @@ def _version_check():
         changelog = f.read()
     with open('CITATION.cff') as f:
         citation = f.read()
-    cl_ver = re.findall('# \[(.*)\]\(http', changelog)[0]
+    cl_ver = re.findall(r'# \[(.*)\]\(http', changelog)[0]
     cit_ver = 'v' + re.findall('\nversion: "(.*)"', citation)[0]
     if cl_ver != cit_ver:
         raise Exception(f'version mismatch! CHANGELOG.md: {cl_ver}; CITATION.cff: {cit_ver}')
@@ -142,7 +142,7 @@ def _create_gh_release(payload, token):
     print(response.text)
     if response.status_code != 201:
         raise RuntimeError('Could not create release')
-    upload_url = re.search('^(.*)\{\?', json.loads(response.text)['upload_url']).groups()[0]
+    upload_url = re.search(r'^(.*)\{\?', json.loads(response.text)['upload_url']).groups()[0]
     return upload_url
 
 

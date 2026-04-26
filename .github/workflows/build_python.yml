@@ -31,6 +31,10 @@ jobs:
       - uses: mamba-org/setup-micromamba@v1
         with:
           cache-downloads: true
+      - name: Tag if release
+        if: contains(github.event.pull_request.title, 'RELEASE')
+        run: |
+          git tag $(python release.py --version_check)
       - name: Build wheels
         run: |
           $MAMBA_EXE create -n cibuildwheel python=3.12 eigen pybind11=3.0.1
