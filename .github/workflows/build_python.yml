@@ -33,7 +33,7 @@ jobs:
           cache-downloads: true
       - name: Build wheels
         run: |
-          $MAMBA_EXE create -n cibuildwheel python=3.12 eigen pybind11
+          $MAMBA_EXE create -n cibuildwheel python=3.12 eigen pybind11=3.0.1
           eval "$($MAMBA_EXE shell activate cibuildwheel)"
           python -m pip install cibuildwheel
           if [[ $OSTYPE == "linux-gnu" ]]
