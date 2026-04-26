@@ -32,11 +32,10 @@ def main():
 
 
 def release_github(test=True, create_tag=False, token=None):
-    rv = subprocess.run([sys.executable, 'setup.py', 'version'], capture_output=True)
-    __version__ = rv.stdout.decode().split("version': '")[1].split("',")[0]
-    git_ver = 'v' + __version__
+    rv = subprocess.run(['git', 'describe', '--tags', '--dirty', '--always'], capture_output=True)
+    git_ver = rv.stdout.decode()
     file_ver, changelog = _version_check()
-    if '+' in git_ver and create_tag:
+    if ('-' in git_ver or '+' in git_ver) and create_tag:
         # Not in a release, create a new tag
         rv = subprocess.run(['git', 'tag', file_ver], capture_output=True)
         if rv.returncode != 0:
